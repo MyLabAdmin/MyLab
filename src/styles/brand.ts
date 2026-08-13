@@ -1,6 +1,20 @@
 export const brand = {
   name: "MyLab",
 
+  assets: {
+    logo: {
+      src: "/brand/mylab-logo.png",
+      alt: "MyLab",
+      aspectRatio: 1,
+      sizes: {
+        sm: 40,
+        md: 64,
+        lg: 96,
+        xl: 128,
+      },
+    },
+  },
+
   colors: {
     primary: {
       50: "#eef8f7",
