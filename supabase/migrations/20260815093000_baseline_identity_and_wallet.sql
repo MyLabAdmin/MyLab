@@ -511,21 +511,7 @@ for select
 to authenticated
 using ((select auth.uid()) = user_id);
 
-create policy wallets_insert_own
-on public.wallets
-for insert
-to authenticated
-with check ((select auth.uid()) = user_id);
+revoke execute on function public.generate_wallet_number() from public, anon, authenticated;
+revoke execute on function public.create_wallet_for_profile() from public, anon, authenticated;
+revoke execute on function public.seed_profile_visibility() from public, anon, authenticated;
 
-create policy wallets_update_own
-on public.wallets
-for update
-to authenticated
-using ((select auth.uid()) = user_id)
-with check ((select auth.uid()) = user_id);
-
-create policy wallets_delete_own
-on public.wallets
-for delete
-to authenticated
-using ((select auth.uid()) = user_id);
