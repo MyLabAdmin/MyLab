@@ -173,7 +173,6 @@ create table public.wallets (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
-  constraint wallets_wallet_number_key unique (wallet_number),
 
   constraint wallets_number_format
     check (wallet_number ~ '^MLB-[0-9]{10}$'),
