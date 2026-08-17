@@ -7,7 +7,7 @@ import { AuthError } from '@/components/auth/ui/AuthError'
 import { AuthField } from '@/components/auth/ui/AuthField'
 import { AuthSubmitButton } from '@/components/auth/ui/AuthSubmitButton'
 
-export function LoginForm() {
+export function SignupForm() {
   const router = useRouter()
   const supabase = createClient()
 
@@ -15,15 +15,19 @@ export function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
 
     if (error) {
@@ -32,15 +36,42 @@ export function LoginForm() {
       return
     }
 
-    router.push('/dashboard')
-    router.refresh()
+    if (data.session) {
+      router.push('/onboarding/profile')
+      router.refresh()
+      return
+    }
+
+    setConfirmationSent(true)
+    setLoading(false)
+  }
+
+  if (confirmationSent) {
+    return (
+      <section className="space-y-4 rounded-xl bg-info-50 p-5">
+        <div>
+          <h2 className="text-lg font-semibold text-neutral-900">
+            Check your email
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-neutral-700">
+            We sent a confirmation link to{' '}
+            <strong className="font-semibold">{email}</strong>.
+          </p>
+        </div>
+
+        <p className="text-sm leading-6 text-neutral-600">
+          Confirm your email address before continuing to your MyLab profile.
+        </p>
+      </section>
+    )
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <AuthField
         label="Email"
-        id="login-email"
+        id="signup-email"
         name="email"
         type="email"
         autoComplete="email"
@@ -53,11 +84,12 @@ export function LoginForm() {
 
       <AuthField
         label="Password"
-        id="login-password"
+        id="signup-password"
         name="password"
         type="password"
-        autoComplete="current-password"
-        placeholder="Your password"
+        autoComplete="new-password"
+        placeholder="At least 8 characters"
+        minLength={8}
         required
         value={password}
         onChange={(event) => setPassword(event.target.value)}
@@ -68,9 +100,9 @@ export function LoginForm() {
 
       <AuthSubmitButton
         loading={loading}
-        loadingLabel="Signing in…"
+        loadingLabel="Creating account…"
       >
-        Sign in
+        Create account
       </AuthSubmitButton>
     </form>
   )
