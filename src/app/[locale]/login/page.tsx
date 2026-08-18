@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import { AuthCard } from '@/components/auth/ui/AuthCard'
 import { AuthError } from '@/components/auth/ui/AuthError'
 import { AuthHeader } from '@/components/auth/ui/AuthHeader'
@@ -15,18 +16,17 @@ export default async function LoginPage({
   searchParams,
 }: LoginPageProps) {
   const { error } = await searchParams
+  const t = await getTranslations('auth.login')
 
   const confirmationError =
-    error === 'confirmation_failed'
-      ? "We couldn't confirm your email. Please request a new confirmation email and try again."
-      : null
+    error === 'confirmation_failed' ? t('confirmationFailed') : null
 
   return (
     <AuthShell>
       <AuthCard>
         <AuthHeader
-          title="Welcome back to MyLab"
-          description="Sign in to continue to your laboratory workspace."
+          title={t('title')}
+          description={t('description')}
         />
 
         <AuthError message={confirmationError} />
@@ -36,12 +36,12 @@ export default async function LoginPage({
         </div>
 
         <p className="mt-6 text-center text-sm text-neutral-600">
-          Don&apos;t have an account?{' '}
+          {t('noAccount')}{' '}
           <Link
             href="/signup"
             className="font-semibold text-primary-700 hover:text-primary-800"
           >
-            Create an account
+            {t('createAccount')}
           </Link>
         </p>
       </AuthCard>

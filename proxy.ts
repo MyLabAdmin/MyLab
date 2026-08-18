@@ -1,5 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import createMiddleware from 'next-intl/middleware'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { routing } from '@/i18n/routing'
+
+const intlMiddleware = createMiddleware(routing)
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -37,11 +41,19 @@ export async function updateSession(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest) {
-  return updateSession(request)
+  const intlResponse = intlMiddleware(request)
+
+  if (intlResponse.headers.get('location')) {
+    return intlResponse
+  }
+
+  const supabaseResponse = await updateSession(request)
+
+  return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

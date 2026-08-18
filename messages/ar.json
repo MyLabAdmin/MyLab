@@ -1,0 +1,38 @@
+{
+  "common": {
+    "appName": "MyLab",
+    "language": "اللغة",
+    "english": "الإنجليزية",
+    "arabic": "العربية"
+  },
+  "auth": {
+    "login": {
+      "title": "مرحبًا بعودتك إلى MyLab",
+      "description": "سجّل الدخول للمتابعة إلى مساحة عمل المختبر الخاصة بك.",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "كلمة المرور الخاصة بك",
+      "submit": "تسجيل الدخول",
+      "submitting": "جارٍ تسجيل الدخول…",
+      "noAccount": "ليس لديك حساب؟",
+      "createAccount": "إنشاء حساب",
+      "confirmationFailed": "تعذر تأكيد بريدك الإلكتروني. يرجى طلب رسالة تأكيد جديدة والمحاولة مرة أخرى."
+    },
+    "signup": {
+      "title": "أنشئ حسابك في MyLab",
+      "description": "انضم إلى MyLab وأنشئ ملفك المهني في مجال المختبرات.",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "8 أحرف على الأقل",
+      "submit": "إنشاء حساب",
+      "submitting": "جارٍ إنشاء الحساب…",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "signIn": "تسجيل الدخول",
+      "checkEmail": "تحقق من بريدك الإلكتروني",
+      "confirmationSent": "أرسلنا رابط التأكيد إلى {email}.",
+      "confirmationDescription": "أكد عنوان بريدك الإلكتروني قبل المتابعة إلى ملفك الشخصي في MyLab."
+    }
+  }
+}

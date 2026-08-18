@@ -1,0 +1,38 @@
+{
+  "common": {
+    "appName": "MyLab",
+    "language": "Language",
+    "english": "English",
+    "arabic": "Arabic"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back to MyLab",
+      "description": "Sign in to continue to your laboratory workspace.",
+      "email": "Email",
+      "password": "Password",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Your password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create an account",
+      "confirmationFailed": "We couldn't confirm your email. Please request a new confirmation email and try again."
+    },
+    "signup": {
+      "title": "Create your MyLab account",
+      "description": "Join MyLab and build your professional laboratory profile.",
+      "email": "Email",
+      "password": "Password",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "At least 8 characters",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "checkEmail": "Check your email",
+      "confirmationSent": "We sent a confirmation link to {email}.",
+      "confirmationDescription": "Confirm your email address before continuing to your MyLab profile."
+    }
+  }
+}
