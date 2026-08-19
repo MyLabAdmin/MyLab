@@ -64,6 +64,7 @@ export function LoginForm() {
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         disabled={loading}
+        passwordToggle
       />
 
       <AuthError message={error} />

@@ -24,6 +24,19 @@ export default async function DashboardPage({
     })
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!profile) {
+    return redirect({
+      href: '/profile/complete',
+      locale,
+    })
+  }
+
   return (
     <main>
       <h1>MyLab Dashboard</h1>
