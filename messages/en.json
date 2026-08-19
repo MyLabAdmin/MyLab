@@ -3,7 +3,9 @@
     "appName": "MyLab",
     "language": "Language",
     "english": "English",
-    "arabic": "Arabic"
+    "arabic": "Arabic",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "auth": {
     "login": {
@@ -32,7 +34,47 @@
       "signIn": "Sign in",
       "checkEmail": "Check your email",
       "confirmationSent": "We sent a confirmation link to {email}.",
-      "confirmationDescription": "Confirm your email address before continuing to your MyLab profile."
+      "confirmationDescription": "Confirm your email address before continuing to your MyLab profile.",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "passwordMismatch": "Passwords do not match.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "invalidEmail": "Please enter a valid email address.",
+      "passwordTooShort": "Password must be at least 8 characters."
+    }
+  },
+  "profile": {
+    "title": "Complete your MyLab profile",
+    "description": "Add your professional information to continue.",
+    "basicInformation": "Basic information",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "city": "City",
+    "countryCode": "Country code",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "dateOfBirth": "Date of birth",
+    "phone": "Phone",
+    "bio": "Bio",
+    "undergraduateEducation": "Undergraduate education",
+    "university": "University",
+    "degree": "Degree",
+    "bachelor": "Bachelor",
+    "diploma": "Diploma",
+    "specialty": "Specialty",
+    "fromYear": "From year",
+    "toYear": "To year",
+    "continue": "Continue",
+    "saving": "Saving...",
+    "validation": {
+      "required": "This field is required.",
+      "invalidCountryCode": "Country code must contain exactly 2 letters.",
+      "futureDateOfBirth": "Date of birth cannot be in the future.",
+      "invalidYear": "Please enter a valid year.",
+      "yearOrder": "From year cannot be later than to year.",
+      "incompleteEducation": "Please complete all undergraduate education fields or leave them empty."
     }
   }
 }

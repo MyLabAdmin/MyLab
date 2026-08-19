@@ -39,6 +39,28 @@ export async function GET(request: Request) {
     )
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.redirect(
+      new URL(`/${locale}/login`, requestUrl.origin),
+    )
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!profile) {
+    return NextResponse.redirect(
+      new URL(`/${locale}/profile/complete`, requestUrl.origin),
+    )
+  }
+
   return NextResponse.redirect(
     new URL(`/${locale}/dashboard`, requestUrl.origin),
   )

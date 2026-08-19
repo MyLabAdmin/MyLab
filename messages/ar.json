@@ -3,7 +3,9 @@
     "appName": "MyLab",
     "language": "اللغة",
     "english": "الإنجليزية",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور"
   },
   "auth": {
     "login": {
@@ -32,7 +34,47 @@
       "signIn": "تسجيل الدخول",
       "checkEmail": "تحقق من بريدك الإلكتروني",
       "confirmationSent": "أرسلنا رابط التأكيد إلى {email}.",
-      "confirmationDescription": "أكد عنوان بريدك الإلكتروني قبل المتابعة إلى ملفك الشخصي في MyLab."
+      "confirmationDescription": "أكد عنوان بريدك الإلكتروني قبل المتابعة إلى ملفك الشخصي في MyLab.",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+      "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+      "showPassword": "إظهار كلمة المرور",
+      "hidePassword": "إخفاء كلمة المرور",
+      "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح.",
+      "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل."
+    }
+  },
+  "profile": {
+    "title": "أكمل ملفك في MyLab",
+    "description": "أضف معلوماتك المهنية للمتابعة.",
+    "basicInformation": "المعلومات الأساسية",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "city": "المدينة",
+    "countryCode": "رمز الدولة",
+    "gender": "الجنس",
+    "male": "ذكر",
+    "female": "أنثى",
+    "dateOfBirth": "تاريخ الميلاد",
+    "phone": "الهاتف",
+    "bio": "نبذة عنك",
+    "undergraduateEducation": "التعليم الجامعي",
+    "university": "الجامعة",
+    "degree": "الدرجة العلمية",
+    "bachelor": "بكالوريوس",
+    "diploma": "دبلوم",
+    "specialty": "التخصص",
+    "fromYear": "من سنة",
+    "toYear": "إلى سنة",
+    "continue": "متابعة",
+    "saving": "جارٍ الحفظ...",
+    "validation": {
+      "required": "هذا الحقل مطلوب.",
+      "invalidCountryCode": "يجب أن يتكون رمز الدولة من حرفين بالضبط.",
+      "futureDateOfBirth": "لا يمكن أن يكون تاريخ الميلاد في المستقبل.",
+      "invalidYear": "يرجى إدخال سنة صحيحة.",
+      "yearOrder": "لا يمكن أن تكون سنة البداية بعد سنة النهاية.",
+      "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل."
     }
   }
 }

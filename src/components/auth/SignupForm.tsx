@@ -16,6 +16,7 @@ export function SignupForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [confirmationSent, setConfirmationSent] = useState(false)
@@ -23,6 +24,25 @@ export function SignupForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+
+    const normalizedEmail = email.trim()
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!emailPattern.test(normalizedEmail)) {
+      setError(t('invalidEmail'))
+      return
+    }
+
+    if (password.length < 8) {
+      setError(t('passwordTooShort'))
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError(t('passwordMismatch'))
+      return
+    }
+
     setLoading(true)
 
     const callbackUrl = new URL(
@@ -33,7 +53,7 @@ export function SignupForm() {
     callbackUrl.searchParams.set('locale', locale)
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: callbackUrl.toString(),
@@ -103,6 +123,22 @@ export function SignupForm() {
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         disabled={loading}
+        passwordToggle
+      />
+
+      <AuthField
+        label={t('confirmPassword')}
+        id="signup-confirm-password"
+        name="confirmPassword"
+        type="password"
+        autoComplete="new-password"
+        placeholder={t('confirmPasswordPlaceholder')}
+        minLength={8}
+        required
+        value={confirmPassword}
+        onChange={(event) => setConfirmPassword(event.target.value)}
+        disabled={loading}
+        passwordToggle
       />
 
       <AuthError message={error} />
