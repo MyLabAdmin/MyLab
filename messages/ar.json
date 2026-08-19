@@ -39,7 +39,9 @@
       "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
       "passwordMismatch": "كلمتا المرور غير متطابقتين.",
       "showPassword": "إظهار كلمة المرور",
-      "hidePassword": "إخفاء كلمة المرور"
+      "hidePassword": "إخفاء كلمة المرور",
+      "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح.",
+      "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل."
     }
   },
   "profile": {
@@ -65,6 +67,14 @@
     "fromYear": "من سنة",
     "toYear": "إلى سنة",
     "continue": "متابعة",
-    "saving": "جارٍ الحفظ..."
+    "saving": "جارٍ الحفظ...",
+    "validation": {
+      "required": "هذا الحقل مطلوب.",
+      "invalidCountryCode": "يجب أن يتكون رمز الدولة من حرفين بالضبط.",
+      "futureDateOfBirth": "لا يمكن أن يكون تاريخ الميلاد في المستقبل.",
+      "invalidYear": "يرجى إدخال سنة صحيحة.",
+      "yearOrder": "لا يمكن أن تكون سنة البداية بعد سنة النهاية.",
+      "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل."
+    }
   }
 }

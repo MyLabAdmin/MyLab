@@ -39,7 +39,9 @@
       "confirmPasswordPlaceholder": "Re-enter your password",
       "passwordMismatch": "Passwords do not match.",
       "showPassword": "Show password",
-      "hidePassword": "Hide password"
+      "hidePassword": "Hide password",
+      "invalidEmail": "Please enter a valid email address.",
+      "passwordTooShort": "Password must be at least 8 characters."
     }
   },
   "profile": {
@@ -65,6 +67,14 @@
     "fromYear": "From year",
     "toYear": "To year",
     "continue": "Continue",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "validation": {
+      "required": "This field is required.",
+      "invalidCountryCode": "Country code must contain exactly 2 letters.",
+      "futureDateOfBirth": "Date of birth cannot be in the future.",
+      "invalidYear": "Please enter a valid year.",
+      "yearOrder": "From year cannot be later than to year.",
+      "incompleteEducation": "Please complete all undergraduate education fields or leave them empty."
+    }
   }
 }

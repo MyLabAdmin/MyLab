@@ -25,6 +25,19 @@ export function SignupForm() {
     event.preventDefault()
     setError(null)
 
+    const normalizedEmail = email.trim()
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!emailPattern.test(normalizedEmail)) {
+      setError(t('invalidEmail'))
+      return
+    }
+
+    if (password.length < 8) {
+      setError(t('passwordTooShort'))
+      return
+    }
+
     if (password !== confirmPassword) {
       setError(t('passwordMismatch'))
       return
@@ -40,7 +53,7 @@ export function SignupForm() {
     callbackUrl.searchParams.set('locale', locale)
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: callbackUrl.toString(),

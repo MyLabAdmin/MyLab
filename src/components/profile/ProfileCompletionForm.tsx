@@ -37,6 +37,82 @@ export function ProfileCompletionForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+
+    const normalizedFirstName = firstName.trim()
+    const normalizedLastName = lastName.trim()
+    const normalizedCity = city.trim()
+    const normalizedCountryCode = countryCode.trim().toUpperCase()
+    const normalizedDateOfBirth = dateOfBirth.trim()
+
+    if (
+      !normalizedFirstName ||
+      !normalizedLastName ||
+      !normalizedCity ||
+      !normalizedCountryCode ||
+      !normalizedDateOfBirth
+    ) {
+      setError(t('validation.required'))
+      return
+    }
+
+    if (!/^[A-Z]{2}$/.test(normalizedCountryCode)) {
+      setError(t('validation.invalidCountryCode'))
+      return
+    }
+
+    const now = new Date()
+    const today = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-')
+
+    if (normalizedDateOfBirth > today) {
+      setError(t('validation.futureDateOfBirth'))
+      return
+    }
+
+    const normalizedFromYear = fromYear.trim()
+    const normalizedToYear = toYear.trim()
+    const hasAnyEducationField =
+      Boolean(university.trim()) ||
+      Boolean(specialty.trim()) ||
+      Boolean(normalizedFromYear) ||
+      Boolean(normalizedToYear)
+
+    const hasCompleteEducation =
+      Boolean(university.trim()) &&
+      Boolean(specialty.trim()) &&
+      Boolean(normalizedFromYear) &&
+      Boolean(normalizedToYear)
+
+    if (hasAnyEducationField && !hasCompleteEducation) {
+      setError(t('validation.incompleteEducation'))
+      return
+    }
+
+    if (hasCompleteEducation) {
+      const fromYearNumber = Number(normalizedFromYear)
+      const toYearNumber = Number(normalizedToYear)
+
+      if (
+        !Number.isInteger(fromYearNumber) ||
+        !Number.isInteger(toYearNumber) ||
+        fromYearNumber < 1900 ||
+        fromYearNumber > 2100 ||
+        toYearNumber < 1900 ||
+        toYearNumber > 2100
+      ) {
+        setError(t('validation.invalidYear'))
+        return
+      }
+
+      if (fromYearNumber > toYearNumber) {
+        setError(t('validation.yearOrder'))
+        return
+      }
+    }
+
     setLoading(true)
 
     const undergraduate =
@@ -54,12 +130,12 @@ export function ProfileCompletionForm() {
         : null
 
     const { error } = await supabase.rpc('complete_my_profile', {
-      p_first_name: firstName.trim(),
-      p_last_name: lastName.trim(),
-      p_city: city.trim(),
-      p_country_code: countryCode.trim().toUpperCase(),
+      p_first_name: normalizedFirstName,
+      p_last_name: normalizedLastName,
+      p_city: normalizedCity,
+      p_country_code: normalizedCountryCode,
       p_gender: gender,
-      p_date_of_birth: dateOfBirth,
+      p_date_of_birth: normalizedDateOfBirth,
       p_phone: phone.trim() || null,
       p_bio: bio.trim() || null,
       p_undergraduate: undergraduate,
