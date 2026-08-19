@@ -34,5 +34,30 @@
       "confirmationSent": "We sent a confirmation link to {email}.",
       "confirmationDescription": "Confirm your email address before continuing to your MyLab profile."
     }
-  }
+  },
+  "profile": {
+  "title": "Complete your MyLab profile",
+  "description": "Add your professional information to continue.",
+  "basicInformation": "Basic information",
+  "firstName": "First name",
+  "lastName": "Last name",
+  "city": "City",
+  "countryCode": "Country code",
+  "gender": "Gender",
+  "male": "Male",
+  "female": "Female",
+  "dateOfBirth": "Date of birth",
+  "phone": "Phone",
+  "bio": "Bio",
+  "undergraduateEducation": "Undergraduate education",
+  "university": "University",
+  "degree": "Degree",
+  "bachelor": "Bachelor",
+  "diploma": "Diploma",
+  "specialty": "Specialty",
+  "fromYear": "From year",
+  "toYear": "To year",
+  "continue": "Continue",
+  "saving": "Saving..."
 }
+  }
