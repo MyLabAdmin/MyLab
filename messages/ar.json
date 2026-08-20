@@ -74,7 +74,15 @@
       "futureDateOfBirth": "لا يمكن أن يكون تاريخ الميلاد في المستقبل.",
       "invalidYear": "يرجى إدخال سنة صحيحة.",
       "yearOrder": "لا يمكن أن تكون سنة البداية بعد سنة النهاية.",
-      "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل."
-    }
+      "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل.",
+      "incompleteProfileSection": "يرجى إكمال جميع حقول هذا القسم أو تركها فارغة بالكامل."
+    },
+    "postgraduateEducation": "التعليم العالي",
+    "workExperience": "الخبرة العملية",
+    "higherDiploma": "دبلوم عالٍ",
+    "master": "ماجستير",
+    "doctorate": "دكتوراه",
+    "organization": "جهة العمل",
+    "jobTitle": "المسمى الوظيفي"
   }
 }

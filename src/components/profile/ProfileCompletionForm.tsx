@@ -31,6 +31,18 @@ export function ProfileCompletionForm() {
   const [fromYear, setFromYear] = useState('')
   const [toYear, setToYear] = useState('')
 
+  const [postgraduateUniversity, setPostgraduateUniversity] = useState('')
+const [postgraduateDegree, setPostgraduateDegree] =
+  useState<'higher_diploma' | 'master' | 'doctorate'>('master')
+const [postgraduateSpecialty, setPostgraduateSpecialty] = useState('')
+const [postgraduateFromYear, setPostgraduateFromYear] = useState('')
+const [postgraduateToYear, setPostgraduateToYear] = useState('')
+
+const [workOrganization, setWorkOrganization] = useState('')
+const [workJobTitle, setWorkJobTitle] = useState('')
+const [workFromYear, setWorkFromYear] = useState('')
+const [workToYear, setWorkToYear] = useState('')
+
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -73,45 +85,134 @@ export function ProfileCompletionForm() {
     }
 
     const normalizedFromYear = fromYear.trim()
-    const normalizedToYear = toYear.trim()
-    const hasAnyEducationField =
-      Boolean(university.trim()) ||
-      Boolean(specialty.trim()) ||
-      Boolean(normalizedFromYear) ||
-      Boolean(normalizedToYear)
+const normalizedToYear = toYear.trim()
 
-    const hasCompleteEducation =
-      Boolean(university.trim()) &&
-      Boolean(specialty.trim()) &&
-      Boolean(normalizedFromYear) &&
-      Boolean(normalizedToYear)
+const normalizedPostgraduateFromYear = postgraduateFromYear.trim()
+const normalizedPostgraduateToYear = postgraduateToYear.trim()
 
-    if (hasAnyEducationField && !hasCompleteEducation) {
-      setError(t('validation.incompleteEducation'))
-      return
-    }
+const normalizedWorkFromYear = workFromYear.trim()
+const normalizedWorkToYear = workToYear.trim()
 
-    if (hasCompleteEducation) {
-      const fromYearNumber = Number(normalizedFromYear)
-      const toYearNumber = Number(normalizedToYear)
+function validateYears(
+  from: string,
+  to: string,
+  incompleteMessage: string
+) {
+  const hasAny = Boolean(from) || Boolean(to)
 
-      if (
-        !Number.isInteger(fromYearNumber) ||
-        !Number.isInteger(toYearNumber) ||
-        fromYearNumber < 1900 ||
-        fromYearNumber > 2100 ||
-        toYearNumber < 1900 ||
-        toYearNumber > 2100
-      ) {
-        setError(t('validation.invalidYear'))
-        return
-      }
+  if (!hasAny) return true
 
-      if (fromYearNumber > toYearNumber) {
-        setError(t('validation.yearOrder'))
-        return
-      }
-    }
+  if (!from || !to) {
+    setError(incompleteMessage)
+    return false
+  }
+
+  const fromNumber = Number(from)
+  const toNumber = Number(to)
+
+  if (
+    !Number.isInteger(fromNumber) ||
+    !Number.isInteger(toNumber) ||
+    fromNumber < 1900 ||
+    fromNumber > 2100 ||
+    toNumber < 1900 ||
+    toNumber > 2100
+  ) {
+    setError(t('validation.invalidYear'))
+    return false
+  }
+
+  if (fromNumber > toNumber) {
+    setError(t('validation.yearOrder'))
+    return false
+  }
+
+  return true
+}
+
+const hasAnyEducationField =
+  Boolean(university.trim()) ||
+  Boolean(specialty.trim()) ||
+  Boolean(normalizedFromYear) ||
+  Boolean(normalizedToYear)
+
+const hasCompleteEducation =
+  Boolean(university.trim()) &&
+  Boolean(specialty.trim()) &&
+  Boolean(normalizedFromYear) &&
+  Boolean(normalizedToYear)
+
+if (hasAnyEducationField && !hasCompleteEducation) {
+  setError(t('validation.incompleteEducation'))
+  return
+}
+
+if (
+  hasCompleteEducation &&
+  !validateYears(
+    normalizedFromYear,
+    normalizedToYear,
+    t('validation.incompleteEducation')
+  )
+) {
+  return
+}
+
+const hasAnyPostgraduate =
+  Boolean(postgraduateUniversity.trim()) ||
+  Boolean(postgraduateSpecialty.trim()) ||
+  Boolean(normalizedPostgraduateFromYear) ||
+  Boolean(normalizedPostgraduateToYear)
+
+const hasCompletePostgraduate =
+  Boolean(postgraduateUniversity.trim()) &&
+  Boolean(postgraduateSpecialty.trim()) &&
+  Boolean(normalizedPostgraduateFromYear) &&
+  Boolean(normalizedPostgraduateToYear)
+
+if (hasAnyPostgraduate && !hasCompletePostgraduate) {
+  setError(t('validation.incompleteProfileSection'))
+  return
+}
+
+if (
+  hasCompletePostgraduate &&
+  !validateYears(
+    normalizedPostgraduateFromYear,
+    normalizedPostgraduateToYear,
+    t('validation.incompleteProfileSection')
+  )
+) {
+  return
+}
+
+const hasAnyWork =
+  Boolean(workOrganization.trim()) ||
+  Boolean(workJobTitle.trim()) ||
+  Boolean(normalizedWorkFromYear) ||
+  Boolean(normalizedWorkToYear)
+
+const hasCompleteWork =
+  Boolean(workOrganization.trim()) &&
+  Boolean(workJobTitle.trim()) &&
+  Boolean(normalizedWorkFromYear) &&
+  Boolean(normalizedWorkToYear)
+
+if (hasAnyWork && !hasCompleteWork) {
+  setError(t('validation.incompleteProfileSection'))
+  return
+}
+
+if (
+  hasCompleteWork &&
+  !validateYears(
+    normalizedWorkFromYear,
+    normalizedWorkToYear,
+    t('validation.incompleteProfileSection')
+  )
+) {
+  return
+}
 
     setLoading(true)
 
@@ -129,6 +230,27 @@ export function ProfileCompletionForm() {
           }
         : null
 
+      const postgraduate =
+  hasCompletePostgraduate
+    ? {
+        university: postgraduateUniversity.trim(),
+        degree: postgraduateDegree,
+        specialty: postgraduateSpecialty.trim(),
+        from_year: Number(normalizedPostgraduateFromYear),
+        to_year: Number(normalizedPostgraduateToYear),
+      }
+    : null
+
+const work =
+  hasCompleteWork
+    ? {
+        organization: workOrganization.trim(),
+        job_title: workJobTitle.trim(),
+        from_year: Number(normalizedWorkFromYear),
+        to_year: Number(normalizedWorkToYear),
+      }
+    : null
+
     const { error } = await supabase.rpc('complete_my_profile', {
       p_first_name: normalizedFirstName,
       p_last_name: normalizedLastName,
@@ -139,8 +261,8 @@ export function ProfileCompletionForm() {
       p_phone: phone.trim() || null,
       p_bio: bio.trim() || null,
       p_undergraduate: undergraduate,
-      p_postgraduate: null,
-      p_work: null,
+      p_postgraduate: postgraduate,
+      p_work: work,
       p_avatar_type: 'none',
       p_avatar_path: null,
       p_avatar_preset: null,
@@ -326,6 +448,123 @@ export function ProfileCompletionForm() {
           />
         </div>
       </section>
+
+    <section className="space-y-4">
+  <h2 className="text-lg font-semibold text-neutral-900">
+    {t('postgraduateEducation')}
+  </h2>
+
+  <AuthField
+    label={t('university')}
+    id="profile-postgraduate-university"
+    value={postgraduateUniversity}
+    onChange={(e) => setPostgraduateUniversity(e.target.value)}
+    disabled={loading}
+  />
+
+  <div className="space-y-2">
+    <label
+      htmlFor="profile-postgraduate-degree"
+      className="block text-sm font-medium text-neutral-800"
+    >
+      {t('degree')}
+    </label>
+
+    <select
+      id="profile-postgraduate-degree"
+      value={postgraduateDegree}
+      onChange={(e) =>
+        setPostgraduateDegree(
+          e.target.value as 'higher_diploma' | 'master' | 'doctorate'
+        )
+      }
+      disabled={loading}
+      className="block w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm"
+    >
+      <option value="higher_diploma">{t('higherDiploma')}</option>
+      <option value="master">{t('master')}</option>
+      <option value="doctorate">{t('doctorate')}</option>
+    </select>
+  </div>
+
+  <AuthField
+    label={t('specialty')}
+    id="profile-postgraduate-specialty"
+    value={postgraduateSpecialty}
+    onChange={(e) => setPostgraduateSpecialty(e.target.value)}
+    disabled={loading}
+  />
+
+  <div className="grid grid-cols-2 gap-4">
+    <AuthField
+      label={t('fromYear')}
+      id="profile-postgraduate-from-year"
+      type="number"
+      min={1900}
+      max={2100}
+      value={postgraduateFromYear}
+      onChange={(e) => setPostgraduateFromYear(e.target.value)}
+      disabled={loading}
+    />
+
+    <AuthField
+      label={t('toYear')}
+      id="profile-postgraduate-to-year"
+      type="number"
+      min={1900}
+      max={2100}
+      value={postgraduateToYear}
+      onChange={(e) => setPostgraduateToYear(e.target.value)}
+      disabled={loading}
+    />
+  </div>
+</section>
+
+<section className="space-y-4">
+  <h2 className="text-lg font-semibold text-neutral-900">
+    {t('workExperience')}
+  </h2>
+
+  <AuthField
+    label={t('organization')}
+    id="profile-work-organization"
+    value={workOrganization}
+    onChange={(e) => setWorkOrganization(e.target.value)}
+    disabled={loading}
+  />
+
+  <AuthField
+    label={t('jobTitle')}
+    id="profile-work-job-title"
+    value={workJobTitle}
+    onChange={(e) => setWorkJobTitle(e.target.value)}
+    disabled={loading}
+  />
+
+  <div className="grid grid-cols-2 gap-4">
+    <AuthField
+      label={t('fromYear')}
+      id="profile-work-from-year"
+      type="number"
+      min={1900}
+      max={2100}
+      value={workFromYear}
+      onChange={(e) => setWorkFromYear(e.target.value)}
+      disabled={loading}
+    />
+
+    <AuthField
+      label={t('toYear')}
+      id="profile-work-to-year"
+      type="number"
+      min={1900}
+      max={2100}
+      value={workToYear}
+      onChange={(e) => setWorkToYear(e.target.value)}
+      disabled={loading}
+    />
+  </div>
+</section>
 
       <AuthError message={error} />
 

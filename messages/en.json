@@ -74,7 +74,15 @@
       "futureDateOfBirth": "Date of birth cannot be in the future.",
       "invalidYear": "Please enter a valid year.",
       "yearOrder": "From year cannot be later than to year.",
-      "incompleteEducation": "Please complete all undergraduate education fields or leave them empty."
-    }
+      "incompleteEducation": "Please complete all undergraduate education fields or leave them empty.",
+      "incompleteProfileSection": "Please complete all fields in this section or leave them empty."
+    },
+    "postgraduateEducation": "Postgraduate education",
+    "workExperience": "Work experience",
+    "higherDiploma": "Higher diploma",
+    "master": "Master's",
+    "doctorate": "Doctorate",
+    "organization": "Organization",
+    "jobTitle": "Job title"
   }
 }
