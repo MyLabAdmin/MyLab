@@ -75,7 +75,9 @@
       "invalidYear": "يرجى إدخال سنة صحيحة.",
       "yearOrder": "لا يمكن أن تكون سنة البداية بعد سنة النهاية.",
       "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل.",
-      "incompleteProfileSection": "يرجى إكمال جميع حقول هذا القسم أو تركها فارغة بالكامل."
+      "incompleteProfileSection": "يرجى إكمال جميع حقول هذا القسم أو تركها فارغة بالكامل.",
+      "invalidAvatar": "يرجى اختيار صورة JPG أو PNG أو WebP صالحة.",
+      "avatarTooLarge": "يجب ألا تتجاوز الصورة الشخصية 5 ميجابايت."
     },
     "postgraduateEducation": "التعليم العالي",
     "workExperience": "الخبرة العملية",
@@ -83,6 +85,9 @@
     "master": "ماجستير",
     "doctorate": "دكتوراه",
     "organization": "جهة العمل",
-    "jobTitle": "المسمى الوظيفي"
+    "jobTitle": "المسمى الوظيفي",
+    "avatar": "الصورة الشخصية",
+    "uploadAvatar": "رفع صورة",
+    "avatarUploadHint": "JPG أو PNG أو WebP — بحد أقصى 5 ميجابايت."
   }
 }

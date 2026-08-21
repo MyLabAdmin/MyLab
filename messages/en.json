@@ -75,7 +75,9 @@
       "invalidYear": "Please enter a valid year.",
       "yearOrder": "From year cannot be later than to year.",
       "incompleteEducation": "Please complete all undergraduate education fields or leave them empty.",
-      "incompleteProfileSection": "Please complete all fields in this section or leave them empty."
+      "incompleteProfileSection": "Please complete all fields in this section or leave them empty.",
+      "invalidAvatar": "Please select a valid JPG, PNG or WebP image.",
+      "avatarTooLarge": "Profile picture must be 5 MB or smaller."
     },
     "postgraduateEducation": "Postgraduate education",
     "workExperience": "Work experience",
@@ -83,6 +85,9 @@
     "master": "Master's",
     "doctorate": "Doctorate",
     "organization": "Organization",
-    "jobTitle": "Job title"
+    "jobTitle": "Job title",
+    "avatar": "Profile picture",
+    "uploadAvatar": "Upload a photo",
+    "avatarUploadHint": "JPG, PNG or WebP — maximum 5 MB."
   }
 }

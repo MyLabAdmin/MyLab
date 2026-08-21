@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { ChangeEvent, FormEvent, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -9,6 +9,20 @@ import { AuthField } from '@/components/auth/ui/AuthField'
 import { AuthSubmitButton } from '@/components/auth/ui/AuthSubmitButton'
 
 type Gender = 'male' | 'female'
+type AvatarType = 'none' | 'preset' | 'upload'
+
+const AVATAR_PRESETS = [
+  { id: 'lorelei', label: 'Lorelei' },
+  { id: 'notionists', label: 'Notionists' },
+  { id: 'pixel-art', label: 'Pixel Art' },
+  { id: 'thumbs', label: 'Thumbs' },
+  { id: 'shapes', label: 'Shapes' },
+  { id: 'adventurer', label: 'Adventurer' },
+] as const
+
+function getDiceBearUrl(style: string) {
+  return `https://api.dicebear.com/10.x/${style}/svg?seed=mylab-${style}&size=128`
+}
 
 export function ProfileCompletionForm() {
   const locale = useLocale()
@@ -42,6 +56,10 @@ const [workOrganization, setWorkOrganization] = useState('')
 const [workJobTitle, setWorkJobTitle] = useState('')
 const [workFromYear, setWorkFromYear] = useState('')
 const [workToYear, setWorkToYear] = useState('')
+
+  const [avatarType, setAvatarType] = useState<AvatarType>('none')
+  const [avatarPreset, setAvatarPreset] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -216,6 +234,60 @@ if (
 
     setLoading(true)
 
+    let avatarPath: string | null = null
+
+    if (avatarType === 'upload') {
+      if (!avatarFile) {
+        setError(t('validation.invalidAvatar'))
+        setLoading(false)
+        return
+      }
+
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(avatarFile.type)) {
+        setError(t('validation.invalidAvatar'))
+        setLoading(false)
+        return
+      }
+
+      if (avatarFile.size > 5 * 1024 * 1024) {
+        setError(t('validation.avatarTooLarge'))
+        setLoading(false)
+        return
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        setError(t('validation.required'))
+        setLoading(false)
+        return
+      }
+
+      const extension =
+        avatarFile.type === 'image/jpeg'
+          ? 'jpg'
+          : avatarFile.type === 'image/png'
+            ? 'png'
+            : 'webp'
+
+      avatarPath = `${user.id}/avatar.${extension}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(avatarPath, avatarFile, {
+          upsert: true,
+          contentType: avatarFile.type,
+        })
+
+      if (uploadError) {
+        setError(uploadError.message)
+        setLoading(false)
+        return
+      }
+    }
+
     const undergraduate =
       university.trim() &&
       specialty.trim() &&
@@ -263,16 +335,20 @@ const work =
       p_undergraduate: undergraduate,
       p_postgraduate: postgraduate,
       p_work: work,
-      p_avatar_type: 'none',
-      p_avatar_path: null,
-      p_avatar_preset: null,
+      p_avatar_type: avatarType,
+      p_avatar_path: avatarType === 'upload' ? avatarPath : null,
+      p_avatar_preset: avatarType === 'preset' ? avatarPreset : null,
     })
 
     if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
+  if (avatarPath) {
+    await supabase.storage.from('avatars').remove([avatarPath])
+  }
+
+  setError(error.message)
+  setLoading(false)
+  return
+}
 
     router.push('/dashboard')
     router.refresh()
@@ -565,6 +641,78 @@ const work =
     />
   </div>
 </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          {t('avatar')}
+        </h2>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {AVATAR_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                setAvatarType('preset')
+                setAvatarPreset(preset.id)
+                setAvatarFile(null)
+              }}
+              className={`rounded-xl border p-3 text-center transition ${
+                avatarType === 'preset' && avatarPreset === preset.id
+                  ? 'border-neutral-900 ring-2 ring-neutral-900/10'
+                  : 'border-neutral-200 hover:border-neutral-400'
+              }`}
+            >
+              <img
+                src={getDiceBearUrl(preset.id)}
+                alt={preset.label}
+                className="mx-auto h-20 w-20 rounded-full"
+              />
+              <span className="mt-2 block text-sm font-medium">
+                {preset.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <label
+          htmlFor="profile-avatar-upload"
+          className={`block cursor-pointer rounded-xl border border-dashed p-4 text-center ${
+            avatarType === 'upload'
+              ? 'border-neutral-900 ring-2 ring-neutral-900/10'
+              : 'border-neutral-300'
+          }`}
+        >
+          <span className="block text-sm font-medium">
+            {t('uploadAvatar')}
+          </span>
+
+          <span className="mt-1 block text-xs text-neutral-500">
+            {t('avatarUploadHint')}
+          </span>
+
+          <input
+            id="profile-avatar-upload"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            disabled={loading}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              const file = event.target.files?.[0] ?? null
+              setAvatarFile(file)
+              setAvatarType(file ? 'upload' : 'none')
+              setAvatarPreset('')
+            }}
+          />
+
+          {avatarFile && (
+            <span className="mt-2 block text-xs text-neutral-600">
+              {avatarFile.name}
+            </span>
+          )}
+        </label>
+      </section>
 
       <AuthError message={error} />
 
