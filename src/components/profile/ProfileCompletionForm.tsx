@@ -1,78 +1,143 @@
-'use client'
+"use client";
 
-import { ChangeEvent, FormEvent, useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { AuthError } from '@/components/auth/ui/AuthError'
-import { AuthField } from '@/components/auth/ui/AuthField'
-import { AuthSubmitButton } from '@/components/auth/ui/AuthSubmitButton'
+import { ChangeEvent, FormEvent, useState } from "react";
+import { upload } from "@imagekit/next";
+import { useLocale,  useTranslations } from "next-intl";
+import { COUNTRY_CODES, getCountryName } from "@/lib/countries";
+import { useRouter } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { AuthError } from "@/components/auth/ui/AuthError";
+import { AuthField } from "@/components/auth/ui/AuthField";
+import { AuthSubmitButton } from "@/components/auth/ui/AuthSubmitButton";
 
-type Gender = 'male' | 'female'
-type AvatarType = 'none' | 'preset' | 'upload'
+type Gender = "male" | "female";
 
-const AVATAR_PRESETS = [
-  { id: 'lorelei', label: 'Lorelei' },
-  { id: 'notionists', label: 'Notionists' },
-  { id: 'pixel-art', label: 'Pixel Art' },
-  { id: 'thumbs', label: 'Thumbs' },
-  { id: 'shapes', label: 'Shapes' },
-  { id: 'adventurer', label: 'Adventurer' },
-] as const
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 
-function getDiceBearUrl(style: string) {
-  return `https://api.dicebear.com/10.x/${style}/svg?seed=mylab-${style}&size=128`
-}
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+const DEFAULT_AVATAR_URL = "/assets/avatars/person-avatar.png";
 
 export function ProfileCompletionForm() {
-  const locale = useLocale()
-  const router = useRouter()
-  const t = useTranslations('profile')
-  const supabase = createClient()
+  const router = useRouter();
+  const t = useTranslations("profile");
+  const supabase = createClient();
 
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [city, setCity] = useState('')
-  const [countryCode, setCountryCode] = useState('')
-  const [gender, setGender] = useState<Gender>('male')
-  const [dateOfBirth, setDateOfBirth] = useState('')
-  const [phone, setPhone] = useState('')
-  const [bio, setBio] = useState('')
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [city, setCity] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [gender, setGender] = useState<Gender>("male");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
 
-  const [university, setUniversity] = useState('')
-  const [degree, setDegree] = useState<'diploma' | 'bachelor'>('bachelor')
-  const [specialty, setSpecialty] = useState('')
-  const [fromYear, setFromYear] = useState('')
-  const [toYear, setToYear] = useState('')
+  const [university, setUniversity] = useState("");
+  const [degree, setDegree] = useState<"diploma" | "bachelor">("bachelor");
+  const [specialty, setSpecialty] = useState("");
+  const [fromYear, setFromYear] = useState("");
+  const [toYear, setToYear] = useState("");
 
-  const [postgraduateUniversity, setPostgraduateUniversity] = useState('')
-const [postgraduateDegree, setPostgraduateDegree] =
-  useState<'higher_diploma' | 'master' | 'doctorate'>('master')
-const [postgraduateSpecialty, setPostgraduateSpecialty] = useState('')
-const [postgraduateFromYear, setPostgraduateFromYear] = useState('')
-const [postgraduateToYear, setPostgraduateToYear] = useState('')
+  const [postgraduateUniversity, setPostgraduateUniversity] = useState("");
+  const [postgraduateDegree, setPostgraduateDegree] = useState<
+    "higher_diploma" | "master" | "doctorate"
+  >("master");
+  const [postgraduateSpecialty, setPostgraduateSpecialty] = useState("");
+  const [postgraduateFromYear, setPostgraduateFromYear] = useState("");
+  const [postgraduateToYear, setPostgraduateToYear] = useState("");
 
-const [workOrganization, setWorkOrganization] = useState('')
-const [workJobTitle, setWorkJobTitle] = useState('')
-const [workFromYear, setWorkFromYear] = useState('')
-const [workToYear, setWorkToYear] = useState('')
+  const [workOrganization, setWorkOrganization] = useState("");
+  const [workJobTitle, setWorkJobTitle] = useState("");
+  const [workFromYear, setWorkFromYear] = useState("");
+  const [workToYear, setWorkToYear] = useState("");
 
-  const [avatarType, setAvatarType] = useState<AvatarType>('none')
-  const [avatarPreset, setAvatarPreset] = useState('')
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState(DEFAULT_AVATAR_URL);
 
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const locale = useLocale();
+
+  function validateYears(from: string, to: string, incompleteMessage: string) {
+    const hasAny = Boolean(from) || Boolean(to);
+
+    if (!hasAny) {
+      return true;
+    }
+
+    if (!from || !to) {
+      setError(incompleteMessage);
+      return false;
+    }
+
+    const fromNumber = Number(from);
+    const toNumber = Number(to);
+
+    if (
+      !Number.isInteger(fromNumber) ||
+      !Number.isInteger(toNumber) ||
+      fromNumber < 1900 ||
+      fromNumber > 2100 ||
+      toNumber < 1900 ||
+      toNumber > 2100
+    ) {
+      setError(t("validation.invalidYear"));
+      return false;
+    }
+
+    if (fromNumber > toNumber) {
+      setError(t("validation.yearOrder"));
+      return false;
+    }
+
+    return true;
+  }
+
+  function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+
+    if (!file) {
+      setAvatarFile(null);
+      setAvatarPreview(DEFAULT_AVATAR_URL);
+      return;
+    }
+
+    if (
+      !ALLOWED_AVATAR_TYPES.includes(
+        file.type as (typeof ALLOWED_AVATAR_TYPES)[number],
+      )
+    ) {
+      setAvatarFile(null);
+      setAvatarPreview(DEFAULT_AVATAR_URL);
+      setError(t("validation.invalidAvatar"));
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      setAvatarFile(null);
+      setAvatarPreview(DEFAULT_AVATAR_URL);
+      setError(t("validation.avatarTooLarge"));
+      event.target.value = "";
+      return;
+    }
+
+    setError(null);
+    setAvatarFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
+    event.preventDefault();
+    setError(null);
 
-    const normalizedFirstName = firstName.trim()
-    const normalizedLastName = lastName.trim()
-    const normalizedCity = city.trim()
-    const normalizedCountryCode = countryCode.trim().toUpperCase()
-    const normalizedDateOfBirth = dateOfBirth.trim()
+    const normalizedFirstName = firstName.trim();
+    const normalizedLastName = lastName.trim();
+    const normalizedCity = city.trim();
+    const normalizedCountryCode = countryCode.trim().toUpperCase();
+    const normalizedDateOfBirth = dateOfBirth.trim();
 
     if (
       !normalizedFirstName ||
@@ -81,249 +146,194 @@ const [workToYear, setWorkToYear] = useState('')
       !normalizedCountryCode ||
       !normalizedDateOfBirth
     ) {
-      setError(t('validation.required'))
-      return
+      setError(t("validation.required"));
+      return;
     }
 
     if (!/^[A-Z]{2}$/.test(normalizedCountryCode)) {
-      setError(t('validation.invalidCountryCode'))
-      return
+      setError(t("validation.invalidCountryCode"));
+      return;
     }
 
-    const now = new Date()
+    const now = new Date();
     const today = [
       now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, '0'),
-      String(now.getDate()).padStart(2, '0'),
-    ].join('-')
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-");
 
     if (normalizedDateOfBirth > today) {
-      setError(t('validation.futureDateOfBirth'))
-      return
+      setError(t("validation.futureDateOfBirth"));
+      return;
     }
 
-    const normalizedFromYear = fromYear.trim()
-const normalizedToYear = toYear.trim()
+    const normalizedFromYear = fromYear.trim();
+    const normalizedToYear = toYear.trim();
 
-const normalizedPostgraduateFromYear = postgraduateFromYear.trim()
-const normalizedPostgraduateToYear = postgraduateToYear.trim()
+    const normalizedPostgraduateFromYear = postgraduateFromYear.trim();
+    const normalizedPostgraduateToYear = postgraduateToYear.trim();
 
-const normalizedWorkFromYear = workFromYear.trim()
-const normalizedWorkToYear = workToYear.trim()
+    const normalizedWorkFromYear = workFromYear.trim();
+    const normalizedWorkToYear = workToYear.trim();
 
-function validateYears(
-  from: string,
-  to: string,
-  incompleteMessage: string
-) {
-  const hasAny = Boolean(from) || Boolean(to)
+    const hasAnyEducationField =
+      Boolean(university.trim()) ||
+      Boolean(specialty.trim()) ||
+      Boolean(normalizedFromYear) ||
+      Boolean(normalizedToYear);
 
-  if (!hasAny) return true
+    const hasCompleteEducation =
+      Boolean(university.trim()) &&
+      Boolean(specialty.trim()) &&
+      Boolean(normalizedFromYear) &&
+      Boolean(normalizedToYear);
 
-  if (!from || !to) {
-    setError(incompleteMessage)
-    return false
-  }
+    if (hasAnyEducationField && !hasCompleteEducation) {
+      setError(t("validation.incompleteEducation"));
+      return;
+    }
 
-  const fromNumber = Number(from)
-  const toNumber = Number(to)
+    if (
+      hasCompleteEducation &&
+      !validateYears(
+        normalizedFromYear,
+        normalizedToYear,
+        t("validation.incompleteEducation"),
+      )
+    ) {
+      return;
+    }
 
-  if (
-    !Number.isInteger(fromNumber) ||
-    !Number.isInteger(toNumber) ||
-    fromNumber < 1900 ||
-    fromNumber > 2100 ||
-    toNumber < 1900 ||
-    toNumber > 2100
-  ) {
-    setError(t('validation.invalidYear'))
-    return false
-  }
+    const hasAnyPostgraduate =
+      Boolean(postgraduateUniversity.trim()) ||
+      Boolean(postgraduateSpecialty.trim()) ||
+      Boolean(normalizedPostgraduateFromYear) ||
+      Boolean(normalizedPostgraduateToYear);
 
-  if (fromNumber > toNumber) {
-    setError(t('validation.yearOrder'))
-    return false
-  }
+    const hasCompletePostgraduate =
+      Boolean(postgraduateUniversity.trim()) &&
+      Boolean(postgraduateSpecialty.trim()) &&
+      Boolean(normalizedPostgraduateFromYear) &&
+      Boolean(normalizedPostgraduateToYear);
 
-  return true
-}
+    if (hasAnyPostgraduate && !hasCompletePostgraduate) {
+      setError(t("validation.incompleteProfileSection"));
+      return;
+    }
 
-const hasAnyEducationField =
-  Boolean(university.trim()) ||
-  Boolean(specialty.trim()) ||
-  Boolean(normalizedFromYear) ||
-  Boolean(normalizedToYear)
+    if (
+      hasCompletePostgraduate &&
+      !validateYears(
+        normalizedPostgraduateFromYear,
+        normalizedPostgraduateToYear,
+        t("validation.incompleteProfileSection"),
+      )
+    ) {
+      return;
+    }
 
-const hasCompleteEducation =
-  Boolean(university.trim()) &&
-  Boolean(specialty.trim()) &&
-  Boolean(normalizedFromYear) &&
-  Boolean(normalizedToYear)
+    const hasAnyWork =
+      Boolean(workOrganization.trim()) ||
+      Boolean(workJobTitle.trim()) ||
+      Boolean(normalizedWorkFromYear) ||
+      Boolean(normalizedWorkToYear);
 
-if (hasAnyEducationField && !hasCompleteEducation) {
-  setError(t('validation.incompleteEducation'))
-  return
-}
+    const hasCompleteWork =
+      Boolean(workOrganization.trim()) &&
+      Boolean(workJobTitle.trim()) &&
+      Boolean(normalizedWorkFromYear) &&
+      Boolean(normalizedWorkToYear);
 
-if (
-  hasCompleteEducation &&
-  !validateYears(
-    normalizedFromYear,
-    normalizedToYear,
-    t('validation.incompleteEducation')
-  )
-) {
-  return
-}
+    if (hasAnyWork && !hasCompleteWork) {
+      setError(t("validation.incompleteProfileSection"));
+      return;
+    }
 
-const hasAnyPostgraduate =
-  Boolean(postgraduateUniversity.trim()) ||
-  Boolean(postgraduateSpecialty.trim()) ||
-  Boolean(normalizedPostgraduateFromYear) ||
-  Boolean(normalizedPostgraduateToYear)
+    if (
+      hasCompleteWork &&
+      !validateYears(
+        normalizedWorkFromYear,
+        normalizedWorkToYear,
+        t("validation.incompleteProfileSection"),
+      )
+    ) {
+      return;
+    }
 
-const hasCompletePostgraduate =
-  Boolean(postgraduateUniversity.trim()) &&
-  Boolean(postgraduateSpecialty.trim()) &&
-  Boolean(normalizedPostgraduateFromYear) &&
-  Boolean(normalizedPostgraduateToYear)
+    setLoading(true);
 
-if (hasAnyPostgraduate && !hasCompletePostgraduate) {
-  setError(t('validation.incompleteProfileSection'))
-  return
-}
+    let uploadedAvatarUrl: string | null = null;
 
-if (
-  hasCompletePostgraduate &&
-  !validateYears(
-    normalizedPostgraduateFromYear,
-    normalizedPostgraduateToYear,
-    t('validation.incompleteProfileSection')
-  )
-) {
-  return
-}
+    if (avatarFile) {
+      try {
+        const authResponse = await fetch("/api/imagekit/auth");
 
-const hasAnyWork =
-  Boolean(workOrganization.trim()) ||
-  Boolean(workJobTitle.trim()) ||
-  Boolean(normalizedWorkFromYear) ||
-  Boolean(normalizedWorkToYear)
+        if (!authResponse.ok) {
+          throw new Error("ImageKit authentication failed");
+        }
 
-const hasCompleteWork =
-  Boolean(workOrganization.trim()) &&
-  Boolean(workJobTitle.trim()) &&
-  Boolean(normalizedWorkFromYear) &&
-  Boolean(normalizedWorkToYear)
+        const authParams = await authResponse.json();
 
-if (hasAnyWork && !hasCompleteWork) {
-  setError(t('validation.incompleteProfileSection'))
-  return
-}
+        const extension =
+          avatarFile.type === "image/jpeg"
+            ? "jpg"
+            : avatarFile.type === "image/png"
+              ? "png"
+              : "webp";
 
-if (
-  hasCompleteWork &&
-  !validateYears(
-    normalizedWorkFromYear,
-    normalizedWorkToYear,
-    t('validation.incompleteProfileSection')
-  )
-) {
-  return
-}
+        const uploadResponse = await upload({
+          file: avatarFile,
+          fileName: `avatar-${Date.now()}.${extension}`,
+          token: authParams.token,
+          signature: authParams.signature,
+          expire: authParams.expire,
+          publicKey: authParams.publicKey,
+          folder: "/mylab/avatars",
+          useUniqueFileName: true,
+        });
 
-    setLoading(true)
+        if (!uploadResponse.url) {
+          throw new Error("ImageKit did not return an image URL");
+        }
 
-    let avatarPath: string | null = null
-
-    if (avatarType === 'upload') {
-      if (!avatarFile) {
-        setError(t('validation.invalidAvatar'))
-        setLoading(false)
-        return
-      }
-
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(avatarFile.type)) {
-        setError(t('validation.invalidAvatar'))
-        setLoading(false)
-        return
-      }
-
-      if (avatarFile.size > 5 * 1024 * 1024) {
-        setError(t('validation.avatarTooLarge'))
-        setLoading(false)
-        return
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        setError(t('validation.required'))
-        setLoading(false)
-        return
-      }
-
-      const extension =
-        avatarFile.type === 'image/jpeg'
-          ? 'jpg'
-          : avatarFile.type === 'image/png'
-            ? 'png'
-            : 'webp'
-
-      avatarPath = `${user.id}/avatar.${extension}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(avatarPath, avatarFile, {
-          upsert: true,
-          contentType: avatarFile.type,
-        })
-
-      if (uploadError) {
-        setError(uploadError.message)
-        setLoading(false)
-        return
+        uploadedAvatarUrl = uploadResponse.url;
+      } catch {
+        setError(t("validation.avatarUploadFailed"));
+        setLoading(false);
+        return;
       }
     }
 
-    const undergraduate =
-      university.trim() &&
-      specialty.trim() &&
-      fromYear &&
-      toYear
-        ? {
-            university: university.trim(),
-            degree,
-            specialty: specialty.trim(),
-            from_year: Number(fromYear),
-            to_year: Number(toYear),
-          }
-        : null
+    const undergraduate = hasCompleteEducation
+      ? {
+          university: university.trim(),
+          degree,
+          specialty: specialty.trim(),
+          from_year: Number(normalizedFromYear),
+          to_year: Number(normalizedToYear),
+        }
+      : null;
 
-      const postgraduate =
-  hasCompletePostgraduate
-    ? {
-        university: postgraduateUniversity.trim(),
-        degree: postgraduateDegree,
-        specialty: postgraduateSpecialty.trim(),
-        from_year: Number(normalizedPostgraduateFromYear),
-        to_year: Number(normalizedPostgraduateToYear),
-      }
-    : null
+    const postgraduate = hasCompletePostgraduate
+      ? {
+          university: postgraduateUniversity.trim(),
+          degree: postgraduateDegree,
+          specialty: postgraduateSpecialty.trim(),
+          from_year: Number(normalizedPostgraduateFromYear),
+          to_year: Number(normalizedPostgraduateToYear),
+        }
+      : null;
 
-const work =
-  hasCompleteWork
-    ? {
-        organization: workOrganization.trim(),
-        job_title: workJobTitle.trim(),
-        from_year: Number(normalizedWorkFromYear),
-        to_year: Number(normalizedWorkToYear),
-      }
-    : null
+    const work = hasCompleteWork
+      ? {
+          organization: workOrganization.trim(),
+          job_title: workJobTitle.trim(),
+          from_year: Number(normalizedWorkFromYear),
+          to_year: Number(normalizedWorkToYear),
+        }
+      : null;
 
-    const { error } = await supabase.rpc('complete_my_profile', {
+    const { error: profileError } = await supabase.rpc("complete_my_profile", {
       p_first_name: normalizedFirstName,
       p_last_name: normalizedLastName,
       p_city: normalizedCity,
@@ -335,34 +345,29 @@ const work =
       p_undergraduate: undergraduate,
       p_postgraduate: postgraduate,
       p_work: work,
-      p_avatar_type: avatarType,
-      p_avatar_path: avatarType === 'upload' ? avatarPath : null,
-      p_avatar_preset: avatarType === 'preset' ? avatarPreset : null,
-    })
+      p_avatar_url: uploadedAvatarUrl,
 
-    if (error) {
-  if (avatarPath) {
-    await supabase.storage.from('avatars').remove([avatarPath])
-  }
+    });
 
-  setError(error.message)
-  setLoading(false)
-  return
-}
+    if (profileError) {
+      setError(profileError.message);
+      setLoading(false);
+      return;
+    }
 
-    router.push('/dashboard')
-    router.refresh()
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-neutral-900">
-          {t('basicInformation')}
+          {t("basicInformation")}
         </h2>
 
         <AuthField
-          label={t('firstName')}
+          label={t("firstName")}
           id="profile-first-name"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
@@ -371,7 +376,7 @@ const work =
         />
 
         <AuthField
-          label={t('lastName')}
+          label={t("lastName")}
           id="profile-last-name"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
@@ -380,7 +385,7 @@ const work =
         />
 
         <AuthField
-          label={t('city')}
+          label={t("city")}
           id="profile-city"
           value={city}
           onChange={(e) => setCity(e.target.value)}
@@ -388,22 +393,41 @@ const work =
           disabled={loading}
         />
 
-        <AuthField
-          label={t('countryCode')}
-          id="profile-country-code"
-          maxLength={2}
-          value={countryCode}
-          onChange={(e) => setCountryCode(e.target.value.toUpperCase())}
-          required
-          disabled={loading}
-        />
+        <div className="space-y-2">
+  <label
+    htmlFor="profile-country"
+    className="block text-sm font-medium text-neutral-800"
+  >
+    {t("country")}
+  </label>
+
+  <select
+    id="profile-country"
+    value={countryCode}
+    onChange={(e) => setCountryCode(e.target.value)}
+    required
+    disabled={loading}
+    className="block w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm"
+  >
+    <option value="">
+      {t("validation.selectCountry")}
+    </option>
+
+    {COUNTRY_CODES.map((code) => (
+      <option key={code} value={code}>
+        {getCountryName(code, locale)}
+      </option>
+    ))}
+  </select>
+</div>
+
 
         <div className="space-y-2">
           <label
             htmlFor="profile-gender"
             className="block text-sm font-medium text-neutral-800"
           >
-            {t('gender')}
+            {t("gender")}
           </label>
 
           <select
@@ -413,13 +437,13 @@ const work =
             disabled={loading}
             className="block w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm"
           >
-            <option value="male">{t('male')}</option>
-            <option value="female">{t('female')}</option>
+            <option value="male">{t("male")}</option>
+            <option value="female">{t("female")}</option>
           </select>
         </div>
 
         <AuthField
-          label={t('dateOfBirth')}
+          label={t("dateOfBirth")}
           id="profile-date-of-birth"
           type="date"
           value={dateOfBirth}
@@ -429,7 +453,7 @@ const work =
         />
 
         <AuthField
-          label={t('phone')}
+          label={t("phone")}
           id="profile-phone"
           type="tel"
           autoComplete="tel"
@@ -443,7 +467,7 @@ const work =
             htmlFor="profile-bio"
             className="block text-sm font-medium text-neutral-800"
           >
-            {t('bio')}
+            {t("bio")}
           </label>
 
           <textarea
@@ -459,11 +483,11 @@ const work =
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-neutral-900">
-          {t('undergraduateEducation')}
+          {t("undergraduateEducation")}
         </h2>
 
         <AuthField
-          label={t('university')}
+          label={t("university")}
           id="profile-university"
           value={university}
           onChange={(e) => setUniversity(e.target.value)}
@@ -475,25 +499,25 @@ const work =
             htmlFor="profile-degree"
             className="block text-sm font-medium text-neutral-800"
           >
-            {t('degree')}
+            {t("degree")}
           </label>
 
           <select
             id="profile-degree"
             value={degree}
             onChange={(e) =>
-              setDegree(e.target.value as 'diploma' | 'bachelor')
+              setDegree(e.target.value as "diploma" | "bachelor")
             }
             disabled={loading}
             className="block w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm"
           >
-            <option value="bachelor">{t('bachelor')}</option>
-            <option value="diploma">{t('diploma')}</option>
+            <option value="bachelor">{t("bachelor")}</option>
+            <option value="diploma">{t("diploma")}</option>
           </select>
         </div>
 
         <AuthField
-          label={t('specialty')}
+          label={t("specialty")}
           id="profile-specialty"
           value={specialty}
           onChange={(e) => setSpecialty(e.target.value)}
@@ -502,7 +526,7 @@ const work =
 
         <div className="grid grid-cols-2 gap-4">
           <AuthField
-            label={t('fromYear')}
+            label={t("fromYear")}
             id="profile-from-year"
             type="number"
             min={1900}
@@ -513,7 +537,7 @@ const work =
           />
 
           <AuthField
-            label={t('toYear')}
+            label={t("toYear")}
             id="profile-to-year"
             type="number"
             min={1900}
@@ -525,203 +549,168 @@ const work =
         </div>
       </section>
 
-    <section className="space-y-4">
-  <h2 className="text-lg font-semibold text-neutral-900">
-    {t('postgraduateEducation')}
-  </h2>
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          {t("postgraduateEducation")}
+        </h2>
 
-  <AuthField
-    label={t('university')}
-    id="profile-postgraduate-university"
-    value={postgraduateUniversity}
-    onChange={(e) => setPostgraduateUniversity(e.target.value)}
-    disabled={loading}
-  />
+        <AuthField
+          label={t("university")}
+          id="profile-postgraduate-university"
+          value={postgraduateUniversity}
+          onChange={(e) => setPostgraduateUniversity(e.target.value)}
+          disabled={loading}
+        />
 
-  <div className="space-y-2">
-    <label
-      htmlFor="profile-postgraduate-degree"
-      className="block text-sm font-medium text-neutral-800"
-    >
-      {t('degree')}
-    </label>
+        <div className="space-y-2">
+          <label
+            htmlFor="profile-postgraduate-degree"
+            className="block text-sm font-medium text-neutral-800"
+          >
+            {t("degree")}
+          </label>
 
-    <select
-      id="profile-postgraduate-degree"
-      value={postgraduateDegree}
-      onChange={(e) =>
-        setPostgraduateDegree(
-          e.target.value as 'higher_diploma' | 'master' | 'doctorate'
-        )
-      }
-      disabled={loading}
-      className="block w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm"
-    >
-      <option value="higher_diploma">{t('higherDiploma')}</option>
-      <option value="master">{t('master')}</option>
-      <option value="doctorate">{t('doctorate')}</option>
-    </select>
-  </div>
+          <select
+            id="profile-postgraduate-degree"
+            value={postgraduateDegree}
+            onChange={(e) =>
+              setPostgraduateDegree(
+                e.target.value as "higher_diploma" | "master" | "doctorate",
+              )
+            }
+            disabled={loading}
+            className="block w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm"
+          >
+            <option value="higher_diploma">{t("higherDiploma")}</option>
+            <option value="master">{t("master")}</option>
+            <option value="doctorate">{t("doctorate")}</option>
+          </select>
+        </div>
 
-  <AuthField
-    label={t('specialty')}
-    id="profile-postgraduate-specialty"
-    value={postgraduateSpecialty}
-    onChange={(e) => setPostgraduateSpecialty(e.target.value)}
-    disabled={loading}
-  />
+        <AuthField
+          label={t("specialty")}
+          id="profile-postgraduate-specialty"
+          value={postgraduateSpecialty}
+          onChange={(e) => setPostgraduateSpecialty(e.target.value)}
+          disabled={loading}
+        />
 
-  <div className="grid grid-cols-2 gap-4">
-    <AuthField
-      label={t('fromYear')}
-      id="profile-postgraduate-from-year"
-      type="number"
-      min={1900}
-      max={2100}
-      value={postgraduateFromYear}
-      onChange={(e) => setPostgraduateFromYear(e.target.value)}
-      disabled={loading}
-    />
+        <div className="grid grid-cols-2 gap-4">
+          <AuthField
+            label={t("fromYear")}
+            id="profile-postgraduate-from-year"
+            type="number"
+            min={1900}
+            max={2100}
+            value={postgraduateFromYear}
+            onChange={(e) => setPostgraduateFromYear(e.target.value)}
+            disabled={loading}
+          />
 
-    <AuthField
-      label={t('toYear')}
-      id="profile-postgraduate-to-year"
-      type="number"
-      min={1900}
-      max={2100}
-      value={postgraduateToYear}
-      onChange={(e) => setPostgraduateToYear(e.target.value)}
-      disabled={loading}
-    />
-  </div>
-</section>
-
-<section className="space-y-4">
-  <h2 className="text-lg font-semibold text-neutral-900">
-    {t('workExperience')}
-  </h2>
-
-  <AuthField
-    label={t('organization')}
-    id="profile-work-organization"
-    value={workOrganization}
-    onChange={(e) => setWorkOrganization(e.target.value)}
-    disabled={loading}
-  />
-
-  <AuthField
-    label={t('jobTitle')}
-    id="profile-work-job-title"
-    value={workJobTitle}
-    onChange={(e) => setWorkJobTitle(e.target.value)}
-    disabled={loading}
-  />
-
-  <div className="grid grid-cols-2 gap-4">
-    <AuthField
-      label={t('fromYear')}
-      id="profile-work-from-year"
-      type="number"
-      min={1900}
-      max={2100}
-      value={workFromYear}
-      onChange={(e) => setWorkFromYear(e.target.value)}
-      disabled={loading}
-    />
-
-    <AuthField
-      label={t('toYear')}
-      id="profile-work-to-year"
-      type="number"
-      min={1900}
-      max={2100}
-      value={workToYear}
-      onChange={(e) => setWorkToYear(e.target.value)}
-      disabled={loading}
-    />
-  </div>
-</section>
+          <AuthField
+            label={t("toYear")}
+            id="profile-postgraduate-to-year"
+            type="number"
+            min={1900}
+            max={2100}
+            value={postgraduateToYear}
+            onChange={(e) => setPostgraduateToYear(e.target.value)}
+            disabled={loading}
+          />
+        </div>
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-neutral-900">
-          {t('avatar')}
+          {t("workExperience")}
         </h2>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {AVATAR_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              disabled={loading}
-              onClick={() => {
-                setAvatarType('preset')
-                setAvatarPreset(preset.id)
-                setAvatarFile(null)
-              }}
-              className={`rounded-xl border p-3 text-center transition ${
-                avatarType === 'preset' && avatarPreset === preset.id
-                  ? 'border-neutral-900 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200 hover:border-neutral-400'
-              }`}
-            >
-              <img
-                src={getDiceBearUrl(preset.id)}
-                alt={preset.label}
-                className="mx-auto h-20 w-20 rounded-full"
-              />
-              <span className="mt-2 block text-sm font-medium">
-                {preset.label}
-              </span>
-            </button>
-          ))}
-        </div>
+        <AuthField
+          label={t("organization")}
+          id="profile-work-organization"
+          value={workOrganization}
+          onChange={(e) => setWorkOrganization(e.target.value)}
+          disabled={loading}
+        />
 
-        <label
-          htmlFor="profile-avatar-upload"
-          className={`block cursor-pointer rounded-xl border border-dashed p-4 text-center ${
-            avatarType === 'upload'
-              ? 'border-neutral-900 ring-2 ring-neutral-900/10'
-              : 'border-neutral-300'
-          }`}
-        >
-          <span className="block text-sm font-medium">
-            {t('uploadAvatar')}
-          </span>
+        <AuthField
+          label={t("jobTitle")}
+          id="profile-work-job-title"
+          value={workJobTitle}
+          onChange={(e) => setWorkJobTitle(e.target.value)}
+          disabled={loading}
+        />
 
-          <span className="mt-1 block text-xs text-neutral-500">
-            {t('avatarUploadHint')}
-          </span>
-
-          <input
-            id="profile-avatar-upload"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
+        <div className="grid grid-cols-2 gap-4">
+          <AuthField
+            label={t("fromYear")}
+            id="profile-work-from-year"
+            type="number"
+            min={1900}
+            max={2100}
+            value={workFromYear}
+            onChange={(e) => setWorkFromYear(e.target.value)}
             disabled={loading}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              const file = event.target.files?.[0] ?? null
-              setAvatarFile(file)
-              setAvatarType(file ? 'upload' : 'none')
-              setAvatarPreset('')
-            }}
           />
 
+          <AuthField
+            label={t("toYear")}
+            id="profile-work-to-year"
+            type="number"
+            min={1900}
+            max={2100}
+            value={workToYear}
+            onChange={(e) => setWorkToYear(e.target.value)}
+            disabled={loading}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          {t("avatar")}
+        </h2>
+
+        <div className="flex flex-col items-center gap-4">
+          <img
+            src={avatarPreview}
+            alt={t("avatar")}
+            className="h-32 w-32 rounded-full object-cover ring-4 ring-neutral-100"
+          />
+
+          <label
+            htmlFor="profile-avatar-upload"
+            className="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-500"
+          >
+            {t("uploadAvatar")}
+
+            <input
+              id="profile-avatar-upload"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={loading}
+              onChange={handleAvatarChange}
+            />
+          </label>
+
+          <p className="text-center text-xs text-neutral-500">
+            {t("avatarUploadHint")}
+          </p>
+
           {avatarFile && (
-            <span className="mt-2 block text-xs text-neutral-600">
+            <p className="text-center text-xs text-neutral-600">
               {avatarFile.name}
-            </span>
+            </p>
           )}
-        </label>
+        </div>
       </section>
 
       <AuthError message={error} />
 
-      <AuthSubmitButton
-        loading={loading}
-        loadingLabel={t('saving')}
-      >
-        {t('continue')}
+      <AuthSubmitButton loading={loading} loadingLabel={t("saving")}>
+        {t("continue")}
       </AuthSubmitButton>
     </form>
-  )
+  );
 }

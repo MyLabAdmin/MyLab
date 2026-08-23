@@ -51,7 +51,7 @@
     "firstName": "First name",
     "lastName": "Last name",
     "city": "City",
-    "countryCode": "Country code",
+    "country": "Country",
     "gender": "Gender",
     "male": "Male",
     "female": "Female",
@@ -70,7 +70,7 @@
     "saving": "Saving...",
     "validation": {
       "required": "This field is required.",
-      "invalidCountryCode": "Country code must contain exactly 2 letters.",
+      "selectCountry": "Select your country",
       "futureDateOfBirth": "Date of birth cannot be in the future.",
       "invalidYear": "Please enter a valid year.",
       "yearOrder": "From year cannot be later than to year.",
@@ -88,6 +88,7 @@
     "jobTitle": "Job title",
     "avatar": "Profile picture",
     "uploadAvatar": "Upload a photo",
-    "avatarUploadHint": "JPG, PNG or WebP — maximum 5 MB."
+    "avatarUploadHint": "JPG, PNG or WebP — maximum 5 MB.",
+    "avatarUploadFailed": "Failed to upload profile picture. Please try again."
   }
 }
