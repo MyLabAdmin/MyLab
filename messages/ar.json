@@ -51,7 +51,7 @@
     "firstName": "الاسم الأول",
     "lastName": "اسم العائلة",
     "city": "المدينة",
-    "countryCode": "رمز الدولة",
+    "country": "الدولة",
     "gender": "الجنس",
     "male": "ذكر",
     "female": "أنثى",
@@ -70,11 +70,25 @@
     "saving": "جارٍ الحفظ...",
     "validation": {
       "required": "هذا الحقل مطلوب.",
-      "invalidCountryCode": "يجب أن يتكون رمز الدولة من حرفين بالضبط.",
+      "selectCountry": "اختر الدولة",
       "futureDateOfBirth": "لا يمكن أن يكون تاريخ الميلاد في المستقبل.",
       "invalidYear": "يرجى إدخال سنة صحيحة.",
       "yearOrder": "لا يمكن أن تكون سنة البداية بعد سنة النهاية.",
-      "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل."
-    }
+      "incompleteEducation": "يرجى إكمال جميع بيانات التعليم الجامعي أو تركها فارغة بالكامل.",
+      "incompleteProfileSection": "يرجى إكمال جميع حقول هذا القسم أو تركها فارغة بالكامل.",
+      "invalidAvatar": "يرجى اختيار صورة JPG أو PNG أو WebP صالحة.",
+      "avatarTooLarge": "يجب ألا تتجاوز الصورة الشخصية 5 ميجابايت."
+    },
+    "postgraduateEducation": "التعليم العالي",
+    "workExperience": "الخبرة العملية",
+    "higherDiploma": "دبلوم عالٍ",
+    "master": "ماجستير",
+    "doctorate": "دكتوراه",
+    "organization": "جهة العمل",
+    "jobTitle": "المسمى الوظيفي",
+    "avatar": "الصورة الشخصية",
+    "uploadAvatar": "رفع صورة",
+    "avatarUploadHint": "JPG أو PNG أو WebP — بحد أقصى 5 ميجابايت.",
+    "avatarUploadFailed": "فشل رفع الصورة الشخصية. يرجى المحاولة مرة أخرى."
   }
 }
