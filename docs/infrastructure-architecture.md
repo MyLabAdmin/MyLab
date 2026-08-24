@@ -107,7 +107,7 @@ The frontend infrastructure includes:
 
 - Next.js application runtime
 - Component-based UI architecture
-- shadcn/ui components
+- Custom reusable UI components
 - CSS variables
 - Design tokens
 - Brand layer
