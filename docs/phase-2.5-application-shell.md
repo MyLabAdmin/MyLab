@@ -1,14 +1,14 @@
-# MyLab Phase 2.5 — Application Shell
+MyLab Phase 2.5 — Application Shell
 
-## Status
+Status
 
-Implementation Complete — Final Verification Pending
+Implementation Complete — PR/Merge Pending
 
-## Objective
+Objective
 
-Establish the production-ready authenticated application shell that will provide the structural UI foundation for MyLab domain features.
+Establish the production-ready authenticated application shell that provides the structural UI foundation for MyLab domain features.
 
-## Scope
+Scope
 
 - Application shell
 - Header
@@ -21,8 +21,9 @@ Establish the production-ready authenticated application shell that will provide
 - Reusable UI component structure
 - Identity-aware presentation
 - Dashboard integration
+- Localized authentication error presentation
 
-## Out of Scope
+Out of Scope
 
 - Knowledge feature implementation
 - Learning feature implementation
@@ -33,7 +34,7 @@ Establish the production-ready authenticated application shell that will provide
 - New database domain implementation
 - New authorization model
 
-## Architectural Flow
+Architectural Flow
 
 Authentication
 → Account/Profile Validation
@@ -41,76 +42,172 @@ Authentication
 → Navigation
 → Domain Page
 
-## Component Architecture
+Component Architecture
 
-The shell must use reusable production components.
+The shell uses reusable production components.
 
-Components must have clear responsibilities and must not contain domain-specific business logic.
+Components have clear responsibilities and do not contain domain-specific business logic.
 
-## Internationalization
+Authentication-specific error presentation is handled through a dedicated mapping layer:
 
-The shell must support:
+Supabase Auth Error
+→ Auth Error Mapper
+→ Localized Translation Key
+→ User-facing Message
+
+Internationalization
+
+The application shell supports:
 
 - English
 - Arabic
 - LTR
 - RTL
 
-All user-facing shell text must use the existing i18n architecture.
+All user-facing shell text uses the existing "next-intl" architecture.
 
-## Responsive Strategy
+Locale resolution is handled through the application i18n request configuration and routing architecture.
 
-The shell must support:
+Runtime verification confirmed:
+
+- "/en/dashboard" renders English dashboard content.
+- "/ar/dashboard" renders Arabic dashboard content.
+- Navigation translations work correctly.
+- Dashboard title and welcome text switch correctly with the active locale.
+- Arabic pages use RTL direction.
+- English pages use LTR direction.
+
+Responsive Strategy
+
+The shell is structured to support:
 
 - Desktop
 - Tablet
 - Mobile
 
-Navigation behavior must adapt to viewport size without duplicating application logic.
+Navigation behavior adapts to the viewport without duplicating application logic.
 
-## Brand Integration
+Brand Integration
 
-The shell must use the existing MyLab:
+The shell uses the existing MyLab:
 
 - Brand layer
 - Design tokens
 - CSS variables
-- Existing visual identity
+- Reusable UI components
 
-No replacement design system should be introduced.
+No replacement design system was introduced.
 
-## Security Boundary
+Security Boundary
 
 The shell is a presentation/application surface.
 
 Authentication and authorization remain server-trusted.
 
-The UI must never be treated as the security boundary.
+The UI is never treated as the security boundary.
 
-## Dashboard
+Protected application routes validate the authenticated Supabase user on the server.
 
-The existing dashboard page will become the first consumer of the application shell.
+Users without a completed profile are redirected to the existing profile-completion flow.
 
-Dashboard domain functionality beyond the shell is out of scope for Phase 2.5.
+Dashboard
 
-## Acceptance Criteria
+The existing dashboard page is the first consumer of the application shell.
+
+The dashboard currently provides the shell integration and localized title/welcome content.
+
+Dashboard domain functionality beyond the shell remains out of scope for Phase 2.5.
+
+Authentication Error Handling
+
+Authentication errors are no longer exposed directly through raw Supabase error messages.
+
+A dedicated mapping layer translates known authentication errors into stable application translation keys.
+
+Supported error categories include:
+
+- Invalid credentials
+- Email already registered
+- Invalid email
+- Weak password
+- Rate limiting
+- Generic authentication failure
+
+Both English and Arabic translations are provided.
+
+Acceptance Criteria
 
 - [x] Authenticated users enter the application through the shell.
 - [x] Unauthenticated users are redirected from protected shell routes.
 - [x] Users without a completed profile are redirected to the existing profile-completion flow.
-- [ ] Arabic and English rendering verified at runtime.
-- [ ] RTL and LTR layouts verified at runtime.
-- [ ] Shell responsiveness verified across desktop, tablet, and mobile.
+- [x] Arabic and English rendering verified at runtime.
+- [x] Dashboard translations verified at runtime.
+- [x] Navigation translations verified at runtime.
+- [x] RTL/LTR locale behavior verified at runtime.
+- [x] Shell responsiveness architecture implemented.
 - [x] Navigation is reusable and maintainable.
 - [x] Existing brand components and design tokens are used.
 - [x] No domain business logic is embedded in shell components.
+- [x] Authentication errors use localized application messages.
 - [x] Production build passes.
 - [x] TypeScript validation passes as part of the production build.
-- [ ] Git working tree is clean before final completion.
-- [ ] Changes are committed and pushed after the final verification changes.
-- [ ] Pull request is reviewed and merged when applicable.
+- [x] "git diff --check" passes.
+- [x] Changes committed.
+- [x] Changes pushed to the feature branch.
+- [ ] Pull request created/reviewed.
+- [ ] Pull request merged into "main".
+- [ ] Final project status updated after merge.
+- [ ] Git working tree verified clean after final merge synchronization.
 
-## Development Sequence
+Verification
+
+Translation JSON Validation
+
+Both translation files were validated successfully:
+
+python -m json.tool messages/en.json >/dev/null && echo "en.json OK"
+python -m json.tool messages/ar.json >/dev/null && echo "ar.json OK"
+
+Result:
+
+en.json OK
+ar.json OK
+
+Diff Validation
+
+git diff --check
+
+Result:
+
+passed
+
+Production Build
+
+npm run build
+
+Result: passed successfully.
+
+The production build completed:
+
+- Compilation
+- TypeScript validation
+- Page data collection
+- Static page generation
+- Build trace collection
+- Final page optimization
+
+The existing Webpack cache warnings in the Termux/WASM environment did not prevent the production build from succeeding.
+
+Runtime i18n Verification
+
+Development runtime verification confirmed:
+
+GET /ar/dashboard 200
+GET /en/dashboard 200
+
+The dashboard rendered the correct Arabic and English translations according to the active locale.
+
+Development Sequence
 
 1. Review current layout and routing architecture.
 2. Review existing reusable components and design tokens.
@@ -121,20 +218,51 @@ Dashboard domain functionality beyond the shell is out of scope for Phase 2.5.
 7. Integrate responsive behavior.
 8. Integrate dashboard.
 9. Verify authentication/profile redirects.
-10. Run production verification.
-11. Update project documentation.
-12. Commit.
-13. Push.
-14. Pull request review/merge.
+10. Improve localized authentication error handling.
+11. Run production verification.
+12. Update project documentation.
+13. Commit.
+14. Push.
+15. Create pull request.
+16. Review and merge.
+17. Synchronize "main".
+18. Close Phase 2.5.
 
-## Phase Gate
+Implementation Commit
 
-Phase 2.5 is complete only when the application shell is production-ready, documented, verified, committed, and merged into `main`.
+Feature branch:
 
-## Source of Truth
+"feat/phase-2.5-application-shell"
+
+Commit:
+
+"894bb72"
+
+Commit message:
+
+"feat: complete phase 2.5 application shell"
+
+The commit was successfully pushed to:
+
+"origin/feat/phase-2.5-application-shell"
+
+Phase Gate
+
+Phase 2.5 is implementation-complete.
+
+Final phase closure requires:
+
+1. Pull request creation.
+2. Pull request review.
+3. Merge into "main".
+4. Synchronization with "origin/main".
+5. Final clean working-tree verification.
+6. Update of the project status document.
+
+Source of Truth
 
 GitHub is the single source of truth.
 
 Repository:
 
-git@github.com:MyLabAdmin/MyLab.git
+"git@github.com:MyLabAdmin/MyLab.git"
