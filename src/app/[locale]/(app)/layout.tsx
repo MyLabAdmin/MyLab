@@ -1,15 +1,19 @@
+import type { ReactNode } from 'react'
 import { redirect } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { ApplicationShell } from '@/components/app-shell/ApplicationShell'
 
-type DashboardPageProps = {
+type AppLayoutProps = {
+  children: ReactNode
   params: Promise<{
-    locale: 'en' | 'ar'
+    locale: string
   }>
 }
 
-export default async function DashboardPage({
+export default async function AppLayout({
+  children,
   params,
-}: DashboardPageProps) {
+}: AppLayoutProps) {
   const { locale } = await params
   const supabase = await createClient()
 
@@ -20,7 +24,7 @@ export default async function DashboardPage({
   if (!user) {
     return redirect({
       href: '/login',
-      locale,
+      locale: locale as 'en' | 'ar',
     })
   }
 
@@ -33,15 +37,9 @@ export default async function DashboardPage({
   if (!profile) {
     return redirect({
       href: '/profile/complete',
-      locale,
+      locale: locale as 'en' | 'ar',
     })
   }
 
-  return (
-    <main>
-      <h1>MyLab Dashboard</h1>
-      <p>Welcome back.</p>
-      <p>{user.email}</p>
-    </main>
-  )
+  return <ApplicationShell>{children}</ApplicationShell>
 }

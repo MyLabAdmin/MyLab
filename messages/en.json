@@ -4,8 +4,10 @@
     "language": "Language",
     "english": "English",
     "arabic": "Arabic",
+    "dashboard": "Dashboard",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "navigation": "Navigation"
   },
   "auth": {
     "login": {
@@ -42,7 +44,19 @@
       "hidePassword": "Hide password",
       "invalidEmail": "Please enter a valid email address.",
       "passwordTooShort": "Password must be at least 8 characters."
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "emailAlreadyRegistered": "An account with this email already exists.",
+      "invalidEmail": "Please enter a valid email address.",
+      "weakPassword": "Your password is too weak. Please choose a stronger password.",
+      "rateLimited": "Too many attempts. Please wait a moment and try again.",
+      "generic": "Something went wrong. Please try again."
     }
+  },
+  "dashboard": {
+    "title": "MyLab Dashboard",
+    "welcome": "Welcome back."
   },
   "profile": {
     "title": "Complete your MyLab profile",

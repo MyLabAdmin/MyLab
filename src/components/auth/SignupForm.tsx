@@ -7,11 +7,13 @@ import { createClient } from '@/lib/supabase/client'
 import { AuthError } from '@/components/auth/ui/AuthError'
 import { AuthField } from '@/components/auth/ui/AuthField'
 import { AuthSubmitButton } from '@/components/auth/ui/AuthSubmitButton'
+import { mapAuthError } from '@/lib/auth/auth-error'
 
 export function SignupForm() {
   const router = useRouter()
   const locale = useLocale()
   const t = useTranslations('auth.signup')
+  const tErrors = useTranslations('auth.errors')
   const supabase = createClient()
 
   const [email, setEmail] = useState('')
@@ -61,10 +63,11 @@ export function SignupForm() {
     })
 
     if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
+  const errorKey = mapAuthError(error.message)
+  setError(tErrors(errorKey))
+  setLoading(false)
+  return
+   }
 
     if (data.session) {
       router.push('/dashboard')
