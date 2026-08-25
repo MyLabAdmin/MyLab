@@ -7,10 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 import { AuthError } from '@/components/auth/ui/AuthError'
 import { AuthField } from '@/components/auth/ui/AuthField'
 import { AuthSubmitButton } from '@/components/auth/ui/AuthSubmitButton'
+import { mapAuthError } from '@/lib/auth/auth-error'
 
 export function LoginForm() {
   const router = useRouter()
   const t = useTranslations('auth.login')
+  const tErrors = useTranslations('auth.errors')
   const supabase = createClient()
 
   const [email, setEmail] = useState('')
@@ -29,10 +31,11 @@ export function LoginForm() {
     })
 
     if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
+  const errorKey = mapAuthError(error.message)
+  setError(tErrors(errorKey))
+  setLoading(false)
+  return
+   }
 
     router.push('/dashboard')
     router.refresh()

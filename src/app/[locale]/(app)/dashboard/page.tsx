@@ -1,9 +1,8 @@
-import { redirect } from '@/i18n/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getTranslations } from 'next-intl/server'
 
 type DashboardPageProps = {
   params: Promise<{
-    locale: 'en' | 'ar'
+    locale: string
   }>
 }
 
@@ -11,37 +10,21 @@ export default async function DashboardPage({
   params,
 }: DashboardPageProps) {
   const { locale } = await params
-  const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return redirect({
-      href: '/login',
-      locale,
-    })
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!profile) {
-    return redirect({
-      href: '/profile/complete',
-      locale,
-    })
-  }
+  const t = await getTranslations({
+    locale,
+    namespace: 'dashboard',
+  })
 
   return (
-    <main>
-      <h1>MyLab Dashboard</h1>
-      <p>Welcome back.</p>
-      <p>{user.email}</p>
-    </main>
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-neutral-900">
+        {t('title')}
+      </h1>
+
+      <p className="mt-2 text-neutral-600">
+        {t('welcome')}
+      </p>
+    </div>
   )
 }
