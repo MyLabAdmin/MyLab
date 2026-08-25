@@ -3,9 +3,11 @@
     "appName": "MyLab",
     "language": "اللغة",
     "english": "الإنجليزية",
+    "dashboard": "لوحة التحكم",
     "arabic": "العربية",
     "showPassword": "إظهار كلمة المرور",
-    "hidePassword": "إخفاء كلمة المرور"
+    "hidePassword": "إخفاء كلمة المرور",
+    "navigation": "التنقل"
   },
   "auth": {
     "login": {
