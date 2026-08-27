@@ -499,3 +499,61 @@ GitHub is the single source of truth.
 Repository:
 
 "git@github.com:MyLabAdmin/MyLab.git"
+
+Phase 2.7 — Identity & Authorization Foundation
+
+Status:
+
+CLOSED
+
+Completed:
+
+- Defined the Identity and Authorization foundation.
+- Established account status architecture.
+- Established staff-role architecture.
+- Established capability-based authorization direction.
+- Established Course Creator as a user capability rather than a staff role.
+- Established server-side authorization helpers.
+- Established RLS requirements for authorization data.
+- Established reconciliation migration for the existing authorization foundation.
+- Confirmed that no destructive schema changes are introduced by the reconciliation migration.
+- Database migration committed and pushed successfully.
+
+Database migration:
+
+20260827184235_identity_authorization_foundation_reconciliation.sql
+
+Commit:
+
+f2bb5f1 — chore(db): reconcile phase 2.7 authorization foundation
+
+Verification:
+
+- git diff --check — PASSED
+- Working tree — CLEAN
+- origin/main synchronized — PASSED
+
+Phase 2.7 is CLOSED.
+
+Current Gate:
+
+Phase 2.8 — Knowledge Domain Foundation
+
+No new domain implementation should begin until the Knowledge domain foundation is explicitly defined and implemented according to the approved architecture.
+
+Next Phase Objective:
+
+Establish the production-ready Knowledge domain foundation, including:
+
+- Knowledge ownership
+- Knowledge entities
+- Knowledge relationships
+- Knowledge access model
+- Knowledge administration boundaries
+- RLS policies
+- Server-side access layer
+- Audit requirements
+- Database migrations
+- Verification strategy
+
+Phase 2.8 must preserve the architecture-first and database-first development workflow.
