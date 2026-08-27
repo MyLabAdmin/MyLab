@@ -6,31 +6,29 @@ Version: 0.1.0
 
 Current Status
 
-Phase 2.5 — Application Shell — IMPLEMENTATION COMPLETE / MERGE PENDING
+Phase 2.5 — Application Shell — CLOSED
 
-Phase 2.5 implementation has been completed and verified on the feature branch.
+Phase 2.5 was successfully implemented, verified, reviewed, merged, and synchronized with "main".
 
-The feature branch has been committed and pushed successfully.
+Current phase:
 
-Final Phase 2.5 merge into "main" is still pending.
+Phase 2.6 — Domain Architecture & Authorization Foundation
+
+Status:
+
+Architecture Definition — IN PROGRESS
+
+No new domain feature implementation should begin until Phase 2.6 architecture is reviewed and accepted.
 
 Repository
 
-"git@github.com:MyLabAdmin/MyLab.git"
+git@github.com:MyLabAdmin/MyLab.git
 
 GitHub is the single source of truth.
 
-Current Branch
+Current Main Commit
 
-"feat/phase-2.5-application-shell"
-
-Current Commit
-
-"894bb72"
-
-Commit message:
-
-"feat: complete phase 2.5 application shell"
+65b880e — Merge pull request #5 from MyLabAdmin/feat/phase-2.5-application-shell
 
 Development Environment
 
@@ -49,7 +47,6 @@ Current Stack
 - Tailwind CSS
 - App Router
 - next-intl 4.13.4
-- Supabase
 - Supabase PostgreSQL
 - Supabase Auth
 - Supabase Storage
@@ -119,24 +116,25 @@ Completed:
 - Avatar storage security policies
 - Bilingual profile validation and submission flow
 
-Phase 2.4 — Verification
+Phase 2.4 — Brand UI / Profile Completion
 
 Completed:
 
-- "npm run build" passed successfully
-- Working tree was clean before merge
-- Feature branch was pushed successfully
-- Pull request #3 was created and reviewed
-- Pull request #3 was merged into "main"
-- "main" was synchronized with "origin/main"
+- Production build verification
+- Working tree verification
+- Feature branch push
+- Pull request #3
+- Pull request review
+- Pull request #3 merged into "main"
+- "main" synchronized with "origin/main"
 - Final implementation commit before merge: "96c8c4f"
 - Final merge commit: "c3b12ec"
 
 Phase 2.5 — Application Shell
 
-Implementation completed on:
+Status:
 
-"feat/phase-2.5-application-shell"
+CLOSED
 
 Completed:
 
@@ -144,35 +142,45 @@ Completed:
 - Protected application layout
 - Server-side authentication validation
 - Server-side profile existence validation
-- Redirect of unauthenticated users to localized login
-- Redirect of incomplete profiles to localized profile completion
+- Localized authentication redirects
+- Existing profile-completion redirect flow
 - Reusable application shell architecture
-- Primary navigation integration
+- Header
+- Primary navigation
+- Mobile navigation
+- Dashboard integration
 - Arabic/English shell translations
 - RTL/LTR locale behavior
 - Localized dashboard title
 - Localized dashboard welcome message
-- Runtime verification of "/ar/dashboard"
-- Runtime verification of "/en/dashboard"
 - Localized authentication error mapping
 - Stable authentication error translation keys
-- Arabic authentication error messages
-- English authentication error messages
 - Production build verification
 - TypeScript verification
 - "git diff --check" verification
+- Runtime verification of "/en/dashboard"
+- Runtime verification of "/ar/dashboard"
+- Arabic RTL verification
+- English LTR verification
 - Documentation update
-- Commit "894bb72"
-- Feature branch push
 
-Pending:
+Phase 2.5 implementation commit:
 
-- Pull request creation
-- Pull request review
-- Merge into "main"
-- Final "main" synchronization
-- Final clean working-tree verification
-- Final project-status update after merge
+"894bb72"
+
+Documentation commit:
+
+"581bc3a"
+
+Pull request:
+
+PR #5
+
+Final merge commit:
+
+"65b880e"
+
+Phase 2.5 is CLOSED.
 
 Architecture Status
 
@@ -191,78 +199,227 @@ The current production architecture includes:
 - Supabase PostgreSQL
 - Supabase authentication
 - Supabase Storage
-- ImageKit for avatar/image delivery
+- ImageKit
 - Server-side API routes where sensitive credentials or authentication are required
 - GitHub-based version control and project source of truth
 
-Google Gemini AI remains a planned integration and has not yet been treated as a completed production domain.
+Google Gemini AI remains a planned external integration.
+
+Phase 2.6 — Domain Architecture & Authorization Foundation
+
+Objective:
+
+Define the production architecture for MyLab's core domains, authorization model, ownership boundaries, AI service boundary, and future economy capabilities before beginning new domain implementation.
+
+Primary domains under architectural definition:
+
+- Identity
+- Knowledge
+- Courses
+- AI
+- Community
+- Economy
+- Subscription
+- Verification
+- Administration
+
+Confirmed Architectural Decisions
+
+Knowledge
+
+- MyLab Knowledge is owned by MyLab.
+- Users read Knowledge but do not directly modify it.
+- Knowledge is managed by authorized administration.
+- User corrections/suggestions should use a communication/support flow.
+- AI must use MyLab Knowledge first when relevant.
+
+AI Architecture Status
+
+AI is an application service and not an independent source of truth.
+
+Google Gemini is the planned external AI provider and will be accessed through its API.
+
+The AI architecture uses three knowledge layers:
+
+1. MyLab Knowledge
+
+   - Official MyLab-owned knowledge.
+   - Highest priority for relevant MyLab requests.
+   - Managed by authorized administration.
+   - Read-only for ordinary users.
+
+2. Domain Content
+
+   - MyLab Courses
+   - Approved User Courses
+   - Community content
+   - Other permitted application-domain context
+   - Access controlled according to domain permissions and privacy rules.
+
+3. General Knowledge
+
+   - External/general AI knowledge.
+   - Used when MyLab Knowledge is insufficient or when the request is outside MyLab Knowledge.
+   - Initial provider: Google Gemini API.
+
+Preferred AI flow:
+
+User Request
+→ MyLab AI Service
+→ Context & Permission Check
+→ MyLab Knowledge
+→ Permitted Domain Content
+→ General Knowledge when required
+→ Google Gemini API
+→ MyLab AI Response
+
+The AI service is responsible for selecting and minimizing context before sending information to the external provider.
+
+The AI provider must not receive unrestricted access to MyLab databases or user data.
+
+Where practical, AI responses should distinguish between MyLab Knowledge, Domain Content, and General AI Knowledge.
+
+AI remains a planned implementation and is not yet a completed production domain.
+
+Courses
+
+Two course categories exist:
+
+- MyLab Courses
+- User Courses
+
+A dedicated "Course Author" staff role is planned for official MyLab course creation/management.
+
+Users may apply to become Course Creators.
+
+Course Creator flow:
+
+User
+→ Application
+→ Terms Acceptance
+→ Super Admin Approval
+→ Course Creator Capability
+
+Approved Course Creators may:
+
+- Create courses
+- Set course prices
+- Make courses free
+- Earn from eligible paid courses
+- Request withdrawals after reaching the configured threshold
+
+Community
+
+- Every user may publish subject to Community policy.
+- Community supports user-generated content.
+- Future monetized content is possible.
+- Media quotas depend on subscription status.
+- Coin-based quota extensions are planned.
+- Exact quota numbers are deferred.
+- Reports, warnings, posting suspension, account suspension, and account locking are required architectural capabilities.
+
+Economy
+
+The Economy domain is shared by all users.
+
+Coins and Creator Earnings are separate concepts.
+
+Coins may be:
+
+- Purchased with real money
+- Earned through rewards
+- Transferred between users
+- Spent on supported features
+
+Coin transfers must support:
+
+- Limits
+- Fees
+- Account status checks
+- Anti-abuse controls
+
+Creator Earnings represent real monetary value earned from eligible paid courses.
+
+Creators may request withdrawals after reaching the configured threshold.
+
+Withdrawal requests use previously supplied payout information and must be processed through a secure financial workflow.
+
+Subscription
+
+One subscription system applies to all users.
+
+Plans:
+
+- Free
+- Monthly
+- Quarterly
+- Yearly
+
+Subscription status may affect feature quotas and access but does not replace authorization.
+
+Verification
+
+At least two verification types are planned:
+
+- Identity Verification
+- Professional Verification
+
+Identity Verification produces an Identity Verified badge.
+
+Professional Verification produces a Professional badge.
+
+Professional Verification approval is currently handled by Super Admin.
+
+Administrative Roles
+
+Planned staff roles:
+
+- Super Admin
+- Knowledge Manager
+- Course Author
+- Course Reviewer
+- Community Moderator
+- Finance/Economy Manager
+- Support Staff
+
+Course Creator is not a staff role.
+
+It is a capability granted to an approved user.
 
 Security Architecture
 
-Security-sensitive decisions remain server-trusted.
+Security-sensitive operations remain server-trusted.
 
-Current protected application flow:
+This includes:
 
-Authentication
-→ Server-side user validation
-→ Profile existence validation
-→ Application Shell
-→ Domain Page
+- Authentication
+- Authorization
+- Course Creator approval
+- Professional Verification
+- Moderation
+- Account locking
+- Economy transactions
+- Coin transfers
+- Withdrawals
+- Payment information
+- AI provider credentials
 
-The client UI is not treated as a security boundary.
+The client UI is never treated as the security boundary.
 
-Authentication errors exposed to users are mapped to controlled application translation keys instead of displaying raw backend error messages.
+Database Architecture Direction
 
-Internationalization Status
+Before implementing each domain:
 
-Supported locales:
+1. Define entities.
+2. Define relationships.
+3. Define ownership.
+4. Define access policies.
+5. Define indexes.
+6. Define audit requirements.
+7. Define migrations.
+8. Implement dependent application features.
 
-- "en"
-- "ar"
-
-Current verified behavior:
-
-- "/en/dashboard" renders English.
-- "/ar/dashboard" renders Arabic.
-- Navigation translations work correctly.
-- Dashboard translations work correctly.
-- Arabic uses RTL.
-- English uses LTR.
-
-Translation resources:
-
-- "messages/en.json"
-- "messages/ar.json"
-
-Verification Status
-
-Translation JSON
-
-Passed:
-
-python -m json.tool messages/en.json >/dev/null && echo "en.json OK"
-python -m json.tool messages/ar.json >/dev/null && echo "ar.json OK"
-
-Git Diff Validation
-
-Passed:
-
-git diff --check
-
-Production Build
-
-Passed:
-
-npm run build
-
-Runtime Verification
-
-Passed:
-
-/ar/dashboard → 200
-/en/dashboard → 200
-
-Localized dashboard rendering was verified successfully.
+Database changes must be version-controlled through migrations.
 
 Development Rules
 
@@ -275,6 +432,10 @@ Development Rules
 - Database changes must be version-controlled through migrations.
 - GitHub is the single source of truth.
 - Architecture decisions must remain consistent across phases.
+- Domain boundaries must be respected.
+- External AI services must remain behind controlled service boundaries.
+
+Phase Completion Rule
 
 Every completed phase must end with:
 
@@ -288,55 +449,48 @@ Every completed phase must end with:
 
 Current Gate
 
-Phase 2.4 is CLOSED.
+Phase 2.5 is CLOSED.
 
-Phase 2.5 implementation is COMPLETE.
+Current gate:
 
-The current gate is:
+Phase 2.6 — Architecture Definition
 
-Phase 2.5 PR / Merge Gate
+No new domain feature implementation should begin until Phase 2.6 has passed architecture review and approval.
 
-No new domain feature implementation should begin until Phase 2.5 has passed its final merge gate.
+Phase 2.6 Required Outputs
 
-Immediate Next Action
+The phase must produce:
 
-Create the Phase 2.5 pull request from:
+- Domain architecture document
+- Authorization model
+- Ownership boundaries
+- AI service boundary
+- Course architecture
+- Community architecture
+- Economy architecture
+- Subscription architecture
+- Verification architecture
+- Security boundaries
+- Database architecture direction
+- Acceptance criteria
+- Verification strategy
 
-"feat/phase-2.5-application-shell"
+Next Action
 
-into:
+Complete and review:
 
-"main"
+"docs/phase-2.6-domain-architecture.md"
 
 Then:
 
-1. Review the pull request.
-2. Merge the pull request.
-3. Pull/rebase the local "main".
-4. Verify the final working tree is clean.
-5. Update this project-status document with the final merge commit.
-6. Mark Phase 2.5 as CLOSED.
-7. Define the next phase before beginning new implementation.
+1. Review the architecture with Alfa.
+2. Resolve any remaining architectural decisions.
+3. Commit the documentation.
+4. Push the documentation.
+5. Mark Phase 2.6 architecture as approved.
+6. Define the first implementation phase based on the approved architecture.
 
-Next Phase
-
-The next phase should be explicitly defined after Phase 2.5 is merged.
-
-The definition must include:
-
-- Phase objective
-- Scope
-- Out of scope
-- Dependencies
-- Architecture impact
-- Database requirements, if any
-- Security requirements
-- Internationalization requirements
-- Acceptance criteria
-- Verification strategy
-- Documentation requirements
-
-Implementation must follow the established architecture-first workflow.
+No new domain implementation should begin before this gate is passed.
 
 Source of Truth
 
