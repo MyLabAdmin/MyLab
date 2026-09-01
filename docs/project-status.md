@@ -6,19 +6,19 @@ Version: 0.1.0
 
 Current Status
 
-Phase 2.5 — Application Shell — CLOSED
+Phase 2.8 — Knowledge Domain Foundation & First Browse Slice — CLOSED
 
-Phase 2.5 was successfully implemented, verified, reviewed, merged, and synchronized with "main".
+Phase 2.8 was successfully implemented, verified, documented, committed, pushed, and synchronized with "main".
 
 Current phase:
 
-Phase 2.6 — Domain Architecture & Authorization Foundation
+Knowledge Content & Discovery
 
 Status:
 
-Architecture Definition — IN PROGRESS
+PLANNING / ARCHITECTURE REVIEW
 
-No new domain feature implementation should begin until Phase 2.6 architecture is reviewed and accepted.
+The Knowledge foundation and first production browse slice are complete. Further Knowledge implementation must continue from the established architecture and real data model.
 
 Repository
 
@@ -28,7 +28,7 @@ GitHub is the single source of truth.
 
 Current Main Commit
 
-65b880e — Merge pull request #5 from MyLabAdmin/feat/phase-2.5-application-shell
+03ae3f7 — feat(knowledge): add knowledge browse UI
 
 Development Environment
 
@@ -557,3 +557,63 @@ Establish the production-ready Knowledge domain foundation, including:
 - Verification strategy
 
 Phase 2.8 must preserve the architecture-first and database-first development workflow.
+
+
+Phase 2.8 — Knowledge Domain Foundation & First Browse Slice
+
+Status:
+
+CLOSED
+
+Completed:
+
+- Knowledge database foundation reconciled and established.
+- Knowledge ownership and read-access model preserved.
+- Knowledge RLS/security boundaries verified.
+- Server-side Knowledge read layer implemented.
+- Published Knowledge item retrieval implemented.
+- Published laboratory test retrieval aligned with published versions.
+- Knowledge categories read layer implemented.
+- Knowledge references read layer implemented.
+- Production Knowledge route implemented.
+- Arabic and English Knowledge UI implemented.
+- Knowledge empty state implemented.
+- Knowledge error state implemented.
+- Knowledge desktop navigation implemented.
+- Knowledge mobile navigation implemented.
+- Light Theme enforced as the current official application theme.
+- Automatic system Dark Mode override removed.
+- Navigation contrast issue caused by system Dark Mode behavior resolved.
+- Production build verified.
+- TypeScript verification passed.
+- ESLint verification passed with 0 errors and one pre-existing unrelated warning.
+- git diff --check passed.
+- Runtime verification completed for /ar/knowledge and /en/knowledge.
+
+Implementation commits:
+
+- 3d4d363 — feat(knowledge): add knowledge read layer
+- 03ae3f7 — feat(knowledge): add knowledge browse UI
+
+Phase 2.8 is CLOSED.
+
+Current Knowledge Status:
+
+- Database Foundation — COMPLETE
+- Read Layer — COMPLETE
+- Browse UI Vertical Slice 1 — COMPLETE
+- Search — DEFERRED
+- Categories UI — NEXT
+- Knowledge Detail — PLANNED
+
+Next Phase:
+
+Knowledge Content & Discovery
+
+Planned sequence:
+
+1. Validate real Knowledge data.
+2. Establish the production Category UI.
+3. Implement production Knowledge cards.
+4. Introduce Search when justified by real data and use cases.
+5. Implement Knowledge Detail.

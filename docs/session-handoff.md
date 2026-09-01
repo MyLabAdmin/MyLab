@@ -55,11 +55,11 @@ Webpack/WASM cache warnings may appear but do not prevent a successful productio
 
 ## Current Phase
 
-**Phase 2.8 — Knowledge Domain Foundation**
+**Knowledge Content & Discovery**
 
 Status:
 
-**Knowledge reconciliation in progress**
+**Ready to begin after Phase 2.8 closure**
 
 ## Completed Phases
 
@@ -118,6 +118,39 @@ Latest repository commit:
 
 `169ed8e docs: record Supabase reconciliation state`
 
+## Phase 2.8 — Knowledge Domain Foundation & First Browse Slice
+
+**CLOSED**
+
+Completed:
+
+- Knowledge database foundation established and reconciled.
+- Knowledge ownership and read-access architecture preserved.
+- Knowledge RLS/security boundaries verified.
+- Server-side Knowledge read layer implemented.
+- Published Knowledge item retrieval implemented.
+- Knowledge categories and references read layers implemented.
+- Production Knowledge browse route implemented.
+- Arabic and English UI implemented.
+- Empty and error states implemented.
+- Desktop and mobile Knowledge navigation implemented.
+- Light Theme established as the current official application theme.
+- Automatic system Dark Mode override removed.
+- Navigation contrast issue resolved.
+- Production build verified.
+- TypeScript verification passed.
+- ESLint verification passed with 0 errors and one pre-existing unrelated warning.
+- `git diff --check` passed.
+- `/ar/knowledge` verified.
+- `/en/knowledge` verified.
+
+Implementation commits:
+
+- `3d4d363` — `feat(knowledge): add knowledge read layer`
+- `03ae3f7` — `feat(knowledge): add knowledge browse UI`
+
+Phase 2.8 is officially CLOSED.
+
 ## Current Knowledge Foundation
 
 The live Supabase environment contains the following Knowledge tables:
@@ -169,23 +202,13 @@ Do not recreate or redesign the existing Knowledge schema blindly.
 
 The existing live schema must first be inspected and represented accurately in a canonical version-controlled migration.
 
-No Knowledge UI or dependent feature implementation should begin before the database foundation and authorization model are reconciled.
+The database foundation and authorization model were reconciled before the Knowledge browse slice was implemented. Future Knowledge work must continue from the established schema, security model, and read layer.
 
-## Required Phase 2.8 Workflow
+## Phase 2.8 Closure
 
-1. Inspect live Knowledge schema.
-2. Compare with GitHub migrations.
-3. Document differences.
-4. Create canonical Knowledge migration.
-5. Verify RLS and authorization policies.
-6. Verify migration safety.
-7. Run production build.
-8. Update documentation.
-9. Update this handoff.
-10. Commit.
-11. Push.
-12. Synchronize `main`.
-13. Close Phase 2.8.
+The required Phase 2.8 workflow has been completed for the current Knowledge foundation and first production browse slice.
+
+The phase is closed and must not be reopened for cosmetic or incremental changes.
 
 ## Current Repository State
 
@@ -201,11 +224,17 @@ Working tree should remain clean after each completed phase.
 
 ## Next Action
 
-Complete the Knowledge database reconciliation.
+Begin **Knowledge Content & Discovery**.
 
-Then create the canonical Knowledge migration based on the actual live Supabase schema.
+Planned sequence:
 
-After verification, proceed to the first production Knowledge implementation.
+1. Validate real Knowledge data.
+2. Establish production Category UI.
+3. Implement production Knowledge cards.
+4. Introduce Search when justified by real data and use cases.
+5. Implement Knowledge Detail.
+
+Do not introduce Search or additional discovery complexity before validating the available real Knowledge data and its actual product use cases.
 
 ## Communication Protocol
 
