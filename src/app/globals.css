@@ -182,13 +182,6 @@ html[dir="ltr"] {
   text-align: left;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0d1418;
-    --foreground: #f1f4f5;
-  }
-}
-
 input,
 textarea,
 select {

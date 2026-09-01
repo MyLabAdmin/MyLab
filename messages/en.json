@@ -5,6 +5,7 @@
     "english": "English",
     "arabic": "Arabic",
     "dashboard": "Dashboard",
+    "knowledge": "Knowledge",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "navigation": "Navigation"
@@ -53,6 +54,13 @@
       "rateLimited": "Too many attempts. Please wait a moment and try again.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "knowledge": {
+    "title": "Knowledge",
+    "description": "Explore published laboratory knowledge and educational resources.",
+    "emptyTitle": "No knowledge available yet",
+    "emptyDescription": "Published knowledge will appear here as it becomes available.",
+    "loadError": "We could not load the knowledge content. Please try again later."
   },
   "dashboard": {
     "title": "MyLab Dashboard",
