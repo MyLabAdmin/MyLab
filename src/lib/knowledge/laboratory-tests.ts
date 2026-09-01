@@ -20,13 +20,18 @@ export async function getPublishedLaboratoryTests(): Promise<LaboratoryTest[]> {
       loinc_code,
       test_type,
       knowledge_items!inner (
-        id
+        id,
+        knowledge_item_versions!inner (
+          id,
+          status
+        )
       )
     `)
+    .eq('knowledge_items.knowledge_item_versions.status', 'published')
     .order('test_code', { ascending: true })
 
   if (error) {
-    throw new Error(`Failed to load laboratory tests: ${error.message}`)
+    throw new Error(`Failed to load published laboratory tests: ${error.message}`)
   }
 
   return (data ?? []).map((item) => ({
