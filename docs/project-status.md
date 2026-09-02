@@ -617,3 +617,28 @@ Planned sequence:
 3. Implement production Knowledge cards.
 4. Introduce Search when justified by real data and use cases.
 5. Implement Knowledge Detail.
+
+## Authorization Review Closure — September 2026
+
+The Authorization Review for the Knowledge authoring/publishing foundation is complete.
+
+Completed:
+- Verified the existing authorization model and actual `staff_role` enum.
+- Preserved the existing capability model without inventing Knowledge capabilities.
+- Added a controlled public RPC boundary for server-side authorization checks.
+- Restricted authorization RPC execution to authenticated users; anonymous execution is revoked.
+- Hardened the public authorization RPCs with `search_path = ''`.
+- Preserved the private authorization functions as the underlying source of authorization truth.
+- Verified the remote Supabase function privileges and configuration.
+- Verified production lint and build.
+- No TypeScript errors.
+- `git diff --check` passed.
+
+Security boundary:
+Client → Authentication → Session Validation → Account State → Authorization → Resource Ownership → Domain Rules → RLS → Operation.
+
+Current decision:
+Knowledge authoring must use the established authorization service and existing authorization model. No Knowledge-specific capability keys should be introduced until a capability design is explicitly approved and versioned in the database.
+
+Next:
+Knowledge Authoring & Versioned Publishing.

@@ -246,3 +246,29 @@ Execution should remain:
 
 Avoid prototypes, temporary fixes, or undocumented schema changes.
 
+## Authorization Review Closure — September 2026
+
+Authorization Review is complete and verified against the live Supabase project.
+
+The production authorization boundary now uses public RPC wrappers backed by the private authorization functions. The three authorization RPCs are executable by `authenticated` and `service_role`, not by `anon`, and use an empty function `search_path` for hardening.
+
+Verified functions:
+- `current_user_is_active()`
+- `current_user_has_role(public.staff_role)`
+- `current_user_has_capability(text)`
+
+The existing roles and capability model were preserved. No new Knowledge capability keys were invented.
+
+Local implementation:
+- `src/lib/authorization/types.ts`
+- `src/lib/authorization/service.ts`
+- `src/lib/authorization/index.ts`
+
+Validation:
+- ESLint: 0 errors; one pre-existing unrelated warning in `ProfileCompletionForm.tsx`.
+- Production build: successful.
+- TypeScript: successful.
+- `git diff --check`: successful.
+
+The next implementation phase is Knowledge Authoring & Versioned Publishing, using the established authorization boundary and the current database-compatible lifecycle:
+Create → Draft → Edit/New Version → Publish → Previous Version = Superseded.
