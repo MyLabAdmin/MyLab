@@ -272,3 +272,46 @@ Validation:
 
 The next implementation phase is Knowledge Authoring & Versioned Publishing, using the established authorization boundary and the current database-compatible lifecycle:
 Create → Draft → Edit/New Version → Publish → Previous Version = Superseded.
+
+---
+
+## Handoff — Knowledge Authoring Migration Reconciliation
+
+**Status:** CLOSED
+
+### Current State
+Knowledge authoring and versioned publishing database boundaries are reconciled with Production and committed to GitHub.
+
+### Production-aligned migrations
+- `20260831183314_knowledge_domain_reconciliation.sql`
+- `20260903183552_knowledge_version_images.sql`
+- `20260903183751_knowledge_authoring_write_boundary.sql`
+- `20260903183816_knowledge_authoring_archive_boundary.sql`
+- `20260903185653_harden_knowledge_write_privileges.sql`
+- `20260903185703_remove_knowledge_anon_table_access.sql`
+
+### Authorization
+Knowledge writes are restricted to authenticated active users with:
+- `knowledge_manager`
+- `super_admin`
+
+Direct Knowledge table DML is privilege-restricted. Authorized writes use RPC boundaries, with RLS remaining defense-in-depth.
+
+### Image Architecture
+Knowledge images are physically stored in ImageKit. Supabase stores image metadata and version relationships in `knowledge_version_images`.
+
+### Approved Workflow
+`Create → Draft → Edit/New Version → Publish → Superseded`
+
+### Git
+Latest commit:
+
+`6047dc1 feat(knowledge): reconcile authoring and publishing migrations`
+
+`main` and `origin/main` are synchronized and the working tree was clean before documentation changes.
+
+### Open Domain Rule
+`archive_knowledge_item()` currently permits archiving any non-archived Knowledge item. This remains an explicit domain-rule/audit point and was not changed during this phase.
+
+### Next Step
+Continue with the production-ready Knowledge Authoring UI and server integration using the existing RPC boundaries.

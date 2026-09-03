@@ -642,3 +642,36 @@ Knowledge authoring must use the established authorization service and existing 
 
 Next:
 Knowledge Authoring & Versioned Publishing.
+
+---
+
+## Knowledge Authoring & Publishing — Migration Reconciliation Closed
+
+**Status:** CLOSED
+**Commit:** `6047dc1`
+**Branch:** `main`
+**Remote:** `origin/main`
+
+### Completed
+- Reconciled Knowledge Domain migration timestamp with Production.
+- Reconciled Knowledge Version Images migration timestamp with Production.
+- Added Knowledge authoring write authorization boundary.
+- Added Knowledge archive authorization boundary.
+- Hardened Knowledge table write privileges.
+- Removed anonymous table access from Knowledge tables.
+- Preserved the approved workflow:
+  `Create → Draft → Edit/New Version → Publish → Superseded`.
+- Preserved the approved Knowledge authorization model:
+  active account + `knowledge_manager` or `super_admin`.
+- Preserved ImageKit as the physical storage layer for Knowledge images.
+- Verified staged diff with `git diff --cached --check`.
+- Verified migration rename detection at 100%.
+- Committed and pushed all migration changes successfully.
+
+### Git State
+`main` is synchronized with `origin/main` at:
+
+`6047dc1 feat(knowledge): reconcile authoring and publishing migrations`
+
+### Next
+Proceed to the next Knowledge Authoring implementation step only after reviewing the current production behavior and domain rules.
