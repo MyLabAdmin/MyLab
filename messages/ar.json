@@ -60,7 +60,113 @@
     "description": "استكشف المعارف المخبرية المنشورة والموارد التعليمية.",
     "emptyTitle": "لا توجد معرفة متاحة حاليًا",
     "emptyDescription": "ستظهر المحتويات المنشورة هنا عند توفرها.",
-    "loadError": "تعذر تحميل محتوى المعرفة. يرجى المحاولة لاحقًا."
+    "loadError": "تعذر تحميل محتوى المعرفة. يرجى المحاولة لاحقًا.",
+    "new": {
+      "title": "إنشاء محتوى معرفي",
+      "description": "أنشئ عنصرًا معرفيًا جديدًا كمسودة، ويمكنك متابعة تحريره قبل النشر.",
+      "itemType": "نوع المحتوى المعرفي",
+      "titleLabel": "العنوان",
+      "titlePlaceholder": "أدخل عنوان المحتوى المعرفي",
+      "summaryLabel": "الملخص",
+      "summaryPlaceholder": "أدخل ملخصًا قصيرًا",
+      "contentLabel": "المحتوى",
+      "contentPlaceholder": "أدخل المحتوى المعرفي الأولي",
+      "submit": "إنشاء مسودة",
+      "saving": "جارٍ إنشاء المسودة...",
+      "cancel": "إلغاء",
+      "validation": {
+        "titleRequired": "العنوان مطلوب."
+      },
+      "errors": {
+        "createFailed": "تعذر إنشاء المحتوى المعرفي. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "itemTypes": {
+      "test": "اختبار مخبري",
+      "procedure": "إجراء مخبري",
+      "equipment": "معدات مخبرية",
+      "reference": "مرجع",
+      "educational": "محتوى تعليمي"
+    },
+    "laboratoryTest": {
+      "title": "إنشاء اختبار مخبري",
+      "description": "أنشئ اختبارًا مخبريًا منظمًا كمسودة، وأكمل المعلومات العلمية ومعلومات العينة قبل النشر.",
+      "sections": {
+        "basicInformation": "المعلومات الأساسية",
+        "description": "الوصف والمحتوى",
+        "preparation": "التحضير قبل الاختبار",
+        "specimens": "العينة والأنبوب",
+        "referenceRanges": "المجالات المرجعية",
+        "interpretation": "التفسير والأهمية السريرية",
+        "images": "الصور"
+      },
+      "fields": {
+        "testName": "اسم الاختبار",
+        "subtitle": "العنوان الفرعي",
+        "testCode": "رمز الاختبار",
+        "loincCode": "رمز LOINC",
+        "primaryCategory": "التصنيف الرئيسي",
+        "subcategory": "التصنيف الفرعي",
+        "summary": "الملخص",
+        "content": "المحتوى العلمي التفصيلي",
+        "preTestPreparation": "التحضير قبل الاختبار",
+        "specimenType": "نوع العينة",
+        "container": "الأنبوب / الحاوية",
+        "handlingInstructions": "تعليمات التعامل مع العينة",
+        "population": "الفئة / المجموعة",
+        "sex": "الجنس",
+        "ageUnit": "وحدة العمر",
+        "ageFrom": "العمر من",
+        "ageTo": "العمر إلى",
+        "lowerValue": "الحد الأدنى",
+        "upperValue": "الحد الأعلى",
+        "unit": "الوحدة",
+        "notes": "ملاحظات",
+        "method": "الطريقة",
+        "methodDescription": "وصف الطريقة",
+        "condition": "الحالة",
+        "interpretation": "التفسير",
+        "clinicalSignificance": "الأهمية السريرية",
+        "selectCategory": "اختر التصنيف",
+        "selectSubcategory": "اختر التصنيف الفرعي"
+      },
+      "specimen": {
+        "title": "العينة {number}"
+      },
+      "referenceRange": {
+        "title": "المجال المرجعي {number}"
+      },
+      "method": {
+        "title": "الطريقة {number}"
+      },
+      "interpretation": {
+        "title": "التفسير {number}"
+      },
+      "images": {
+        "comingNext": "سيتم ربط رفع الصور في خطوة التأليف التالية."
+      },
+      "actions": {
+        "addSpecimen": "إضافة عينة",
+        "addReferenceRange": "إضافة مجال مرجعي",
+        "addMethod": "إضافة طريقة",
+        "addInterpretation": "إضافة تفسير",
+        "remove": "حذف",
+        "saveDraft": "حفظ كمسودة",
+        "saving": "جارٍ الحفظ...",
+        "cancel": "إلغاء"
+      },
+      "validation": {
+        "testName": "اسم الاختبار مطلوب.",
+        "testCode": "رمز الاختبار مطلوب.",
+        "primaryCategory": "التصنيف الرئيسي مطلوب.",
+        "subcategory": "التصنيف الفرعي مطلوب.",
+        "specimen": "يجب إضافة عينة واحدة على الأقل مع تحديد نوع العينة.",
+        "generic": "تعذر إنشاء الاختبار المخبري. يرجى المحاولة مرة أخرى."
+      },
+      "editTitle": "تعديل الفحص المخبري",
+      "editDescription": "قم بتعديل مسودة الفحص المخبري وحفظ التغييرات دون نشرها."
+    },
+    "create": "إنشاء محتوى معرفي"
   },
   "dashboard": {
     "title": "لوحة تحكم MyLab",

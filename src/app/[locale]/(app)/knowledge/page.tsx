@@ -1,4 +1,6 @@
 import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
+import { hasRole } from '@/lib/authorization/service'
 import { getPublishedKnowledgeItems } from '@/lib/knowledge/items'
 
 type KnowledgePageProps = {
@@ -17,6 +19,10 @@ export default async function KnowledgePage({
     namespace: 'knowledge',
   })
 
+  const canManageKnowledge =
+    (await hasRole('knowledge_manager')) ||
+    (await hasRole('super_admin'))
+
   const items = await getPublishedKnowledgeItems()
 
   return (
@@ -26,9 +32,19 @@ export default async function KnowledgePage({
           {t('title')}
         </h1>
 
-        <p className="mt-2 text-neutral-600">
-          {t('description')}
-        </p>
+        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-neutral-600">
+            {t('description')}
+          </p>
+          {canManageKnowledge && (
+            <Link
+              href="/knowledge/new"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700"
+            >
+              {t('create')}
+            </Link>
+          )}
+        </div>
       </header>
 
       <section className="mt-8">

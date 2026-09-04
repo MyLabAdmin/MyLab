@@ -1,5 +1,6 @@
 export const KNOWLEDGE_ITEM_TYPES = [
   'test',
+  'laboratory_test',
   'procedure',
   'equipment',
   'reference',
@@ -7,6 +8,17 @@ export const KNOWLEDGE_ITEM_TYPES = [
 ] as const
 
 export type KnowledgeItemType = (typeof KNOWLEDGE_ITEM_TYPES)[number]
+
+export const GENERIC_KNOWLEDGE_ITEM_TYPES = [
+  'test',
+  'procedure',
+  'equipment',
+  'reference',
+  'educational',
+] as const
+
+export type GenericKnowledgeItemType =
+  (typeof GENERIC_KNOWLEDGE_ITEM_TYPES)[number]
 
 export const KNOWLEDGE_ITEM_STATUSES = [
   'draft',
@@ -43,8 +55,10 @@ export type KnowledgeItemVersion = {
   knowledge_item_id: string
   version_number: number
   title: string
+  subtitle: string | null
   summary: string | null
   content: string | null
+  pre_test_preparation: string | null
   status: KnowledgeVersionStatus
   created_by: string
   created_at: string

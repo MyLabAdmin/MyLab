@@ -60,7 +60,113 @@
     "description": "Explore published laboratory knowledge and educational resources.",
     "emptyTitle": "No knowledge available yet",
     "emptyDescription": "Published knowledge will appear here as it becomes available.",
-    "loadError": "We could not load the knowledge content. Please try again later."
+    "loadError": "We could not load the knowledge content. Please try again later.",
+    "new": {
+      "title": "Create knowledge item",
+      "description": "Create a new knowledge item as a draft. You can continue editing it before publication.",
+      "itemType": "Knowledge type",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Enter the knowledge item title",
+      "summaryLabel": "Summary",
+      "summaryPlaceholder": "Enter a short summary",
+      "contentLabel": "Content",
+      "contentPlaceholder": "Enter the initial knowledge content",
+      "submit": "Create draft",
+      "saving": "Creating draft...",
+      "cancel": "Cancel",
+      "validation": {
+        "titleRequired": "Title is required."
+      },
+      "errors": {
+        "createFailed": "We could not create the knowledge item. Please try again."
+      }
+    },
+    "itemTypes": {
+      "test": "Laboratory test",
+      "procedure": "Laboratory procedure",
+      "equipment": "Laboratory equipment",
+      "reference": "Reference",
+      "educational": "Educational"
+    },
+    "laboratoryTest": {
+      "title": "Create laboratory test",
+      "description": "Create a structured laboratory test as a draft. Complete the scientific and specimen information before publication.",
+      "sections": {
+        "basicInformation": "Basic Information",
+        "description": "Description & Content",
+        "preparation": "Pre-test Preparation",
+        "specimens": "Specimen & Tube",
+        "referenceRanges": "Reference Ranges",
+        "interpretation": "Interpretation & Clinical Significance",
+        "images": "Images"
+      },
+      "fields": {
+        "testName": "Test Name",
+        "subtitle": "Subtitle",
+        "testCode": "Test Code",
+        "loincCode": "LOINC Code",
+        "primaryCategory": "Primary Category",
+        "subcategory": "Subcategory",
+        "summary": "Summary",
+        "content": "Detailed Scientific Content",
+        "preTestPreparation": "Pre-test Preparation",
+        "specimenType": "Specimen Type",
+        "container": "Tube / Container",
+        "handlingInstructions": "Handling Instructions",
+        "population": "Population / Group",
+        "sex": "Sex",
+        "ageUnit": "Age Unit",
+        "ageFrom": "Age From",
+        "ageTo": "Age To",
+        "lowerValue": "Lower Value",
+        "upperValue": "Upper Value",
+        "unit": "Unit",
+        "notes": "Notes",
+        "method": "Method",
+        "methodDescription": "Method Description",
+        "condition": "Condition",
+        "interpretation": "Interpretation",
+        "clinicalSignificance": "Clinical Significance",
+        "selectCategory": "Select a category",
+        "selectSubcategory": "Select a subcategory"
+      },
+      "specimen": {
+        "title": "Specimen {number}"
+      },
+      "referenceRange": {
+        "title": "Reference Range {number}"
+      },
+      "method": {
+        "title": "Method {number}"
+      },
+      "interpretation": {
+        "title": "Interpretation {number}"
+      },
+      "images": {
+        "comingNext": "Image upload integration will be connected in the next authoring step."
+      },
+      "actions": {
+        "addSpecimen": "Add specimen",
+        "addReferenceRange": "Add reference range",
+        "addMethod": "Add method",
+        "addInterpretation": "Add interpretation",
+        "remove": "Remove",
+        "saveDraft": "Save Draft",
+        "saving": "Saving...",
+        "cancel": "Cancel"
+      },
+      "validation": {
+        "testName": "Test name is required.",
+        "testCode": "Test code is required.",
+        "primaryCategory": "Primary category is required.",
+        "subcategory": "Subcategory is required.",
+        "specimen": "At least one specimen with a specimen type is required.",
+        "generic": "We could not create the laboratory test. Please try again."
+      },
+      "editTitle": "Edit laboratory test",
+      "editDescription": "Edit the laboratory test draft and save your changes without publishing it."
+    },
+    "create": "Create knowledge"
   },
   "dashboard": {
     "title": "MyLab Dashboard",
