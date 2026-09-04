@@ -314,4 +314,19 @@ Latest commit:
 `archive_knowledge_item()` currently permits archiving any non-archived Knowledge item. This remains an explicit domain-rule/audit point and was not changed during this phase.
 
 ### Next Step
-Continue with the production-ready Knowledge Authoring UI and server integration using the existing RPC boundaries.
+Phase 2.9 is complete.
+
+Current repository commit:
+`6c5ee5f — feat(knowledge): complete laboratory test draft editing`
+
+The next session must begin with an explicit architecture decision for the next Knowledge capability.
+
+Preserve:
+
+- existing authorization boundary;
+- RPC-based sensitive mutations;
+- atomic draft updates;
+- draft/published separation;
+- bilingual taxonomy;
+- version-controlled migrations;
+- production-ready implementation standards.

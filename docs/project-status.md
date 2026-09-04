@@ -6,9 +6,9 @@ Version: 0.1.0
 
 Current Status
 
-Phase 2.8 — Knowledge Domain Foundation & First Browse Slice — CLOSED
+Phase 2.9 — Knowledge Authoring & Laboratory Test Draft Editing — CLOSED
 
-Phase 2.8 was successfully implemented, verified, documented, committed, pushed, and synchronized with "main".
+Phase 2.9 was successfully implemented, verified, documented, committed, pushed, and synchronized with "main".
 
 Current phase:
 
@@ -28,7 +28,7 @@ GitHub is the single source of truth.
 
 Current Main Commit
 
-03ae3f7 — feat(knowledge): add knowledge browse UI
+6c5ee5f — feat(knowledge): complete laboratory test draft editing
 
 Development Environment
 
@@ -673,5 +673,64 @@ Knowledge Authoring & Versioned Publishing.
 
 `6047dc1 feat(knowledge): reconcile authoring and publishing migrations`
 
-### Next
-Proceed to the next Knowledge Authoring implementation step only after reviewing the current production behavior and domain rules.
+### Phase 2.9 — Knowledge Authoring & Laboratory Test Draft Editing
+
+**Status: CLOSED**
+
+Completed:
+
+- Production Knowledge authoring authorization boundary.
+- Laboratory Test creation flow.
+- Laboratory Test draft read layer.
+- Laboratory Test draft edit route.
+- Laboratory Test draft update Server Action.
+- Production Laboratory Test draft update RPC.
+- Atomic draft updates.
+- Category hierarchy validation.
+- Specimen management.
+- Method management.
+- Interpretation management.
+- Reference-range management.
+- English and Arabic authoring UI.
+- Authenticated-only execution for the draft update RPC.
+- Draft/published read separation.
+- Explicit row-count validation to prevent silent update no-ops.
+- Anonymous execution revoked from the Laboratory Test draft update RPC.
+- Supabase persistence verified through integration testing.
+- Production build, TypeScript, and git diff verification completed.
+
+Integration test record:
+
+`GLU-INTEGRATION-0`
+
+Implementation commit:
+
+`6c5ee5f — feat(knowledge): complete laboratory test draft editing`
+
+Phase 2.9 is CLOSED.
+
+### Current Knowledge Status
+
+- Database Foundation — COMPLETE
+- Read Layer — COMPLETE
+- Browse UI — COMPLETE
+- Authoring Create Flow — COMPLETE
+- Draft Read Layer — COMPLETE
+- Draft Edit Flow — COMPLETE
+- Draft Persistence Verification — COMPLETE
+- Publishing Workflow — NOT YET IMPLEMENTED
+- Search — DEFERRED
+- Knowledge Detail — PLANNED
+
+### Next Knowledge Decision
+
+Before implementing the next capability, select and document the next production workflow.
+
+Primary candidates:
+
+1. Knowledge Publishing / Approval Workflow
+2. Knowledge Detail
+3. Production Category UI
+4. Search after validating real Knowledge data
+
+No new implementation should begin until the next capability and its architecture are explicitly selected.
