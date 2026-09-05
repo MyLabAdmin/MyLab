@@ -1,6 +1,7 @@
 export const STAFF_ROLES = [
   'super_admin',
   'knowledge_manager',
+  'knowledge_reviewer',
   'course_author',
   'course_reviewer',
   'community_moderator',
