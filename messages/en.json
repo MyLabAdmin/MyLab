@@ -166,7 +166,17 @@
       "editTitle": "Edit laboratory test",
       "editDescription": "Edit the laboratory test draft and save your changes without publishing it."
     },
-    "create": "Create knowledge"
+    "create": "Create knowledge",
+    "review": {
+      "title": "Knowledge review",
+      "description": "Review knowledge versions that are waiting for approval.",
+      "emptyTitle": "No submissions waiting for review",
+      "emptyDescription": "New knowledge submissions will appear here when authors send them for review.",
+      "pending": "Pending review",
+      "version": "Version",
+      "submitted": "Submitted",
+      "author": "Author"
+    }
   },
   "dashboard": {
     "title": "MyLab Dashboard",
