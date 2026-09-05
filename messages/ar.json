@@ -176,6 +176,33 @@
       "version": "الإصدار",
       "submitted": "تاريخ الإرسال",
       "author": "المنشئ"
+    },
+    "reviewDetail": {
+      "backToQueue": "العودة إلى قائمة المراجعة",
+      "version": "الإصدار",
+      "pending": "بانتظار المراجعة",
+      "overview": "نظرة عامة",
+      "summary": "الملخص",
+      "content": "المحتوى",
+      "preTestPreparation": "التحضير قبل الفحص",
+      "laboratoryTest": "الفحص المخبري",
+      "testCode": "رمز الفحص",
+      "loincCode": "رمز LOINC",
+      "specimens": "العينات",
+      "methods": "الطرق",
+      "interpretations": "التفسيرات",
+      "referenceRanges": "المجالات المرجعية",
+      "none": "لا توجد بيانات متاحة.",
+      "container": "الوعاء",
+      "handling": "تعليمات التعامل",
+      "clinicalSignificance": "الأهمية السريرية",
+      "notes": "ملاحظات",
+      "population": "الفئة السكانية",
+      "sex": "الجنس",
+      "range": "المجال المرجعي",
+      "age": "العمر",
+      "specimen": "العينة",
+      "method": "الطريقة"
     }
   },
   "dashboard": {

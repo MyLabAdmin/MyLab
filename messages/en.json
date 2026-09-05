@@ -176,6 +176,33 @@
       "version": "Version",
       "submitted": "Submitted",
       "author": "Author"
+    },
+    "reviewDetail": {
+      "backToQueue": "Back to review queue",
+      "version": "Version",
+      "pending": "Pending review",
+      "overview": "Overview",
+      "summary": "Summary",
+      "content": "Content",
+      "preTestPreparation": "Pre-test preparation",
+      "laboratoryTest": "Laboratory test",
+      "testCode": "Test code",
+      "loincCode": "LOINC code",
+      "specimens": "Specimens",
+      "methods": "Methods",
+      "interpretations": "Interpretations",
+      "referenceRanges": "Reference ranges",
+      "none": "No entries available.",
+      "container": "Container",
+      "handling": "Handling instructions",
+      "clinicalSignificance": "Clinical significance",
+      "notes": "Notes",
+      "population": "Population",
+      "sex": "Sex",
+      "range": "Reference range",
+      "age": "Age",
+      "specimen": "Specimen",
+      "method": "Method"
     }
   },
   "dashboard": {

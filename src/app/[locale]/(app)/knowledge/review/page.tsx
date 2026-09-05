@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { hasRole } from '@/lib/authorization/service'
@@ -66,7 +67,12 @@ export default async function KnowledgeReviewPage({
                     </p>
 
                     <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-                      {item.title}
+                      <Link
+                        href={`/${locale}/knowledge/review/${item.knowledge_item_version_id}`}
+                        className="hover:text-primary-700 hover:underline"
+                      >
+                        {item.title}
+                      </Link>
                     </h2>
 
                     {item.summary && (
