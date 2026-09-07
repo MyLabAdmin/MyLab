@@ -14,6 +14,7 @@ export type KnowledgeReviewDetail = {
   laboratory_test_id: string | null
   laboratory_test_version_id: string | null
   version_number: number
+  review_status: string
   title: string
   subtitle: string | null
   summary: string | null

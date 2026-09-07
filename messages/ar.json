@@ -202,7 +202,20 @@
       "range": "المجال المرجعي",
       "age": "العمر",
       "specimen": "العينة",
-      "method": "الطريقة"
+      "method": "الطريقة",
+      "publish": "نشر",
+    "approve": "اعتماد",
+      "reject": "رفض",
+      "rejectReason": "سبب الرفض",
+      "rejectReasonPlaceholder": "وضح ما الذي يحتاج إلى تصحيح قبل إعادة الإرسال.",
+      "approveNote": "ملاحظة المراجعة (اختيارية)",
+      "approveNotePlaceholder": "أضف ملاحظة اختيارية حول الاعتماد.",
+      "confirmPublish": "تأكيد النشر",
+    "confirmApprove": "تأكيد الاعتماد",
+      "confirmReject": "تأكيد الرفض",
+      "cancel": "إلغاء",
+      "requiredReason": "سبب الرفض مطلوب.",
+      "genericError": "تعذر تنفيذ إجراء المراجعة. حاول مرة أخرى."
     }
   },
   "dashboard": {

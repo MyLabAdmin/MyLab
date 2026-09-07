@@ -10,6 +10,12 @@ import {
   type CreateLaboratoryTestInput,
   type CreateLaboratoryTestResult,
 } from '@/lib/knowledge/laboratory-test-authoring'
+import {
+  approveKnowledgeVersion,
+  rejectKnowledgeVersion,
+  publishKnowledgeVersion,
+  type KnowledgeReviewActionResult,
+} from '@/lib/knowledge/review-actions'
 
 export async function createKnowledgeItemAction(
   input: unknown,
@@ -28,4 +34,26 @@ export async function updateLaboratoryTestDraftAction(
   input: unknown,
 ): Promise<CreateLaboratoryTestResult> {
   return updateLaboratoryTestDraft(input)
+}
+
+
+export async function approveKnowledgeVersionAction(
+  knowledgeItemVersionId: string,
+  note?: string,
+): Promise<KnowledgeReviewActionResult> {
+  return approveKnowledgeVersion(knowledgeItemVersionId, note)
+}
+
+export async function rejectKnowledgeVersionAction(
+  knowledgeItemVersionId: string,
+  note: string,
+): Promise<KnowledgeReviewActionResult> {
+  return rejectKnowledgeVersion(knowledgeItemVersionId, note)
+}
+
+
+export async function publishKnowledgeVersionAction(
+  knowledgeItemVersionId: string,
+): Promise<KnowledgeReviewActionResult> {
+  return publishKnowledgeVersion(knowledgeItemVersionId)
 }

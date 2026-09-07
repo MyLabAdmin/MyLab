@@ -202,7 +202,20 @@
       "range": "Reference range",
       "age": "Age",
       "specimen": "Specimen",
-      "method": "Method"
+      "method": "Method",
+      "publish": "Publish",
+    "approve": "Approve",
+      "reject": "Reject",
+      "rejectReason": "Rejection reason",
+      "rejectReasonPlaceholder": "Explain what needs to be corrected before resubmission.",
+      "approveNote": "Review note (optional)",
+      "approveNotePlaceholder": "Add an optional note about the approval.",
+      "confirmPublish": "Confirm publish",
+    "confirmApprove": "Confirm approval",
+      "confirmReject": "Confirm rejection",
+      "cancel": "Cancel",
+      "requiredReason": "A rejection reason is required.",
+      "genericError": "The review action could not be completed. Please try again."
     }
   },
   "dashboard": {

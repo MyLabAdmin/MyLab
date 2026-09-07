@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 
 import { hasRole } from '@/lib/authorization/service'
 import { getKnowledgeReviewDetail } from '@/lib/knowledge/review-detail'
+import ReviewDecisionPanel from './ReviewDecisionPanel'
 
 type KnowledgeReviewDetailPageProps = {
   params: Promise<{
@@ -110,6 +111,25 @@ export default async function KnowledgeReviewDetailPage({
           </div>
         )}
       </section>
+
+      <ReviewDecisionPanel
+  reviewStatus={detail.review_status}
+          locale={locale}
+        versionId={versionId}
+        approveLabel={t('approve')}
+  publishLabel={t('publish')}
+        rejectLabel={t('reject')}
+        rejectReasonLabel={t('rejectReason')}
+        rejectReasonPlaceholder={t('rejectReasonPlaceholder')}
+        approveNoteLabel={t('approveNote')}
+        approveNotePlaceholder={t('approveNotePlaceholder')}
+        confirmApproveLabel={t('confirmApprove')}
+  confirmPublishLabel={t('confirmPublish')}
+        confirmRejectLabel={t('confirmReject')}
+        cancelLabel={t('cancel')}
+        requiredReasonMessage={t('requiredReason')}
+        genericErrorMessage={t('genericError')}
+      />
 
       {detail.item_type === 'laboratory_test' && (
         <>
