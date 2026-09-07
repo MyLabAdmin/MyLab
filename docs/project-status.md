@@ -12,11 +12,11 @@ Phase 2.9 was successfully implemented, verified, documented, committed, pushed,
 
 Current phase:
 
-Knowledge Content & Discovery
+Knowledge Experience & Master Application Architecture
 
 Status:
 
-PLANNING / ARCHITECTURE REVIEW
+ARCHITECTURE APPROVED — READY FOR KNOWLEDGE DATA MODEL
 
 The Knowledge foundation and first production browse slice are complete. Further Knowledge implementation must continue from the established architecture and real data model.
 
@@ -28,7 +28,11 @@ GitHub is the single source of truth.
 
 Current Main Commit
 
-6c5ee5f — feat(knowledge): complete laboratory test draft editing
+269a043 — feat(knowledge): add secure review detail
+
+Current repository note:
+
+The latest committed state is 269a043. Knowledge Review/Publish frontend changes are currently present locally and must be committed after final verification.
 
 Development Environment
 
@@ -734,3 +738,482 @@ Primary candidates:
 4. Search after validating real Knowledge data
 
 No new implementation should begin until the next capability and its architecture are explicitly selected.
+
+
+---
+
+# Master Application Architecture — September 2026
+
+## Status
+
+APPROVED
+
+The MyLab application architecture now treats the Dashboard as the primary application portal and keeps each major domain independently responsible for its own experience and business logic.
+
+## Application Portal
+
+The Dashboard is the main entry point for authenticated users.
+
+It is not a Knowledge page and does not own Knowledge business logic.
+
+The Dashboard provides entry points and future widgets for:
+
+- Knowledge
+- Learning
+- AI
+- Community
+- Economy
+- Account
+- Settings
+- Help
+
+The Dashboard is designed to remain extensible as new MyLab domains are introduced.
+
+## Domain Separation
+
+The application is organized around independent domains:
+
+- Knowledge
+- Learning
+- AI
+- Community
+- Economy
+- Account
+- Settings
+- Help
+- Legal
+
+Knowledge itself is divided into:
+
+- Knowledge Experience
+- Knowledge Management
+- Knowledge Review
+
+The user-facing Knowledge Experience must not be mixed with administrative authoring or review interfaces.
+
+## Master Navigation Principle
+
+The approved navigation model is:
+
+Dashboard
+→ Domain
+→ Domain Experience
+
+For Knowledge:
+
+Dashboard
+→ Knowledge
+→ Knowledge Type
+→ Category
+→ Subcategory
+→ Knowledge Detail
+→ Language
+→ Access
+
+---
+
+# Knowledge Experience Architecture — Approved
+
+## Knowledge Catalog
+
+Knowledge is presented to ordinary users as a structured laboratory knowledge catalog, not as one large generic listing.
+
+The Knowledge home provides major entry points such as:
+
+- Laboratory Tests
+- Pathogens
+- Equipment
+- Procedures
+- References
+- Educational Content
+
+Each Knowledge type may have its own taxonomy structure.
+
+## Laboratory Tests
+
+Example structure:
+
+Laboratory Tests
+→ Hematology
+→ Clinical Chemistry
+→ Immunology
+→ Microbiology
+→ Blood Bank
+→ Coagulation
+→ Hormones
+→ other approved categories
+
+## Pathogens
+
+Example structure:
+
+Pathogens
+→ Bacteria
+→ Gram Positive
+→ Gram Negative
+
+and:
+
+Pathogens
+→ Viruses
+→ Fungi
+→ Parasites
+→ other approved categories
+
+The taxonomy must therefore support hierarchical structures and must not assume that every Knowledge type uses the same number of category levels.
+
+## Knowledge Detail
+
+The user-facing Knowledge Detail page is:
+
+`/[locale]/knowledge/[id]`
+
+It is the central presentation page for published Knowledge.
+
+It must support:
+
+- common Knowledge information;
+- type-specific sections;
+- language selection;
+- access control;
+- Free content;
+- Premium preview;
+- full Premium content for entitled users;
+- related Knowledge in future iterations.
+
+---
+
+# Access Architecture — Approved
+
+Free/Premium is not a publication status.
+
+Publication lifecycle and access level are separate concepts.
+
+Publication status:
+
+- draft
+- published
+- archived
+
+Access:
+
+- free
+- premium
+
+## Access Rules
+
+Free:
+
+User
+→ Full Content
+
+Premium + Entitled:
+
+User
+→ Entitlement
+→ Full Content
+
+Premium + Not Entitled:
+
+User
+→ Preview
+→ Unlock / Purchase / Subscribe
+
+Premium content must not be sent to an unauthorized client and hidden only through UI logic.
+
+Authorization and entitlement checks must happen through the trusted server/database boundary.
+
+---
+
+# Economy Boundary — Approved
+
+MyLab uses an internal application currency as part of the Economy domain.
+
+The Knowledge domain does not own wallets, balances, transactions, or currency logic.
+
+The conceptual relationship is:
+
+Knowledge
+→ Access Policy
+→ Offer
+→ Economy
+→ MyLab Currency
+→ Entitlement
+→ User
+
+The internal MyLab Currency is distinct from external real-world currencies.
+
+External currencies may be introduced later only for external payment processing where required. They are not the application's internal Knowledge pricing currency.
+
+The Economy architecture must remain reusable for:
+
+- Knowledge
+- Courses
+- AI features
+- future services
+- bundles
+- subscriptions
+- rewards
+- other monetized features
+
+---
+
+# Translation Architecture — Approved
+
+A Knowledge Item represents one logical piece of MyLab knowledge.
+
+Arabic and English are language representations of the same Knowledge identity.
+
+Conceptually:
+
+Knowledge Item
+→ Arabic Version
+→ English Version
+
+Translations must not create unrelated duplicate Knowledge Items.
+
+## Translation Lifecycle
+
+Translation:
+
+Draft
+→ Translation Review
+→ Approved
+→ Published
+
+Gemini may generate or assist with translation drafts.
+
+Gemini is not the final authority for medical translation.
+
+Human review and approval are required before publication.
+
+## Translation Synchronization
+
+When a source version changes, existing translations must be able to indicate that they require updating.
+
+A translation must not silently be considered current when its source content has changed.
+
+---
+
+# User-Facing vs Administrative Knowledge
+
+## User Experience
+
+User-facing:
+
+- Knowledge Home
+- Knowledge Type
+- Category
+- Subcategory
+- Knowledge Detail
+- Free/Premium access experience
+
+## Management
+
+Administrative:
+
+- Knowledge Management
+- Authoring
+- Editing
+- Versioning
+
+## Review
+
+Administrative/reviewer:
+
+- Review Queue
+- Review Detail
+- Reject
+- Approve
+- Publish
+
+These layers must remain separated in routing, authorization, UI, and server-side data access.
+
+---
+
+# Master Application Sitemap — Approved
+
+## Public
+
+- Landing
+- About
+- Features
+- Pricing
+- FAQ
+- Contact
+- Privacy Policy
+- Terms & Conditions
+- Cookie Policy
+- Medical Disclaimer
+
+## Authentication
+
+- Login
+- Register
+- Forgot Password
+- Reset Password
+
+## Authenticated Portal
+
+- Dashboard
+
+## Core Domains
+
+- Knowledge
+- Learning
+- AI
+- Community
+- Economy
+
+## User
+
+- Account
+- Profile
+- Saved Content
+- Purchases
+- Subscription
+- Security
+
+## Settings
+
+- General
+- Appearance
+- Language
+- Notifications
+- Privacy
+- Security
+
+## Help
+
+- How MyLab Works
+- Getting Started
+- Help Center
+- FAQ
+- Contact
+- Report a Problem
+
+## Legal
+
+- Privacy
+- Terms
+- Cookies
+- Subscription Terms
+- Refund Policy
+- Medical Disclaimer
+
+## Internal Knowledge Operations
+
+- Knowledge Management
+- Knowledge Review
+
+All applicable pages must support the existing Arabic/English localization architecture.
+
+---
+
+# Navigation Architecture Rule
+
+Internal navigation must use the project's existing locale-safe i18n navigation layer wherever applicable.
+
+Avoid manually constructing locale-prefixed URLs inside application components when the existing navigation abstraction can provide the route.
+
+This prevents inconsistent `/ar` and `/en` routing and avoids repeating the previously encountered Review navigation problem.
+
+---
+
+# Current Knowledge Implementation State
+
+Completed:
+
+- Knowledge database foundation
+- Knowledge read layer
+- First Knowledge browse slice
+- Knowledge authoring
+- Laboratory Test draft creation
+- Laboratory Test draft editing
+- Knowledge versioning
+- Knowledge review workflow
+- Review Queue
+- Secure Review Detail
+- Approve
+- Reject
+- Publish
+- Review-state edit lock
+- Arabic/English Knowledge UI
+- Production verification for the implemented slices
+
+Current integration test state:
+
+- The original laboratory test integration record was successfully published through the full workflow.
+- The published integration record must not be mutated merely to test another workflow state.
+- A separate draft was created for rejection testing.
+- Rejection E2E remains the next workflow verification item if still required.
+
+---
+
+# Current Gate
+
+The Knowledge Experience architecture and Master Application Navigation are approved.
+
+The next architecture gate is:
+
+## Knowledge Data Model v1
+
+The Data Model must cover:
+
+- Knowledge identity
+- Knowledge types
+- hierarchical taxonomy
+- versions
+- language representations
+- translation lifecycle
+- publication lifecycle
+- access policy
+- Free/Premium
+- offers
+- entitlements
+- Economy boundary
+- MyLab Currency boundary
+- secure content delivery
+- RLS
+- RPC/service boundaries
+- audit requirements
+- indexes and constraints
+
+No production schema migration should be created until this model is explicitly reviewed and approved.
+
+---
+
+# Next Implementation Sequence
+
+1. Knowledge Data Model v1
+2. Reconcile the model with the existing Knowledge schema
+3. Define required migrations
+4. Define secure read/access boundaries
+5. Define Knowledge Experience routes
+6. Implement Knowledge Catalog
+7. Implement Knowledge Detail
+8. Implement Generic Knowledge Form
+9. Standardize Knowledge UI with Brand → Tokens → CSS Variables → shadcn/ui
+10. Review Knowledge image architecture
+11. Complete navigation linking
+12. Complete E2E verification
+13. Documentation update
+14. Commit
+15. Push
+16. Close the phase
+
+---
+
+# Architecture Principles Preserved
+
+- Production-ready implementation only.
+- No prototypes or temporary solutions.
+- Architecture first.
+- Database before dependent UI.
+- Security before sensitive features.
+- GitHub is the source of truth.
+- Supabase migrations are version-controlled.
+- Client UI is never the security boundary.
+- Domain boundaries must remain explicit.
+- Economy must remain independent from Knowledge.
+- Translation must remain independent from Knowledge identity while staying linked to it.

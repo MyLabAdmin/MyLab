@@ -55,11 +55,11 @@ Webpack/WASM cache warnings may appear but do not prevent a successful productio
 
 ## Current Phase
 
-**Knowledge Content & Discovery**
+**Knowledge Experience & Master Application Architecture**
 
 Status:
 
-**Ready to begin after Phase 2.8 closure**
+**ARCHITECTURE APPROVED — READY FOR KNOWLEDGE DATA MODEL**
 
 ## Completed Phases
 
@@ -330,3 +330,268 @@ Preserve:
 - bilingual taxonomy;
 - version-controlled migrations;
 - production-ready implementation standards.
+
+
+---
+
+# Current Handoff — Master Application & Knowledge Experience Architecture
+
+**Status:** APPROVED
+
+## Master Application Decision
+
+The MyLab Dashboard is the primary portal for all current and future application domains.
+
+The Dashboard does not own domain business logic.
+
+Current/future domain entry points:
+
+- Knowledge
+- Learning
+- AI
+- Community
+- Economy
+
+Additional application areas:
+
+- Account
+- Settings
+- Help
+- Legal
+
+## Knowledge Experience Decision
+
+Knowledge is presented to ordinary users as a structured catalog.
+
+The primary user journey is:
+
+Dashboard
+→ Knowledge
+→ Type
+→ Category
+→ Subcategory
+→ Knowledge Detail
+→ Language
+→ Access
+
+Major Knowledge types:
+
+- Laboratory Tests
+- Pathogens
+- Equipment
+- Procedures
+- References
+- Educational Content
+
+Laboratory Tests and Pathogens have distinct hierarchical taxonomies.
+
+The taxonomy model must therefore support arbitrary approved hierarchy depth rather than a fixed type/subcategory schema.
+
+## Knowledge Layer Separation
+
+Knowledge is divided into:
+
+### Experience
+
+For ordinary users:
+
+- discovery
+- catalog browsing
+- category browsing
+- detail
+- access-controlled content
+
+### Management
+
+For authorized staff:
+
+- authoring
+- editing
+- versioning
+
+### Review
+
+For authorized reviewers:
+
+- queue
+- review detail
+- reject
+- approve
+- publish
+
+Do not mix these layers in the same user-facing route or authorization boundary.
+
+## Access Model
+
+Publication status and access level are separate.
+
+Publication:
+
+- draft
+- published
+- archived
+
+Access:
+
+- free
+- premium
+
+Rules:
+
+- Free → full content.
+- Premium + entitlement → full content.
+- Premium without entitlement → preview + unlock path.
+
+Premium full content must not be exposed to unauthorized clients.
+
+## Economy
+
+MyLab has an internal application currency belonging to the Economy domain.
+
+Knowledge does not directly own:
+
+- wallet
+- balance
+- transactions
+- currency
+- payment processing
+
+The conceptual relationship is:
+
+Knowledge
+→ Access Policy
+→ Offer
+→ Economy
+→ MyLab Currency
+→ Entitlement
+→ User
+
+The internal MyLab Currency is not the same concept as external payment currencies.
+
+## Translation
+
+One Knowledge Item represents one logical Knowledge identity.
+
+Arabic and English are language representations of the same Knowledge.
+
+Translation lifecycle:
+
+Draft
+→ Translation Review
+→ Approved
+→ Published
+
+Gemini can assist with translation drafts.
+
+Human review remains required for final medical translation publication.
+
+When the source changes, translations must be able to become stale/require update.
+
+## Master Sitemap
+
+### Public
+
+- Landing
+- About
+- Features
+- Pricing
+- FAQ
+- Contact
+- Privacy
+- Terms & Conditions
+- Cookies
+- Medical Disclaimer
+
+### Auth
+
+- Login
+- Register
+- Forgot Password
+- Reset Password
+
+### Authenticated
+
+- Dashboard
+- Knowledge
+- Learning
+- AI
+- Community
+- Economy
+- Account
+- Settings
+- Help
+
+### Knowledge Operations
+
+- Knowledge Management
+- Knowledge Review
+
+All applicable pages support Arabic and English through the existing i18n architecture.
+
+## Navigation Rule
+
+Use the existing locale-safe i18n navigation abstraction for internal application navigation.
+
+Avoid manually constructing locale-prefixed URLs when the project's navigation abstraction can provide the route.
+
+## Current Repository State
+
+Latest known committed main state:
+
+`269a043 — feat(knowledge): add secure review detail`
+
+There are currently local, uncommitted Knowledge Review/Publish frontend changes that must be verified and committed before this work is considered closed.
+
+The working tree must be synchronized with `origin/main` at the end of the implementation phase.
+
+## Knowledge Workflow State
+
+The original integration Knowledge Item has completed the full workflow and is published.
+
+It must not be mutated for additional workflow testing.
+
+A separate draft Knowledge Item was created for rejection workflow testing.
+
+## Next Gate
+
+The next architectural deliverable is:
+
+**Knowledge Data Model v1**
+
+It must define:
+
+- Knowledge identity
+- types
+- hierarchical taxonomy
+- versions
+- language representations
+- translation lifecycle
+- publication lifecycle
+- access policy
+- Free/Premium
+- offers
+- entitlements
+- Economy boundary
+- MyLab Currency boundary
+- secure content delivery
+- RLS
+- RPC/service boundaries
+- audit
+- constraints
+- indexes
+
+No new production database schema migration should be created until this model is reviewed and approved.
+
+## Execution Protocol
+
+Continue using:
+
+Decision
+→ Action
+→ Verification
+→ Documentation
+→ Commit
+→ Push
+→ Close phase
+
+No prototypes, temporary fixes, or undocumented schema changes.
