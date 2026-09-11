@@ -22,6 +22,13 @@ export const GENERIC_KNOWLEDGE_ITEM_TYPES = [
 export type GenericKnowledgeItemType =
   (typeof GENERIC_KNOWLEDGE_ITEM_TYPES)[number]
 
+export const KNOWLEDGE_LOCALES = ['ar', 'en'] as const
+export type KnowledgeLocale = (typeof KNOWLEDGE_LOCALES)[number]
+
+export const KNOWLEDGE_ACCESS_TIERS = ['free', 'premium'] as const
+export type KnowledgeAccessTier =
+  (typeof KNOWLEDGE_ACCESS_TIERS)[number]
+
 export const KNOWLEDGE_ITEM_STATUSES = [
   'draft',
   'published',
