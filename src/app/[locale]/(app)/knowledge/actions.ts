@@ -5,6 +5,11 @@ import {
   type CreateKnowledgeItemResult,
 } from '@/lib/knowledge/authoring'
 import {
+  createGenericKnowledgeItem,
+  updateGenericKnowledgeDraft,
+  type GenericKnowledgeAuthoringResult,
+} from '@/lib/knowledge/generic-knowledge-authoring'
+import {
   createLaboratoryTest,
   updateLaboratoryTestDraft,
   type CreateLaboratoryTestInput,
@@ -12,8 +17,9 @@ import {
 } from '@/lib/knowledge/laboratory-test-authoring'
 import {
   approveKnowledgeVersion,
-  rejectKnowledgeVersion,
   publishKnowledgeVersion,
+  rejectKnowledgeVersion,
+  submitKnowledgeVersionForReview,
   type KnowledgeReviewActionResult,
 } from '@/lib/knowledge/review-actions'
 
@@ -23,12 +29,24 @@ export async function createKnowledgeItemAction(
   return createKnowledgeItem(input)
 }
 
+
+export async function createGenericKnowledgeItemAction(
+  input: unknown,
+): Promise<GenericKnowledgeAuthoringResult> {
+  return createGenericKnowledgeItem(input)
+}
+
+export async function updateGenericKnowledgeDraftAction(
+  input: unknown,
+): Promise<GenericKnowledgeAuthoringResult> {
+  return updateGenericKnowledgeDraft(input)
+}
+
 export async function createLaboratoryTestAction(
   input: CreateLaboratoryTestInput,
 ): Promise<CreateLaboratoryTestResult> {
   return createLaboratoryTest(input)
 }
-
 
 export async function updateLaboratoryTestDraftAction(
   input: unknown,
@@ -36,6 +54,11 @@ export async function updateLaboratoryTestDraftAction(
   return updateLaboratoryTestDraft(input)
 }
 
+export async function submitKnowledgeVersionForReviewAction(
+  knowledgeItemVersionId: string,
+): Promise<KnowledgeReviewActionResult> {
+  return submitKnowledgeVersionForReview(knowledgeItemVersionId)
+}
 
 export async function approveKnowledgeVersionAction(
   knowledgeItemVersionId: string,
@@ -50,7 +73,6 @@ export async function rejectKnowledgeVersionAction(
 ): Promise<KnowledgeReviewActionResult> {
   return rejectKnowledgeVersion(knowledgeItemVersionId, note)
 }
-
 
 export async function publishKnowledgeVersionAction(
   knowledgeItemVersionId: string,

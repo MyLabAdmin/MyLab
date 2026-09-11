@@ -1,6 +1,7 @@
 export const KNOWLEDGE_ITEM_TYPES = [
   'test',
   'laboratory_test',
+  'pathogen',
   'procedure',
   'equipment',
   'reference',
@@ -11,6 +12,7 @@ export type KnowledgeItemType = (typeof KNOWLEDGE_ITEM_TYPES)[number]
 
 export const GENERIC_KNOWLEDGE_ITEM_TYPES = [
   'test',
+  'pathogen',
   'procedure',
   'equipment',
   'reference',
@@ -37,6 +39,16 @@ export const KNOWLEDGE_VERSION_STATUSES = [
 export type KnowledgeVersionStatus =
   (typeof KNOWLEDGE_VERSION_STATUSES)[number]
 
+export const KNOWLEDGE_REVIEW_STATUSES = [
+  'draft',
+  'pending_review',
+  'approved',
+  'rejected',
+] as const
+
+export type KnowledgeReviewStatus =
+  (typeof KNOWLEDGE_REVIEW_STATUSES)[number]
+
 export const KNOWLEDGE_REFERENCE_TYPES = [
   'book',
   'journal',
@@ -60,6 +72,7 @@ export type KnowledgeItemVersion = {
   content: string | null
   pre_test_preparation: string | null
   status: KnowledgeVersionStatus
+  review_status: KnowledgeReviewStatus
   created_by: string
   created_at: string
   published_at: string | null

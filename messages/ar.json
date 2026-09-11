@@ -86,7 +86,8 @@
       "procedure": "إجراء مخبري",
       "equipment": "معدات مخبرية",
       "reference": "مرجع",
-      "educational": "محتوى تعليمي"
+      "educational": "محتوى تعليمي",
+      "pathogen": "ممرض"
     },
     "laboratoryTest": {
       "title": "إنشاء اختبار مخبري",
@@ -151,6 +152,8 @@
         "addMethod": "إضافة طريقة",
         "addInterpretation": "إضافة تفسير",
         "remove": "حذف",
+        "submitForReview": "إرسال للمراجعة",
+        "resubmitForReview": "إعادة الإرسال للمراجعة",
         "saveDraft": "حفظ كمسودة",
         "saving": "جارٍ الحفظ...",
         "cancel": "إلغاء"
@@ -204,18 +207,86 @@
       "specimen": "العينة",
       "method": "الطريقة",
       "publish": "نشر",
-    "approve": "اعتماد",
+      "approve": "اعتماد",
       "reject": "رفض",
       "rejectReason": "سبب الرفض",
       "rejectReasonPlaceholder": "وضح ما الذي يحتاج إلى تصحيح قبل إعادة الإرسال.",
       "approveNote": "ملاحظة المراجعة (اختيارية)",
       "approveNotePlaceholder": "أضف ملاحظة اختيارية حول الاعتماد.",
       "confirmPublish": "تأكيد النشر",
-    "confirmApprove": "تأكيد الاعتماد",
+      "confirmApprove": "تأكيد الاعتماد",
       "confirmReject": "تأكيد الرفض",
       "cancel": "إلغاء",
       "requiredReason": "سبب الرفض مطلوب.",
       "genericError": "تعذر تنفيذ إجراء المراجعة. حاول مرة أخرى."
+    },
+    "generic": {
+      "sections": {
+        "core": {
+          "title": "المعلومات الأساسية",
+          "description": "أدخل المعلومات الأساسية لهذا العنصر المعرفي.",
+          "titleLabel": "العنوان",
+          "titlePlaceholder": "أدخل عنوان العنصر المعرفي",
+          "summary": "الملخص",
+          "summaryPlaceholder": "أدخل ملخصًا مختصرًا",
+          "content": "المحتوى",
+          "contentPlaceholder": "أدخل محتوى العنصر المعرفي"
+        },
+        "taxonomy": {
+          "title": "التصنيف",
+          "description": "ضع العنصر المعرفي ضمن التصنيف المناسب.",
+          "primaryCategory": "التصنيف الرئيسي",
+          "primaryCategoryPlaceholder": "اختر التصنيف الرئيسي",
+          "subcategory": "التصنيف الفرعي",
+          "subcategoryPlaceholder": "اختر التصنيف الفرعي"
+        },
+        "pathogen": {
+          "title": "معلومات العامل الممرض",
+          "description": "أدخل التصنيف العلمي والمعلومات التعريفية.",
+          "scientificName": "الاسم العلمي",
+          "commonName": "الاسم الشائع",
+          "pathogenGroup": "مجموعة العامل الممرض",
+          "genus": "الجنس",
+          "species": "النوع",
+          "strainOrSerotype": "السلالة / النمط المصلي"
+        },
+        "equipment": {
+          "title": "معلومات المعدات",
+          "description": "الوصف",
+          "equipmentCode": "رمز المعدات",
+          "manufacturer": "الشركة المصنعة",
+          "model": "الطراز",
+          "equipmentType": "نوع المعدات",
+          "manufacturerPartNumber": "رقم قطعة الشركة المصنعة",
+          "active": "نشطة"
+        },
+        "procedure": {
+          "title": "معلومات الإجراء",
+          "description": "أدخل المعلومات التعريفية لهذا الإجراء.",
+          "procedureCode": "رمز الإجراء"
+        },
+        "reference": {
+          "title": "معلومات المرجع",
+          "description": "أضف معلومات الاستشهاد الخاصة بهذا العنصر المعرفي.",
+          "referenceType": "نوع المرجع",
+          "citation": "الاستشهاد",
+          "url": "الرابط",
+          "referenceTypePlaceholder": "اختر نوع المرجع",
+          "types": {
+            "book": "كتاب",
+            "journal": "مجلة علمية",
+            "guideline": "دليل إرشادي",
+            "organization": "منظمة",
+            "website": "موقع إلكتروني",
+            "manual": "دليل استخدام",
+            "other": "أخرى"
+          }
+        },
+        "educational": {
+          "title": "المحتوى التعليمي",
+          "description": "استخدم حقول المحتوى الأساسية لتقديم المادة التعليمية."
+        }
+      }
     }
   },
   "dashboard": {

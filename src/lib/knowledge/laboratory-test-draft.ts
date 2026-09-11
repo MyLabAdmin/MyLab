@@ -13,6 +13,7 @@ export type LaboratoryTestDraft = {
   laboratory_test_id: string
   laboratory_test_version_id: string
   version_number: number
+  review_status: 'draft' | 'pending_review' | 'approved' | 'rejected'
   title: string
   subtitle: string | null
   summary: string | null

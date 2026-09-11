@@ -7,9 +7,11 @@ export type KnowledgeReference = {
   reference_type: KnowledgeReferenceType
   title: string
   authors: string | null
+  publisher: string | null
   publication_year: number | null
-  identifier: string | null
+  doi: string | null
   url: string | null
+  citation_text: string | null
 }
 
 export async function getKnowledgeReferences(
@@ -25,9 +27,11 @@ export async function getKnowledgeReferences(
       reference_type,
       title,
       authors,
+      publisher,
       publication_year,
-      identifier,
-      url
+      doi,
+      url,
+      citation_text
     `)
     .eq('knowledge_item_id', knowledgeItemId)
     .order('publication_year', { ascending: false, nullsFirst: false })

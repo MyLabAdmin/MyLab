@@ -6,7 +6,12 @@ import { useRouter } from '@/i18n/navigation'
 import {
   createLaboratoryTestAction,
   updateLaboratoryTestDraftAction,
+  submitKnowledgeVersionForReviewAction,
 } from '@/app/[locale]/(app)/knowledge/actions'
+import {
+  KnowledgeAuthoringActionBar,
+  type KnowledgeAuthoringState,
+} from '@/components/knowledge/KnowledgeAuthoringActionBar'
 import type {
   KnowledgeCategory,
   KnowledgeCategoryOption,
@@ -212,35 +217,31 @@ export function CreateLaboratoryTestForm({
     )
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault()
-
+  async function saveDraft() {
     if (submitting) {
-      return
+      return null
     }
 
     setError(null)
 
     if (!title.trim()) {
       setError(t('validation.testName'))
-      return
+      return null
     }
 
     if (!testCode.trim()) {
       setError(t('validation.testCode'))
-      return
+      return null
     }
 
     if (!primaryCategoryId) {
       setError(t('validation.primaryCategory'))
-      return
+      return null
     }
 
     if (!subcategoryId) {
       setError(t('validation.subcategory'))
-      return
+      return null
     }
 
     if (
@@ -250,7 +251,7 @@ export function CreateLaboratoryTestForm({
       )
     ) {
       setError(t('validation.specimen'))
-      return
+      return null
     }
 
     setSubmitting(true)
@@ -270,52 +271,137 @@ export function CreateLaboratoryTestForm({
         specimens: specimens.map(
           ({ id: _id, ...specimen }) => ({
             ...specimen,
-            specimen_type: specimen.specimen_type.trim(),
-            container: specimen.container?.trim() || null,
+            specimen_type:
+              specimen.specimen_type.trim(),
+            container:
+              specimen.container?.trim() || null,
             handling_instructions:
               specimen.handling_instructions?.trim() || null,
           }),
         ),
-        methods: methods.map(({ id: _id, ...method }) => ({
-          ...method,
-          method_name: method.method_name.trim(),
-          description: method.description?.trim() || null,
-        })),
+        methods: methods.map(
+          ({ id: _id, ...method }) => ({
+            ...method,
+            method_name:
+              method.method_name.trim(),
+            description:
+              method.description?.trim() || null,
+          }),
+        ),
         interpretations: interpretations.map(
           ({ id: _id, ...interpretation }) => ({
             ...interpretation,
-            condition: interpretation.condition.trim(),
+            condition:
+              interpretation.condition.trim(),
             interpretation:
               interpretation.interpretation.trim(),
             clinical_significance:
-              interpretation.clinical_significance?.trim() || null,
-            notes: interpretation.notes?.trim() || null,
+              interpretation.clinical_significance?.trim() ||
+              null,
+            notes:
+              interpretation.notes?.trim() || null,
           }),
-        ),        reference_ranges: referenceRanges.map(
+        ),
+        reference_ranges: referenceRanges.map(
           ({ id: _id, ...range }) => ({
             ...range,
-            specimen_type: range.specimen_type?.trim() || null,
-            method_name: range.method_name?.trim() || null,
-            population_label: range.population_label.trim(),
-            age_unit: range.age_unit?.trim() || null,
-            sex: range.sex?.trim() || null,
+            specimen_type:
+              range.specimen_type?.trim() || null,
+            method_name:
+              range.method_name?.trim() || null,
+            population_label:
+              range.population_label.trim(),
+            age_unit:
+              range.age_unit?.trim() || null,
+            sex:
+              range.sex?.trim() || null,
             unit: range.unit.trim(),
-            notes: range.notes?.trim() || null,
+            notes:
+              range.notes?.trim() || null,
           }),
         ),
       }
 
       if (mode === 'edit' && initialData) {
-        await updateLaboratoryTestDraftAction({
-          laboratory_test_id: initialData.laboratory_test_id,
+        return await updateLaboratoryTestDraftAction({
+          laboratory_test_id:
+            initialData.laboratory_test_id,
           ...payload,
         })
-        router.push('/knowledge?updated=1')
-      } else {
-        await createLaboratoryTestAction(payload)
-        router.push('/knowledge?created=1')
       }
 
+      return await createLaboratoryTestAction(payload)
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : t('validation.generic'),
+      )
+      return null
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
+
+    const result = await saveDraft()
+
+    if (!result) {
+      return
+    }
+
+    if (mode === 'create') {
+      router.push('/knowledge?created=1')
+      router.refresh()
+    }
+  }
+
+  const authoringState: KnowledgeAuthoringState =
+    mode === 'edit' && initialData
+      ? initialData.review_status
+      : 'draft'
+
+  async function handleSubmitForReview() {
+    if (submitting) {
+      return
+    }
+
+    setError(null)
+
+    const result = await saveDraft()
+
+    if (!result) {
+      return
+    }
+
+    const versionId =
+      result.knowledge_item_version_id
+
+    if (!versionId) {
+      setError(t('validation.generic'))
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const submitResult =
+        await submitKnowledgeVersionForReviewAction(
+          versionId,
+        )
+
+      if (!submitResult.success) {
+        throw new Error(
+          submitResult.message ??
+            t('validation.generic'),
+        )
+      }
+
+      router.push('/knowledge?submitted=1')
       router.refresh()
     } catch (submissionError) {
       setError(
@@ -329,7 +415,11 @@ export function CreateLaboratoryTestForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form
+      onSubmit={handleSubmit}
+      data-knowledge-authoring-form="true"
+      className="space-y-8"
+    >
       {error ? (
         <div
           role="alert"
@@ -867,26 +957,22 @@ export function CreateLaboratoryTestForm({
         </div>
       </section>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-neutral-200 pt-6 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={() => router.push('/knowledge')}
-          disabled={submitting}
-          className="rounded-lg border border-neutral-300 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {t('actions.cancel')}
-        </button>
-
+      <KnowledgeAuthoringActionBar
+        state={authoringState}
+        submitting={submitting}
+        onCancel={() => router.push('/knowledge')}
+        onSubmit={handleSubmitForReview}
+      >
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg border border-primary-600 bg-white px-5 py-2.5 text-sm font-medium text-primary-700 shadow-sm transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {submitting
             ? t('actions.saving')
             : t('actions.saveDraft')}
         </button>
-      </div>
+      </KnowledgeAuthoringActionBar>
     </form>
   )
 }

@@ -10,371 +10,99 @@ Alfa
 
 ## Repository
 
-git@github.com:MyLabAdmin/MyLab.git
+`git@github.com:MyLabAdmin/MyLab.git`
 
 GitHub is the single source of truth.
 
+## Current Phase
+
+**Knowledge Consolidation & Completion**
+
+## Current Objective
+
+Complete the Knowledge domain as a coherent production-ready system.
+
+Immediate objective:
+
+**Shared Knowledge Image Service**
+
+Then:
+
+1. Generic Knowledge Form
+2. Laboratory Test Form integration
+3. Creation menu
+4. Listing/filtering/search
+5. Knowledge Detail
+6. Access boundary
+7. Localization/navigation consistency
+8. Full E2E verification
+9. Documentation closure
+
 ## Development Environment
 
-- Termux on Android
+- Termux on Android ARM64
 - Git
 - GitHub CLI
 - Node.js
 - npm
 
-## Current Stack
+Production verification:
+
+`npm run build`
+
+The project uses:
+
+`next build --webpack`
+
+for production builds in the current Termux environment.
+
+## Core Stack
 
 - Next.js 16.3.0
-- React 19.2.8
+- React 19
 - TypeScript
-- ESLint
-- Tailwind CSS 4
+- Tailwind CSS
+- shadcn/ui architecture
+- CSS variables
+- Design tokens
 - App Router
-- next-intl 4.13.4
+- next-intl
 - Supabase PostgreSQL
 - Supabase Auth
-- Supabase Storage
+- Supabase Storage where applicable
 - ImageKit
-- Google Gemini — planned integration
+- Google Gemini — planned
+- GitHub
 
-## Android Build Constraint
+## Architecture Principles
 
-The project runs in Termux on Android ARM64.
+Development follows:
 
-Production verification uses:
+**Decision → Action → Verification → Documentation → Commit → Push → Close**
 
-npm run build
+Rules:
 
-with:
+- production-ready implementation only;
+- no prototypes;
+- no temporary architecture;
+- database before dependent domain UI;
+- security before sensitive features;
+- client is never the security boundary;
+- version all database changes;
+- preserve established domain boundaries;
+- complete and verify each step before starting the next.
 
-next build --webpack
+## Knowledge Architecture
 
-Turbopack is not used for production builds in the current Android environment.
+Knowledge is owned by MyLab.
 
-Webpack/WASM cache warnings may appear but do not prevent a successful production build.
+Ordinary users read published Knowledge.
 
-## Current Phase
+Authorized staff manage Knowledge.
 
-**Knowledge Experience & Master Application Architecture**
+Authorized reviewers review and publish Knowledge.
 
-Status:
-
-**ARCHITECTURE APPROVED — READY FOR KNOWLEDGE DATA MODEL**
-
-## Completed Phases
-
-### Phase 2.5 — Application Shell
-
-CLOSED
-
-Completed and merged into `main`.
-
-### Phase 2.6 — Domain Architecture
-
-Architecture defined across:
-
-- Identity
-- Knowledge
-- Courses
-- AI
-- Community
-- Economy
-- Subscription
-- Verification
-- Administration
-
-### Phase 2.7 — Identity & Authorization Foundation
-
-CLOSED
-
-Completed:
-
-- Identity authorization foundation
-- Account status architecture
-- Staff roles
-- Capability-based authorization
-- Course Creator capability
-- RLS requirements
-- Server-side authorization direction
-- Reconciliation migration
-
-Migration:
-
-`20260827184235_identity_authorization_foundation_reconciliation.sql`
-
-### Repository Reconciliation
-
-Completed:
-
-- Local Supabase migration inventory verified.
-- Git-tracked migration inventory verified.
-- Local and Git migration filenames match.
-- Temporary `supabase/.temp` directory removed.
-- Supabase CLI `db pull` identified as unavailable without project linking.
-- Reconciliation state documented.
-- Documentation committed and pushed to `main`.
-
-Latest repository commit:
-
-`169ed8e docs: record Supabase reconciliation state`
-
-## Phase 2.8 — Knowledge Domain Foundation & First Browse Slice
-
-**CLOSED**
-
-Completed:
-
-- Knowledge database foundation established and reconciled.
-- Knowledge ownership and read-access architecture preserved.
-- Knowledge RLS/security boundaries verified.
-- Server-side Knowledge read layer implemented.
-- Published Knowledge item retrieval implemented.
-- Knowledge categories and references read layers implemented.
-- Production Knowledge browse route implemented.
-- Arabic and English UI implemented.
-- Empty and error states implemented.
-- Desktop and mobile Knowledge navigation implemented.
-- Light Theme established as the current official application theme.
-- Automatic system Dark Mode override removed.
-- Navigation contrast issue resolved.
-- Production build verified.
-- TypeScript verification passed.
-- ESLint verification passed with 0 errors and one pre-existing unrelated warning.
-- `git diff --check` passed.
-- `/ar/knowledge` verified.
-- `/en/knowledge` verified.
-
-Implementation commits:
-
-- `3d4d363` — `feat(knowledge): add knowledge read layer`
-- `03ae3f7` — `feat(knowledge): add knowledge browse UI`
-
-Phase 2.8 is officially CLOSED.
-
-## Current Knowledge Foundation
-
-The live Supabase environment contains the following Knowledge tables:
-
-- `knowledge_categories`
-- `knowledge_items`
-- `knowledge_item_versions`
-- `knowledge_item_categories`
-- `knowledge_references`
-
-RLS is enabled on these Knowledge tables.
-
-The repository does not yet contain a dedicated Knowledge migration representing this existing live schema.
-
-## Phase 2.8 Objective
-
-Reconcile the existing live Knowledge database foundation with GitHub before implementing Knowledge application features.
-
-Required areas:
-
-- entities;
-- relationships;
-- ownership;
-- constraints;
-- indexes;
-- triggers;
-- grants;
-- RLS;
-- RLS policies;
-- authorization functions;
-- audit requirements;
-- versioning model.
-
-## Architecture Decisions
-
-MyLab Knowledge is owned by MyLab.
-
-Ordinary users read Knowledge but do not directly modify official Knowledge.
-
-Knowledge administration is restricted to authorized administrative capabilities.
-
-The client is never treated as the security boundary.
-
-Database authorization and server-side authorization must enforce sensitive operations.
-
-## Critical Rule
-
-Do not recreate or redesign the existing Knowledge schema blindly.
-
-The existing live schema must first be inspected and represented accurately in a canonical version-controlled migration.
-
-The database foundation and authorization model were reconciled before the Knowledge browse slice was implemented. Future Knowledge work must continue from the established schema, security model, and read layer.
-
-## Phase 2.8 Closure
-
-The required Phase 2.8 workflow has been completed for the current Knowledge foundation and first production browse slice.
-
-The phase is closed and must not be reopened for cosmetic or incremental changes.
-
-## Current Repository State
-
-Expected branch:
-
-`main`
-
-Expected relationship:
-
-`main` synchronized with `origin/main`
-
-Working tree should remain clean after each completed phase.
-
-## Next Action
-
-Begin **Knowledge Content & Discovery**.
-
-Planned sequence:
-
-1. Validate real Knowledge data.
-2. Establish production Category UI.
-3. Implement production Knowledge cards.
-4. Introduce Search when justified by real data and use cases.
-5. Implement Knowledge Detail.
-
-Do not introduce Search or additional discovery complexity before validating the available real Knowledge data and its actual product use cases.
-
-## Communication Protocol
-
-Alfa is the project owner and final decision authority.
-
-Execution should remain:
-
-**Decision → Action → Verification → Commit → Push → Close phase**
-
-Avoid prototypes, temporary fixes, or undocumented schema changes.
-
-## Authorization Review Closure — September 2026
-
-Authorization Review is complete and verified against the live Supabase project.
-
-The production authorization boundary now uses public RPC wrappers backed by the private authorization functions. The three authorization RPCs are executable by `authenticated` and `service_role`, not by `anon`, and use an empty function `search_path` for hardening.
-
-Verified functions:
-- `current_user_is_active()`
-- `current_user_has_role(public.staff_role)`
-- `current_user_has_capability(text)`
-
-The existing roles and capability model were preserved. No new Knowledge capability keys were invented.
-
-Local implementation:
-- `src/lib/authorization/types.ts`
-- `src/lib/authorization/service.ts`
-- `src/lib/authorization/index.ts`
-
-Validation:
-- ESLint: 0 errors; one pre-existing unrelated warning in `ProfileCompletionForm.tsx`.
-- Production build: successful.
-- TypeScript: successful.
-- `git diff --check`: successful.
-
-The next implementation phase is Knowledge Authoring & Versioned Publishing, using the established authorization boundary and the current database-compatible lifecycle:
-Create → Draft → Edit/New Version → Publish → Previous Version = Superseded.
-
----
-
-## Handoff — Knowledge Authoring Migration Reconciliation
-
-**Status:** CLOSED
-
-### Current State
-Knowledge authoring and versioned publishing database boundaries are reconciled with Production and committed to GitHub.
-
-### Production-aligned migrations
-- `20260831183314_knowledge_domain_reconciliation.sql`
-- `20260903183552_knowledge_version_images.sql`
-- `20260903183751_knowledge_authoring_write_boundary.sql`
-- `20260903183816_knowledge_authoring_archive_boundary.sql`
-- `20260903185653_harden_knowledge_write_privileges.sql`
-- `20260903185703_remove_knowledge_anon_table_access.sql`
-
-### Authorization
-Knowledge writes are restricted to authenticated active users with:
-- `knowledge_manager`
-- `super_admin`
-
-Direct Knowledge table DML is privilege-restricted. Authorized writes use RPC boundaries, with RLS remaining defense-in-depth.
-
-### Image Architecture
-Knowledge images are physically stored in ImageKit. Supabase stores image metadata and version relationships in `knowledge_version_images`.
-
-### Approved Workflow
-`Create → Draft → Edit/New Version → Publish → Superseded`
-
-### Git
-Latest commit:
-
-`6047dc1 feat(knowledge): reconcile authoring and publishing migrations`
-
-`main` and `origin/main` are synchronized and the working tree was clean before documentation changes.
-
-### Open Domain Rule
-`archive_knowledge_item()` currently permits archiving any non-archived Knowledge item. This remains an explicit domain-rule/audit point and was not changed during this phase.
-
-### Next Step
-Phase 2.9 is complete.
-
-Current repository commit:
-`6c5ee5f — feat(knowledge): complete laboratory test draft editing`
-
-The next session must begin with an explicit architecture decision for the next Knowledge capability.
-
-Preserve:
-
-- existing authorization boundary;
-- RPC-based sensitive mutations;
-- atomic draft updates;
-- draft/published separation;
-- bilingual taxonomy;
-- version-controlled migrations;
-- production-ready implementation standards.
-
-
----
-
-# Current Handoff — Master Application & Knowledge Experience Architecture
-
-**Status:** APPROVED
-
-## Master Application Decision
-
-The MyLab Dashboard is the primary portal for all current and future application domains.
-
-The Dashboard does not own domain business logic.
-
-Current/future domain entry points:
-
-- Knowledge
-- Learning
-- AI
-- Community
-- Economy
-
-Additional application areas:
-
-- Account
-- Settings
-- Help
-- Legal
-
-## Knowledge Experience Decision
-
-Knowledge is presented to ordinary users as a structured catalog.
-
-The primary user journey is:
-
-Dashboard
-→ Knowledge
-→ Type
-→ Category
-→ Subcategory
-→ Knowledge Detail
-→ Language
-→ Access
-
-Major Knowledge types:
+Major types:
 
 - Laboratory Tests
 - Pathogens
@@ -383,215 +111,409 @@ Major Knowledge types:
 - References
 - Educational Content
 
-Laboratory Tests and Pathogens have distinct hierarchical taxonomies.
+Laboratory Test authoring remains specialized.
 
-The taxonomy model must therefore support arbitrary approved hierarchy depth rather than a fixed type/subcategory schema.
+Other types use the Generic Knowledge Form architecture.
 
-## Knowledge Layer Separation
-
-Knowledge is divided into:
+## Knowledge Separation
 
 ### Experience
 
-For ordinary users:
+Ordinary users:
 
 - discovery
-- catalog browsing
-- category browsing
+- catalog
+- categories
+- search
 - detail
-- access-controlled content
+- language
+- access
 
 ### Management
 
-For authorized staff:
+Authorized staff:
 
-- authoring
-- editing
-- versioning
+- create
+- edit
+- draft
+- version
+- images
 
 ### Review
 
-For authorized reviewers:
+Authorized reviewers:
 
 - queue
-- review detail
+- detail
 - reject
 - approve
 - publish
 
-Do not mix these layers in the same user-facing route or authorization boundary.
+These layers remain separate.
 
-## Access Model
+## Knowledge Lifecycle
 
-Publication status and access level are separate.
+`Draft → Pending Review → Rejected → Draft → Pending Review → Approved → Published`
 
-Publication:
+Published versions are immutable.
+
+Rejected versions remain editable and unpublished.
+
+Rejection requires a reason.
+
+## Versioning
+
+A Knowledge Item represents logical identity.
+
+Versions represent revisions.
+
+Version status:
 
 - draft
 - published
-- archived
+- superseded
 
-Access:
+Review status:
 
-- free
-- premium
+- draft
+- pending_review
+- approved
+- rejected
 
-Rules:
-
-- Free → full content.
-- Premium + entitlement → full content.
-- Premium without entitlement → preview + unlock path.
-
-Premium full content must not be exposed to unauthorized clients.
-
-## Economy
-
-MyLab has an internal application currency belonging to the Economy domain.
-
-Knowledge does not directly own:
-
-- wallet
-- balance
-- transactions
-- currency
-- payment processing
-
-The conceptual relationship is:
-
-Knowledge
-→ Access Policy
-→ Offer
-→ Economy
-→ MyLab Currency
-→ Entitlement
-→ User
-
-The internal MyLab Currency is not the same concept as external payment currencies.
+These states are separate.
 
 ## Translation
 
-One Knowledge Item represents one logical Knowledge identity.
+One Knowledge Item has Arabic and English representations.
 
-Arabic and English are language representations of the same Knowledge.
+Translations belong to a source version.
 
 Translation lifecycle:
 
-Draft
-→ Translation Review
-→ Approved
-→ Published
+`Draft → Review → Approved → Published`
 
-Gemini can assist with translation drafts.
+Gemini may assist with translation drafts.
 
-Human review remains required for final medical translation publication.
+Human medical review is required before final publication.
 
-When the source changes, translations must be able to become stale/require update.
+## Knowledge Taxonomy
 
-## Master Sitemap
+Taxonomy is hierarchical and extensible.
 
-### Public
+Do not hard-code a fixed depth.
 
-- Landing
-- About
-- Features
-- Pricing
-- FAQ
-- Contact
-- Privacy
-- Terms & Conditions
-- Cookies
-- Medical Disclaimer
+The common experience is:
 
-### Auth
+`Type → Category → Subcategory → Detail`
 
-- Login
-- Register
-- Forgot Password
-- Reset Password
+Different Knowledge types may use different hierarchy depth.
 
-### Authenticated
+## Knowledge Access
 
-- Dashboard
-- Knowledge
-- Learning
-- AI
-- Community
-- Economy
-- Account
-- Settings
-- Help
+Publication and access are separate.
 
-### Knowledge Operations
+Access tiers:
 
-- Knowledge Management
-- Knowledge Review
+- FREE
+- PREMIUM
 
-All applicable pages support Arabic and English through the existing i18n architecture.
+Rules:
 
-## Navigation Rule
+- FREE → full content.
+- PREMIUM + entitlement → full content.
+- PREMIUM without entitlement → preview only.
 
-Use the existing locale-safe i18n navigation abstraction for internal application navigation.
+Unauthorized premium content must never reach the client.
 
-Avoid manually constructing locale-prefixed URLs when the project's navigation abstraction can provide the route.
+## Economy Boundary
 
-## Current Repository State
+Knowledge does not own:
 
-Latest known committed main state:
+- wallet
+- currency
+- balance
+- transactions
+- payment processing
 
-`269a043 — feat(knowledge): add secure review detail`
+Conceptual flow:
 
-There are currently local, uncommitted Knowledge Review/Publish frontend changes that must be verified and committed before this work is considered closed.
+`Knowledge → Access Policy → Offer → Economy → MyLab Currency → Entitlement → User`
 
-The working tree must be synchronized with `origin/main` at the end of the implementation phase.
+## Image Architecture
 
-## Knowledge Workflow State
+Physical Knowledge media is stored in ImageKit.
 
-The original integration Knowledge Item has completed the full workflow and is published.
+Supabase stores version-level image metadata and relationships.
 
-It must not be mutated for additional workflow testing.
+Relationship:
 
-A separate draft Knowledge Item was created for rejection workflow testing.
+`Knowledge Version → knowledge_version_images → ImageKit`
 
-## Next Gate
+## ImageKit Production Decision
 
-The next architectural deliverable is:
+The current ImageKit plan does not support Draft Assets.
 
-**Knowledge Data Model v1**
+Therefore the production architecture uses:
 
-It must define:
+**Private ImageKit Files**
 
-- Knowledge identity
-- types
-- hierarchical taxonomy
-- versions
-- language representations
-- translation lifecycle
-- publication lifecycle
-- access policy
-- Free/Premium
-- offers
-- entitlements
-- Economy boundary
-- MyLab Currency boundary
-- secure content delivery
-- RLS
-- RPC/service boundaries
-- audit
-- constraints
-- indexes
+with:
 
-No new production database schema migration should be created until this model is reviewed and approved.
+`isPrivateFile = true`
 
-## Execution Protocol
+Do not use `isPublished` as the MyLab access-control mechanism.
 
-Continue using:
+MyLab controls access.
 
-Decision
-→ Action
-→ Verification
-→ Documentation
-→ Commit
-→ Push
-→ Close phase
+Private URLs are delivered through short-lived server-generated signed URLs.
 
-No prototypes, temporary fixes, or undocumented schema changes.
+Private ImageKit credentials remain server-side.
+
+## Image Service
+
+Current files:
+
+- `src/lib/knowledge/imagekit.ts`
+- `src/lib/knowledge/knowledge-image-upload.ts`
+- `src/app/api/imagekit/auth/route.ts`
+- `src/app/api/knowledge/images/route.ts`
+- `src/app/api/knowledge/images/[id]/route.ts`
+- `src/app/api/knowledge/images/[id]/url/route.ts`
+
+Responsibilities:
+
+- secure upload authentication;
+- version-scoped ImageKit folders;
+- client-side validation;
+- private uploads;
+- ImageKit Details API verification;
+- metadata persistence;
+- ownership validation;
+- deletion;
+- signed URL delivery;
+- controlled cleanup.
+
+Maximum Knowledge image size:
+
+`5 MB`
+
+Allowed:
+
+- JPEG
+- PNG
+- WebP
+- GIF
+- AVIF
+
+## Image Authorization
+
+Upload:
+
+- authenticated;
+- active account;
+- `knowledge.manage`;
+- editable version;
+- draft/rejected review state.
+
+Mutation:
+
+- same authorization boundary;
+- version ownership;
+- published protection.
+
+Delivery:
+
+- published Knowledge;
+- valid FREE access or PREMIUM entitlement;
+- or authorized staff preview.
+
+## Safe Test Draft
+
+Version:
+
+`93ea2145-c7f4-4385-9976-b81efd6bdf13`
+
+Knowledge Item:
+
+`b8e771a1-03b6-40c3-90f3-2aba1dc11ec8`
+
+Title:
+
+`jdgdk`
+
+Status:
+
+`draft`
+
+Review:
+
+`draft`
+
+Use this separate draft for media/workflow testing.
+
+Do not mutate the original published integration record.
+
+## ImageKit Verification History
+
+Verified:
+
+- ImageKit credentials configured.
+- ImageKit API connectivity successful.
+- Private upload successful.
+- ImageKit Details API confirmed `isPrivateFile = true`.
+- Version-scoped folder confirmed.
+- Test file successfully deleted.
+
+No production Knowledge image metadata was created by the diagnostic test.
+
+## Current Local Working Tree
+
+Current uncommitted files:
+
+- `src/app/api/imagekit/auth/route.ts`
+- `src/app/api/knowledge/`
+- `src/lib/knowledge/imagekit.ts`
+- `src/lib/knowledge/knowledge-image-upload.ts`
+
+Branch:
+
+`main`
+
+## Important Current Technical Point
+
+`@imagekit/next` upload `responseFields` does not expose `filePath` or `url`.
+
+The client upload helper must request only supported response fields, currently:
+
+`responseFields: ['isPrivateFile']`
+
+The server must retrieve authoritative file details from the ImageKit Details API.
+
+The client must never be trusted for:
+
+- file path;
+- public URL;
+- ownership;
+- privacy state;
+- file size;
+- MIME type;
+- Knowledge Version ownership.
+
+## Secure Signed URL
+
+Private Knowledge image delivery follows:
+
+`Authenticated User → Knowledge Access Check → Image Ownership Check → ImageKit Details Check → Private File Check → Version Folder Check → Signed URL`
+
+Signed URLs are short-lived.
+
+The ImageKit private key remains server-side.
+
+## Next Implementation Sequence
+
+### Step 1
+
+Finish Shared Image Service verification.
+
+Verify:
+
+- upload;
+- metadata persistence;
+- private state;
+- version folder ownership;
+- MIME validation;
+- size validation;
+- delete;
+- signed URL;
+- access denial;
+- staff access;
+- published/free access;
+- premium entitlement access;
+- rejection behavior.
+
+### Step 2
+
+Integrate shared image service into Generic Knowledge Form.
+
+### Step 3
+
+Integrate shared image service into Laboratory Test Form.
+
+Laboratory Test remains specialized.
+
+### Step 4
+
+Complete Knowledge creation menu.
+
+### Step 5
+
+Complete Knowledge listing:
+
+- type;
+- category;
+- status;
+- search;
+- pagination where required.
+
+### Step 6
+
+Complete Knowledge Detail.
+
+### Step 7
+
+Complete FREE/PREMIUM access boundary.
+
+### Step 8
+
+Verify Arabic/English and locale-safe navigation.
+
+### Step 9
+
+Run complete Knowledge E2E verification.
+
+### Step 10
+
+Close the Knowledge Consolidation & Completion phase.
+
+## Verification Standard
+
+Before closing the phase:
+
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- runtime verification of relevant Arabic routes;
+- runtime verification of relevant English routes;
+- database integrity checks;
+- authorization checks;
+- image access checks;
+- workflow checks.
+
+## Documentation Standard
+
+At phase closure:
+
+1. Update `docs/project-status.md`.
+2. Update `docs/session-handoff.md`.
+3. Add a project progress comment.
+4. Commit changes.
+5. Push to `main`.
+6. Verify `main` equals `origin/main`.
+
+## Communication Protocol
+
+Alfa is the final decision authority.
+
+Technical execution should remain concise:
+
+**Decision → Action → Verification → Commit → Push**
+
+Do not create unnecessary intermediate steps.
+
+## Final Handoff Rule
+
+A future session must be able to continue from this document without reconstructing the Knowledge architecture or repeating completed work.
+
+The current immediate task is:
+
+**Shared Knowledge Image Service verification and completion.**

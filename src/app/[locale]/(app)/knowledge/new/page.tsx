@@ -1,7 +1,11 @@
 import { getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { hasRole } from '@/lib/authorization/service'
-import { CreateKnowledgeItemForm } from '@/components/knowledge/CreateKnowledgeItemForm'
+import {
+  getKnowledgeCategories,
+  type KnowledgeLocale,
+} from '@/lib/knowledge/categories'
+import { CreateGenericKnowledgeItemForm } from '@/components/knowledge/CreateGenericKnowledgeItemForm'
 
 type NewKnowledgePageProps = {
   params: Promise<{
@@ -30,8 +34,28 @@ export default async function NewKnowledgePage({
     namespace: 'knowledge.new',
   })
 
+  const categories = await getKnowledgeCategories(
+    locale as KnowledgeLocale,
+  )
+
+  const parents = categories
+    .filter((category) => category.parent_id === null)
+    .sort((a, b) => a.name.localeCompare(b.name, locale))
+
+  const parentNames = new Map(
+    parents.map((parent) => [parent.id, parent.name]),
+  )
+
+  const subcategories = categories
+    .filter((category) => category.parent_id !== null)
+    .map((category) => ({
+      ...category,
+      parent_name:
+        parentNames.get(category.parent_id ?? '') ?? null,
+    }))
+
   return (
-    <div className="mx-auto w-full max-w-3xl p-6">
+    <div className="mx-auto w-full max-w-4xl p-6">
       <header>
         <h1 className="text-2xl font-semibold text-neutral-900">
           {t('title')}
@@ -43,7 +67,10 @@ export default async function NewKnowledgePage({
       </header>
 
       <section className="mt-8 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <CreateKnowledgeItemForm />
+        <CreateGenericKnowledgeItemForm
+          parents={parents}
+          subcategories={subcategories}
+        />
       </section>
     </div>
   )

@@ -1,10 +1,11 @@
 import { getUploadAuthParams } from '@imagekit/next/server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { buildKnowledgeImageFolder } from '@/lib/knowledge/imagekit'
 
 const AUTH_EXPIRY_SECONDS = 15 * 60
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient()
 
   const {
@@ -40,6 +41,47 @@ export async function GET() {
     )
   }
 
+  const versionId = new URL(request.url).searchParams.get('versionId')
+
+  if (!versionId) {
+    return NextResponse.json(
+      { error: 'versionId is required' },
+      { status: 400 },
+    )
+  }
+
+  const { data: version, error: versionError } = await supabase
+    .from('knowledge_item_versions')
+    .select('id, status, review_status')
+    .eq('id', versionId)
+    .maybeSingle()
+
+  if (versionError) {
+    return NextResponse.json(
+      { error: 'Knowledge version lookup failed' },
+      { status: 500 },
+    )
+  }
+
+  if (!version) {
+    return NextResponse.json(
+      { error: 'Knowledge version not found' },
+      { status: 404 },
+    )
+  }
+
+  const editable =
+    version.status === 'draft' &&
+    (version.review_status === 'draft' ||
+      version.review_status === 'rejected')
+
+  if (!editable) {
+    return NextResponse.json(
+      { error: 'Knowledge version is not editable' },
+      { status: 409 },
+    )
+  }
+
   const privateKey = process.env.IMAGEKIT_PRIVATE_KEY
   const publicKey = process.env.IMAGEKIT_PUBLIC_KEY
 
@@ -61,5 +103,6 @@ export async function GET() {
     expire,
     signature,
     publicKey,
+    folder: buildKnowledgeImageFolder(versionId),
   })
 }

@@ -86,7 +86,8 @@
       "procedure": "Laboratory procedure",
       "equipment": "Laboratory equipment",
       "reference": "Reference",
-      "educational": "Educational"
+      "educational": "Educational",
+      "pathogen": "Pathogen"
     },
     "laboratoryTest": {
       "title": "Create laboratory test",
@@ -151,6 +152,8 @@
         "addMethod": "Add method",
         "addInterpretation": "Add interpretation",
         "remove": "Remove",
+        "submitForReview": "Submit for Review",
+        "resubmitForReview": "Resubmit for Review",
         "saveDraft": "Save Draft",
         "saving": "Saving...",
         "cancel": "Cancel"
@@ -204,18 +207,86 @@
       "specimen": "Specimen",
       "method": "Method",
       "publish": "Publish",
-    "approve": "Approve",
+      "approve": "Approve",
       "reject": "Reject",
       "rejectReason": "Rejection reason",
       "rejectReasonPlaceholder": "Explain what needs to be corrected before resubmission.",
       "approveNote": "Review note (optional)",
       "approveNotePlaceholder": "Add an optional note about the approval.",
       "confirmPublish": "Confirm publish",
-    "confirmApprove": "Confirm approval",
+      "confirmApprove": "Confirm approval",
       "confirmReject": "Confirm rejection",
       "cancel": "Cancel",
       "requiredReason": "A rejection reason is required.",
       "genericError": "The review action could not be completed. Please try again."
+    },
+    "generic": {
+      "sections": {
+        "core": {
+          "title": "Core Information",
+          "description": "Enter the core information for this knowledge item.",
+          "titleLabel": "Title",
+          "titlePlaceholder": "Enter the knowledge item title",
+          "summary": "Summary",
+          "summaryPlaceholder": "Enter a short summary",
+          "content": "Content",
+          "contentPlaceholder": "Enter the knowledge content"
+        },
+        "taxonomy": {
+          "title": "Classification",
+          "description": "Place the knowledge item within the appropriate category.",
+          "primaryCategory": "Primary Category",
+          "primaryCategoryPlaceholder": "Select a primary category",
+          "subcategory": "Subcategory",
+          "subcategoryPlaceholder": "Select a subcategory"
+        },
+        "pathogen": {
+          "title": "Pathogen Information",
+          "description": "Enter the scientific classification and identifying information.",
+          "scientificName": "Scientific Name",
+          "commonName": "Common Name",
+          "pathogenGroup": "Pathogen Group",
+          "genus": "Genus",
+          "species": "Species",
+          "strainOrSerotype": "Strain / Serotype"
+        },
+        "equipment": {
+          "title": "Equipment Information",
+          "description": "Description",
+          "equipmentCode": "Equipment Code",
+          "manufacturer": "Manufacturer",
+          "model": "Model",
+          "equipmentType": "Equipment Type",
+          "manufacturerPartNumber": "Manufacturer Part Number",
+          "active": "Active"
+        },
+        "procedure": {
+          "title": "Procedure Information",
+          "description": "Enter the identifying information for this procedure.",
+          "procedureCode": "Procedure Code"
+        },
+        "reference": {
+          "title": "Reference Information",
+          "description": "Add citation information for this knowledge item.",
+          "referenceType": "Reference Type",
+          "citation": "Citation",
+          "url": "URL",
+          "referenceTypePlaceholder": "Select a reference type",
+          "types": {
+            "book": "Book",
+            "journal": "Journal",
+            "guideline": "Guideline",
+            "organization": "Organization",
+            "website": "Website",
+            "manual": "Manual",
+            "other": "Other"
+          }
+        },
+        "educational": {
+          "title": "Educational Content",
+          "description": "Use the core content fields to provide the educational material."
+        }
+      }
     }
   },
   "dashboard": {
