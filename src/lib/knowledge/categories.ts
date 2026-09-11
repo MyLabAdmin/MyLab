@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { KNOWLEDGE_LOCALES, type KnowledgeLocale } from './types'
 
-export const KNOWLEDGE_LOCALES = ['en', 'ar'] as const
-
-export type KnowledgeLocale = (typeof KNOWLEDGE_LOCALES)[number]
+export { KNOWLEDGE_LOCALES, type KnowledgeLocale } from './types'
 
 export type KnowledgeCategory = {
   id: string

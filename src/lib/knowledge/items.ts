@@ -29,9 +29,12 @@ export async function getPublishedKnowledgeItems(): Promise<
         knowledge_item_id,
         version_number,
         title,
+        subtitle,
         summary,
         content,
+        pre_test_preparation,
         status,
+        review_status,
         created_by,
         created_at,
         published_at
