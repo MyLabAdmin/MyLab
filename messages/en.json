@@ -287,6 +287,13 @@
           "description": "Use the core content fields to provide the educational material."
         }
       }
+    },
+    "detail": {
+      "access": "Access",
+      "content": "Content",
+      "preTestPreparation": "Pre-test Preparation",
+      "media": "Media",
+      "references": "References"
     }
   },
   "dashboard": {

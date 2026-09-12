@@ -287,6 +287,13 @@
           "description": "استخدم حقول المحتوى الأساسية لتقديم المادة التعليمية."
         }
       }
+    },
+    "detail": {
+      "access": "الوصول",
+      "content": "المحتوى",
+      "preTestPreparation": "التحضير قبل الاختبار",
+      "media": "الوسائط",
+      "references": "المراجع"
     }
   },
   "dashboard": {
