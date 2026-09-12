@@ -1,7 +1,18 @@
+import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+
+import { KnowledgeCard } from '@/components/knowledge/KnowledgeCard'
+import { KnowledgeGrid } from '@/components/knowledge/KnowledgeGrid'
+import { getKnowledgeDiscovery } from '@/lib/knowledge/discovery'
+import {
+  getKnowledgeTypeConfig,
+  KNOWLEDGE_TYPE_CONFIG,
+} from '@/lib/knowledge/type-config'
+import {
+  KNOWLEDGE_LOCALES,
+  type KnowledgeLocale,
+} from '@/lib/knowledge/types'
 import { Link } from '@/i18n/navigation'
-import { hasRole } from '@/lib/authorization/service'
-import { getPublishedKnowledgeItems } from '@/lib/knowledge/items'
 
 type KnowledgePageProps = {
   params: Promise<{
@@ -14,75 +25,92 @@ export default async function KnowledgePage({
 }: KnowledgePageProps) {
   const { locale } = await params
 
+  if (!KNOWLEDGE_LOCALES.includes(locale as KnowledgeLocale)) {
+    notFound()
+  }
+
+  const knowledgeLocale = locale as KnowledgeLocale
   const t = await getTranslations({
-    locale,
+    locale: knowledgeLocale,
     namespace: 'knowledge',
   })
 
-  const canManageKnowledge =
-    (await hasRole('knowledge_manager')) ||
-    (await hasRole('super_admin'))
+  const discovery = await getKnowledgeDiscovery({
+    locale: knowledgeLocale,
+    page: 1,
+    pageSize: 24,
+  })
 
-  const items = await getPublishedKnowledgeItems()
+  const typeLabels = Object.fromEntries(
+    Object.entries(KNOWLEDGE_TYPE_CONFIG).map(([type, config]) => [
+      type,
+      t(config.labelKey),
+    ]),
+  )
 
   return (
-    <div className="p-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-neutral-900">
-          {t('title')}
-        </h1>
+    <main className="space-y-8">
+      <header className="space-y-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">
+              {t('title')}
+            </p>
 
-        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-neutral-600">
-            {t('description')}
-          </p>
-          {canManageKnowledge && (
-            <Link
-              href="/knowledge/new"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700"
-            >
-              {t('create')}
-            </Link>
-          )}
-        </div>
-      </header>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {t('title')}
+            </h1>
 
-      <section className="mt-8">
-        {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
-            <h2 className="text-lg font-semibold text-neutral-900">
-              {t('emptyTitle')}
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-600">
-              {t('emptyDescription')}
+            <p className="mt-2 max-w-2xl text-muted-foreground">
+              {t('description')}
             </p>
           </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {items.map((item) => (
-              <article
+
+          <Link
+            href="/knowledge/new"
+            className="inline-flex h-10 items-center justify-center rounded-md border bg-background px-4 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {t('create')}
+          </Link>
+        </div>
+
+        {discovery.total > 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {discovery.total} {t('results')}
+          </p>
+        ) : null}
+      </header>
+
+      {discovery.items.length === 0 ? (
+        <section className="rounded-xl border border-dashed p-10 text-center">
+          <h2 className="text-lg font-semibold">
+            {t('emptyTitle')}
+          </h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t('emptyDescription')}
+          </p>
+        </section>
+      ) : (
+        <KnowledgeGrid>
+          {discovery.items.map((item) => {
+            const config = getKnowledgeTypeConfig(item.item_type)
+
+            return (
+              <KnowledgeCard
                 key={item.id}
-                className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm"
-              >
-                <p className="text-xs font-medium uppercase tracking-wide text-primary-700">
-                  {item.item_type}
-                </p>
-
-                <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-                  {item.version.title}
-                </h2>
-
-                {item.version.summary && (
-                  <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    {item.version.summary}
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+                item={item}
+                typeLabel={typeLabels[item.item_type] ?? config.type}
+                accessLabel={
+                  item.access_tier
+                    ? t(`access.${item.access_tier}`)
+                    : null
+                }
+              />
+            )
+          })}
+        </KnowledgeGrid>
+      )}
+    </main>
   )
 }
