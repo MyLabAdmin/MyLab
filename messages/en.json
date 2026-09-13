@@ -1,5 +1,13 @@
 {
   "HomePage": {
     "title": "Welcome to MyLab"
+  },
+  "Auth": {
+    "appName": "MyLab",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "loginButton": "Log In",
+    "noAccount": "Don't have an account?",
+    "signupLink": "Sign up"
   }
 }

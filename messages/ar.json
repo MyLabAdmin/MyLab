@@ -1,5 +1,13 @@
 {
   "HomePage": {
     "title": "مرحباً بك في MyLab"
+  },
+  "Auth": {
+    "appName": "MyLab",
+    "emailLabel": "البريد الإلكتروني",
+    "passwordLabel": "كلمة المرور",
+    "loginButton": "تسجيل الدخول",
+    "noAccount": "لا تملك حساباً؟",
+    "signupLink": "تسجيل"
   }
 }
