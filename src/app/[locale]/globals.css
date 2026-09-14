@@ -35,3 +35,12 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500;
+  }
+  .btn-primary {
+    @apply w-full rounded-lg bg-primary-600 text-white font-medium py-2.5 hover:bg-primary-700 transition-colors;
+  }
+}
