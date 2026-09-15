@@ -69,6 +69,8 @@
     "titleLabel": "Title",
     "excerptLabel": "Excerpt",
     "coverImageLabel": "Cover Image",
+    "uploadNewTab": "Upload New",
+    "chooseFromLibraryTab": "Choose from Library",
     "addBlock": "+ Add Block",
     "blockTypeLabel": "Block Type",
     "textBlock": "Text",

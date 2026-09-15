@@ -69,6 +69,8 @@
     "titleLabel": "العنوان",
     "excerptLabel": "مقتطف مختصر",
     "coverImageLabel": "صورة الغلاف",
+    "uploadNewTab": "رفع جديد",
+    "chooseFromLibraryTab": "اختيار من المكتبة",
     "addBlock": "+ إضافة بلوك",
     "blockTypeLabel": "نوع البلوك",
     "textBlock": "نص",
