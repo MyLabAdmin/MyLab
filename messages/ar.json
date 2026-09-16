@@ -1,5 +1,7 @@
 {
-  "HomePage": { "title": "مرحباً بك في MyLab" },
+  "HomePage": {
+    "title": "مرحباً بك في MyLab"
+  },
   "Auth": {
     "appName": "MyLab",
     "emailLabel": "البريد الإلكتروني",
@@ -88,9 +90,25 @@
     "previewAsFree": "معاينة كمستخدم مجاني",
     "previewAsPaid": "معاينة كمستخدم مدفوع",
     "lockedContent": "🔒 محتوى مدفوع",
+    "imageIsPaidFeature": "🔒 إرفاق الصور ميزة مدفوعة",
     "saveDraftButton": "حفظ كمسودة",
     "publishButton": "نشر",
     "nextButton": "التالي",
     "backButton": "رجوع"
+  },
+  "Community": {
+    "reportButton": "إبلاغ",
+    "shareButton": "مشاركة",
+    "saveButton": "حفظ",
+    "savedButton": "محفوظ",
+    "muteButton": "كتم الإشعارات",
+    "mutedButton": "الإشعارات مكتومة",
+    "repostButton": "إعادة نشر في الفيد",
+    "copyLinkButton": "نسخ الرابط",
+    "linkCopied": "تم نسخ الرابط!",
+    "reportReasonPlaceholder": "ليه بتبلّغ عن المنشور ده؟",
+    "submitReport": "إرسال البلاغ",
+    "reportSubmitted": "تم إرسال البلاغ",
+    "cancel": "إلغاء"
   }
 }

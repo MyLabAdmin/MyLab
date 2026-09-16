@@ -1,5 +1,7 @@
 {
-  "HomePage": { "title": "Welcome to MyLab" },
+  "HomePage": {
+    "title": "Welcome to MyLab"
+  },
   "Auth": {
     "appName": "MyLab",
     "emailLabel": "Email",
@@ -88,9 +90,25 @@
     "previewAsFree": "Preview as Free User",
     "previewAsPaid": "Preview as Paid User",
     "lockedContent": "🔒 Paid content",
+    "imageIsPaidFeature": "🔒 Image attachments are a paid feature",
     "saveDraftButton": "Save as Draft",
     "publishButton": "Publish",
     "nextButton": "Next",
     "backButton": "Back"
+  },
+  "Community": {
+    "reportButton": "Report",
+    "shareButton": "Share",
+    "saveButton": "Save",
+    "savedButton": "Saved",
+    "muteButton": "Mute notifications",
+    "mutedButton": "Notifications muted",
+    "repostButton": "Repost to feed",
+    "copyLinkButton": "Copy link",
+    "linkCopied": "Link copied!",
+    "reportReasonPlaceholder": "Why are you reporting this?",
+    "submitReport": "Submit report",
+    "reportSubmitted": "Report submitted",
+    "cancel": "Cancel"
   }
 }
