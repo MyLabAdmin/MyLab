@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { REACTIONS } from '@/components/community/ReactionIcons'
 import { getReactionDetails } from '@/app/[locale]/actions/community'
+import Avatar from '@/components/community/Avatar'
 
 type TargetType = 'post' | 'comment' | 'reply'
 
@@ -59,7 +60,10 @@ export default function ReactionDetails({
 
         <div className="flex flex-col gap-2">
           {names.map((name, i) => (
-            <p key={i} className="text-sm text-gray-700">{name}</p>
+            <div key={i} className="flex items-center gap-2">
+              <Avatar name={name} size="sm" />
+              <p className="text-sm text-gray-700">{name}</p>
+            </div>
           ))}
         </div>
       </div>

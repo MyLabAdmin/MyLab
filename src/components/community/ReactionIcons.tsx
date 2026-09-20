@@ -59,9 +59,13 @@ export function LoveIcon({ className }: IconProps) {
 export function SurprisingIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 8v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="12" cy="16" r="1" fill="currentColor" />
+      <path
+        d="M12 2.5 13.5 9 20 10.5 13.5 12 12 18.5 10.5 12 4 10.5 10.5 9 12 2.5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M18.5 16.5 19 18.5 21 19 19 19.5 18.5 21.5 18 19.5 16 19 18 18.5 18.5 16.5z" fill="currentColor" />
     </svg>
   )
 }
@@ -78,8 +82,6 @@ export const REACTIONS = [
   { key: 'helpful', Icon: HelpfulIcon, labelEn: 'Helpful', labelAr: 'مفيد' },
   { key: 'insightful', Icon: InsightfulIcon, labelEn: 'Insightful', labelAr: 'ملهم' },
   { key: 'well_done', Icon: WellDoneIcon, labelEn: 'Well Done', labelAr: 'برافو' },
-  { key: 'love', Icon: LoveIcon, labelEn: 'Love', labelAr: 'أحببته' },
-  { key: 'surprising', Icon: SurprisingIcon, labelEn: 'Surprising', labelAr: 'مثير' },
 ] as const
 
 export type ReactionKey = typeof REACTIONS[number]['key']

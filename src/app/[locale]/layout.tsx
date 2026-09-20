@@ -3,6 +3,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import "./globals.css";
+import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
   title: "MyLab",
@@ -27,7 +28,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={dir}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider><ToastProvider>{children}</ToastProvider></NextIntlClientProvider>
       </body>
     </html>
   );
