@@ -148,7 +148,32 @@ export async function joinGroup(groupId: string) {
 export async function leaveGroup(groupId: string) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return { success: false }
+
+  if (!userData.user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from('group_members')
+    .select('role, status')
+    .eq('group_id', groupId)
+    .eq('user_id', userData.user.id)
+    .maybeSingle()
+
+  if (membershipError) {
+    return { success: false, error: membershipError.message }
+  }
+
+  if (!membership) {
+    return { success: false, error: 'You are not a member of this group' }
+  }
+
+  if (membership.role === 'owner') {
+    return {
+      success: false,
+      error: 'The group owner cannot leave the group',
+    }
+  }
 
   const { error } = await supabase
     .from('group_members')
@@ -156,11 +181,40 @@ export async function leaveGroup(groupId: string) {
     .eq('group_id', groupId)
     .eq('user_id', userData.user.id)
 
-  return { success: !error }
+  return {
+    success: !error,
+    error: error?.message,
+  }
 }
 
 export async function getPendingMembers(groupId: string) {
   const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+
+  if (!userData.user) return []
+
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('role, status')
+    .eq('group_id', groupId)
+    .eq('user_id', userData.user.id)
+    .maybeSingle()
+
+  const { data: adminRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userData.user.id)
+    .eq('role', 'admin')
+    .maybeSingle()
+
+  const isManager =
+    membership?.status === 'active' &&
+    (membership.role === 'owner' || membership.role === 'moderator')
+
+  const isAdmin = !!adminRole
+
+  if (!isManager && !isAdmin) return []
+
   const { data } = await supabase
     .from('group_members')
     .select('id, user_id, joined_at')
@@ -170,20 +224,133 @@ export async function getPendingMembers(groupId: string) {
   if (!data || data.length === 0) return []
 
   const userIds = data.map((m) => m.user_id)
-  const { data: profiles } = await supabase.from('profiles').select('id, display_name').in('id', userIds)
-  const nameOf = (id: string) => profiles?.find((p) => p.id === id)?.display_name ?? '—'
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', userIds)
 
-  return data.map((m) => ({ id: m.id, userId: m.user_id, name: nameOf(m.user_id) }))
+  const nameOf = (id: string) =>
+    profiles?.find((p) => p.id === id)?.display_name ?? '—'
+
+  return data.map((m) => ({
+    id: m.id,
+    userId: m.user_id,
+    name: nameOf(m.user_id),
+  }))
+}
+
+async function canManageGroupMembers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  groupId: string,
+  userId: string
+) {
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('role, status')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  const isManager =
+    membership?.status === 'active' &&
+    (membership.role === 'owner' || membership.role === 'moderator')
+
+  if (isManager) return true
+
+  const { data: adminRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
+    .maybeSingle()
+
+  return !!adminRole
 }
 
 export async function approveMember(memberRowId: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('group_members').update({ status: 'active' }).eq('id', memberRowId)
-  return { success: !error }
+  const { data: userData } = await supabase.auth.getUser()
+
+  if (!userData.user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { data: member } = await supabase
+    .from('group_members')
+    .select('group_id, status')
+    .eq('id', memberRowId)
+    .maybeSingle()
+
+  if (!member) {
+    return { success: false, error: 'Membership request not found' }
+  }
+
+  const allowed = await canManageGroupMembers(
+    supabase,
+    member.group_id,
+    userData.user.id
+  )
+
+  if (!allowed) {
+    return { success: false, error: 'Not authorized' }
+  }
+
+  if (member.status !== 'pending') {
+    return { success: false, error: 'Membership request is not pending' }
+  }
+
+  const { error } = await supabase
+    .from('group_members')
+    .update({ status: 'active' })
+    .eq('id', memberRowId)
+    .eq('status', 'pending')
+
+  return {
+    success: !error,
+    error: error?.message,
+  }
 }
 
 export async function rejectMember(memberRowId: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from('group_members').delete().eq('id', memberRowId)
-  return { success: !error }
+  const { data: userData } = await supabase.auth.getUser()
+
+  if (!userData.user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { data: member } = await supabase
+    .from('group_members')
+    .select('group_id, status')
+    .eq('id', memberRowId)
+    .maybeSingle()
+
+  if (!member) {
+    return { success: false, error: 'Membership request not found' }
+  }
+
+  const allowed = await canManageGroupMembers(
+    supabase,
+    member.group_id,
+    userData.user.id
+  )
+
+  if (!allowed) {
+    return { success: false, error: 'Not authorized' }
+  }
+
+  if (member.status !== 'pending') {
+    return { success: false, error: 'Membership request is not pending' }
+  }
+
+  const { error } = await supabase
+    .from('group_members')
+    .delete()
+    .eq('id', memberRowId)
+    .eq('status', 'pending')
+
+  return {
+    success: !error,
+    error: error?.message,
+  }
 }
