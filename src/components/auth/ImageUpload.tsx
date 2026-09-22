@@ -51,7 +51,6 @@ export default function ImageUpload({
         signature: auth.signature,
         expire: auth.expire,
         publicKey: auth.publicKey,
-        urlEndpoint: auth.urlEndpoint,
         folder,
         isPrivateFile: true,
         useUniqueFileName: true,

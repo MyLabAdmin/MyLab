@@ -7,7 +7,7 @@ import MultiImageUpload from '../MultiImageUpload'
 import { createPost } from '@/app/[locale]/actions/community'
 import { useToast } from '@/components/ui/Toast'
 
-export default function NewPostForm({ canAddImage }: { canAddImage: boolean }) {
+export default function NewPostForm({ canAddImage, groupId }: { canAddImage: boolean; groupId?: string }) {
   const locale = useLocale()
   const t = useTranslations('KnowledgeAdmin')
   const router = useRouter()
@@ -27,7 +27,7 @@ export default function NewPostForm({ canAddImage }: { canAddImage: boolean }) {
     setError('')
 
     const media = imageRefs.map((ref) => ({ type: 'image' as const, ref }))
-    const result = await createPost(content, media)
+    const result = await createPost(content, media, groupId ?? null)
 
     setSubmitting(false)
     if (!result.success) {
@@ -35,7 +35,7 @@ export default function NewPostForm({ canAddImage }: { canAddImage: boolean }) {
       return
     }
     showToast(locale === 'ar' ? 'تم النشر ✅' : 'Posted ✅')
-    router.push('/community')
+    router.push(groupId ? `/community/groups/${groupId}` : '/community')
   }
 
   return (

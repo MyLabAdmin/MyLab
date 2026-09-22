@@ -54,7 +54,6 @@ export default function MultiImageUpload({
           signature: auth.signature,
           expire: auth.expire,
           publicKey: auth.publicKey,
-          urlEndpoint: auth.urlEndpoint,
           folder,
           isPrivateFile: true,
           useUniqueFileName: true,

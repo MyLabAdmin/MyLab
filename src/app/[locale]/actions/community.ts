@@ -13,14 +13,14 @@ async function resolveMedia(ref: string) {
   return ref
 }
 
-export async function createPost(content: string, mediaRefs: { type: 'image' | 'video'; ref: string }[]) {
+export async function createPost(content: string, mediaRefs: { type: 'image' | 'video'; ref: string }[], groupId?: string | null) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return { success: false as const, error: 'Not authenticated' }
 
   const { data: post, error } = await supabase
     .from('posts')
-    .insert({ author_id: userData.user.id, content })
+    .insert({ author_id: userData.user.id, content, group_id: groupId ?? null })
     .select('id, created_at')
     .single()
 
@@ -343,7 +343,7 @@ const POSTS_PAGE_SIZE = 10
 const COMMENTS_PREVIEW_SIZE = 3
 const REPLIES_PREVIEW_SIZE = 2
 
-export async function getFeed(cursor: string | null = null) {
+export async function getFeed(cursor: string | null = null, groupId: string | null = null) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const currentUserId = userData.user?.id
@@ -360,9 +360,10 @@ export async function getFeed(cursor: string | null = null) {
     .limit(POSTS_PAGE_SIZE)
 
   if (cursor) query = query.lt('created_at', cursor)
+  query = groupId ? query.eq('group_id', groupId) : query.is('group_id', null)
 
   const { data: posts, error } = await query
-  if (error || !posts) return { posts: [], nextCursor: null }
+  if (error || !posts) { console.error("[getFeed] posts query failed:", error); return { posts: [], nextCursor: null } }
 
   const sharedPostIds = Array.from(new Set(posts.map((p: any) => p.shared_post_id).filter(Boolean)))
   const sharedPostsMap = new Map<string, { id: string; content: string; authorName: string; media: { type: string; url: string }[]; reactionCounts: Record<string, number>; commentCount: number }>()

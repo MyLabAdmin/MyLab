@@ -12,12 +12,14 @@ export default function FeedList({
   canAddImage,
   currentUserId,
   isAdmin,
+  groupId,
 }: {
   initialPosts: Post[]
   initialCursor: string | null
   canAddImage: boolean
   currentUserId?: string
   isAdmin: boolean
+  groupId?: string
 }) {
   const locale = useLocale()
   const [posts, setPosts] = useState(initialPosts)
@@ -28,11 +30,11 @@ export default function FeedList({
   const loadMore = useCallback(async () => {
     if (!cursor || loading) return
     setLoading(true)
-    const { posts: more, nextCursor } = await getFeed(cursor)
+    const { posts: more, nextCursor } = await getFeed(cursor, groupId ?? null)
     setPosts((prev) => [...prev, ...(more as Post[])])
     setCursor(nextCursor)
     setLoading(false)
-  }, [cursor, loading])
+  }, [cursor, loading, groupId])
 
   useEffect(() => {
     const el = sentinelRef.current
@@ -49,7 +51,7 @@ export default function FeedList({
 
   return (
     <>
-      <PostComposerTrigger canAddImage={canAddImage} />
+      <PostComposerTrigger canAddImage={canAddImage} groupId={groupId} />
 
       <div className="flex flex-col gap-4">
         {posts.map((post) => (

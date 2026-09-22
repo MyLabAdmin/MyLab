@@ -4,10 +4,13 @@ import NewPostForm from './NewPostForm'
 
 export default async function NewPostPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ group?: string }>
 }) {
   const { locale } = await params
+  const { group } = await searchParams
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
 
@@ -22,5 +25,5 @@ export default async function NewPostPage({
 
   const isAdmin = roles?.some((r) => r.role === 'admin') ?? false
 
-  return <NewPostForm canAddImage={isAdmin} />
+  return <NewPostForm canAddImage={isAdmin} groupId={group} />
 }
