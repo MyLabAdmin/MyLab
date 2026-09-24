@@ -31,7 +31,7 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
 
   const { data: existing, error: findError } = await supabase
     .from('conversations')
-    .select('id, type, title, created_by, created_at, updated_at')
+    .select('id, type, title, description, created_by, created_at, updated_at')
     .eq('type', 'direct')
     .eq('direct_key', directKey)
     .maybeSingle()
@@ -78,7 +78,7 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
     .insert({
       conversation_id: conversation.id,
       user_id: user.id,
-      role: 'admin',
+      role: 'owner',
     })
 
   if (creatorMemberError) {
@@ -215,6 +215,190 @@ export async function createGroupConversation(
   }
 }
 
+export async function updateGroupConversation(conversationId: string, title: string, description: string) {
+  const result = await getCurrentUser()
+  if (result.user === null) return { success: false as const, error: 'Not authenticated' }
+  const cleanTitle = title.trim()
+  const cleanDescription = description.trim()
+  if (conversationId.length === 0) return { success: false as const, error: 'Conversation ID is required' }
+  if (cleanTitle.length === 0) return { success: false as const, error: 'Conversation title is required' }
+  const response = await result.supabase.from('conversations').update({ title: cleanTitle, description: cleanDescription || null }).eq('id', conversationId).eq('type', 'group').select('id, type, title, description, created_by, created_at, updated_at').single()
+  if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to update conversation' }
+  return { success: true as const, conversation: response.data }
+}
+
+export async function addConversationMember(conversationId: string, userId: string) {
+  const result = await getCurrentUser()
+  if (result.user === null) return { success: false as const, error: 'Not authenticated' }
+  if (conversationId.length === 0 || userId.length === 0) return { success: false as const, error: 'Conversation ID and user ID are required' }
+  const response = await result.supabase.from('conversation_members').insert({ conversation_id: conversationId, user_id: userId, role: 'member' }).select('conversation_id, user_id, role, joined_at').single()
+  if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to add member' }
+  return { success: true as const, member: response.data }
+}
+
+export async function removeConversationMember(conversationId: string, userId: string) {
+  const result = await getCurrentUser()
+  if (result.user === null) return { success: false as const, error: 'Not authenticated' }
+  if (conversationId.length === 0 || userId.length === 0) return { success: false as const, error: 'Conversation ID and user ID are required' }
+  const response = await result.supabase.from('conversation_members').delete().eq('conversation_id', conversationId).eq('user_id', userId).select('conversation_id, user_id, role').maybeSingle()
+  if (response.error) return { success: false as const, error: response.error.message }
+  if (response.data === null) return { success: false as const, error: 'Member could not be removed' }
+  return { success: true as const, member: response.data }
+}
+
+export async function setConversationModerator(conversationId: string, userId: string, isModerator: boolean) {
+  const result = await getCurrentUser()
+  if (result.user === null) return { success: false as const, error: 'Not authenticated' }
+  const response = await result.supabase.from('conversation_members').update({ role: isModerator ? 'moderator' : 'member' }).eq('conversation_id', conversationId).eq('user_id', userId).neq('role', 'owner').select('conversation_id, user_id, role').single()
+  if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to update member role' }
+  if (isModerator === false) await result.supabase.from('conversation_moderator_permissions').delete().eq('conversation_id', conversationId).eq('user_id', userId)
+  return { success: true as const, member: response.data }
+}
+
+export async function updateModeratorPermissions(conversationId: string, userId: string, permissions: { canEditInfo: boolean; canAddMembers: boolean; canRemoveMembers: boolean }) {
+  const result = await getCurrentUser()
+  if (result.user === null) return { success: false as const, error: 'Not authenticated' }
+  const response = await result.supabase.from('conversation_moderator_permissions').upsert({ conversation_id: conversationId, user_id: userId, can_edit_info: permissions.canEditInfo, can_add_members: permissions.canAddMembers, can_remove_members: permissions.canRemoveMembers, updated_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' }).select('conversation_id, user_id, can_edit_info, can_add_members, can_remove_members, updated_at').single()
+  if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to update moderator permissions' }
+  return { success: true as const, permissions: response.data }
+}
+
+export async function getConversations() {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  const { data: memberships, error } = await supabase
+    .from('conversation_members')
+    .select(`
+      conversation_id,
+      role,
+      last_read_at,
+      muted_at,
+      conversations (
+        id,
+        type,
+        title,
+        description,
+        created_by,
+        created_at,
+        updated_at
+      )
+    `)
+    .eq('user_id', user.id)
+
+  if (error) {
+    return { success: false as const, error: error.message }
+  }
+
+  const conversationIds = (memberships ?? []).map(
+    (membership) => membership.conversation_id,
+  )
+
+  if (conversationIds.length === 0) {
+    return {
+      success: true as const,
+      conversations: [],
+    }
+  }
+
+  const { data: allMembers, error: membersError } = await supabase
+    .from('conversation_members')
+    .select('conversation_id, user_id, role')
+    .in('conversation_id', conversationIds)
+
+  if (membersError) {
+    return { success: false as const, error: membersError.message }
+  }
+
+  const userIds = Array.from(
+    new Set((allMembers ?? []).map((member) => member.user_id)),
+  )
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', userIds)
+
+  if (profilesError) {
+    return { success: false as const, error: profilesError.message }
+  }
+
+  const profileMap = new Map(
+    (profiles ?? []).map((profile) => [profile.id, profile]),
+  )
+
+  const membersByConversation = new Map<
+    string,
+    Array<{
+      userId: string
+      role: string
+      displayName: string | null
+      avatarUrl: string | null
+    }>
+  >()
+
+  for (const member of allMembers ?? []) {
+    const profile = profileMap.get(member.user_id)
+
+    const list = membersByConversation.get(member.conversation_id) ?? []
+
+    list.push({
+      userId: member.user_id,
+      role: member.role,
+      displayName: profile?.display_name ?? null,
+      avatarUrl: profile?.avatar_url ?? null,
+    })
+
+    membersByConversation.set(member.conversation_id, list)
+  }
+
+  const conversations = (memberships ?? [])
+    .map((membership) => {
+      const conversation = Array.isArray(membership.conversations)
+        ? membership.conversations[0]
+        : membership.conversations
+
+      if (!conversation) return null
+
+      const members = membersByConversation.get(conversation.id) ?? []
+
+      const otherMembers = members.filter(
+        (member) => member.userId !== user.id,
+      )
+
+      const otherUser =
+        conversation.type === 'direct'
+          ? otherMembers[0] ?? null
+          : null
+
+      return {
+        ...conversation,
+        role: membership.role,
+        lastReadAt: membership.last_read_at,
+        mutedAt: membership.muted_at,
+        members,
+        otherUser,
+      }
+    })
+    .filter(
+      (conversation): conversation is NonNullable<typeof conversation> =>
+        conversation !== null,
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() -
+        new Date(a.updated_at).getTime(),
+    )
+
+  return {
+    success: true as const,
+    conversations,
+  }
+}
+
 export async function getConversation(conversationId: string) {
   const { supabase, user } = await getCurrentUser()
 
@@ -232,6 +416,7 @@ export async function getConversation(conversationId: string) {
       id,
       type,
       title,
+      description,
       created_by,
       created_at,
       updated_at,
@@ -253,9 +438,32 @@ export async function getConversation(conversationId: string) {
     }
   }
 
+  const memberIds = conversation.conversation_members.map((member) => member.user_id)
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', memberIds)
+
+  if (profilesError) {
+    return { success: false as const, error: profilesError.message }
+  }
+
+  const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]))
+
+  const members = conversation.conversation_members.map((member) => {
+    const profile = profileMap.get(member.user_id)
+    return {
+      ...member,
+      display_name: profile?.display_name ?? null,
+      avatar_url: profile?.avatar_url ?? null,
+    }
+  })
+
   return {
     success: true as const,
-    conversation,
+    currentUserId: user.id,
+    conversation: { ...conversation, conversation_members: members },
   }
 }
 
@@ -305,9 +513,50 @@ export async function getMessages(
 
   const messages = [...(data ?? [])].reverse()
 
+  const senderIds = Array.from(
+    new Set(messages.map((message) => message.sender_id)),
+  )
+
+  let profileMap = new Map<
+    string,
+    {
+      display_name: string | null
+      avatar_url: string | null
+    }
+  >()
+
+  if (senderIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url')
+      .in('id', senderIds)
+
+    if (profilesError) {
+      return { success: false as const, error: profilesError.message }
+    }
+
+    profileMap = new Map(
+      (profiles ?? []).map((profile) => [
+        profile.id,
+        {
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+        },
+      ]),
+    )
+  }
+
+  const messagesWithSenders = messages.map((message) => ({
+    ...message,
+    sender: profileMap.get(message.sender_id) ?? {
+      display_name: null,
+      avatar_url: null,
+    },
+  }))
+
   return {
     success: true as const,
-    messages,
+    messages: messagesWithSenders,
     hasMore: (data?.length ?? 0) === safeLimit,
   }
 }
@@ -421,6 +670,30 @@ export async function markConversationAsRead(
     success: true as const,
     lastReadAt: timestamp,
   }
+}
+
+export async function leaveConversation(conversationId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (user === null) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  if (conversationId.length === 0) {
+    return { success: false as const, error: 'Conversation ID is required' }
+  }
+
+  const { error } = await supabase
+.from('conversation_members')
+.delete()
+.eq('conversation_id', conversationId)
+.eq('user_id', user.id)
+
+  if (error) {
+    return { success: false as const, error: error.message }
+  }
+
+  return { success: true as const }
 }
 
 export async function editMessage(
