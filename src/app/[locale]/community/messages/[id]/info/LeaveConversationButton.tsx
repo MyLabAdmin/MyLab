@@ -7,13 +7,17 @@ import { useState } from 'react'
 export default function LeaveConversationButton({
   conversationId,
   locale,
+  isOwner,
 }: {
   conversationId: string
   locale: string
+  isOwner: boolean
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  if (isOwner) return null
 
   async function handleLeave() {
     const confirmed = window.confirm(locale === 'ar' ? 'هل تريد مغادرة هذه المجموعة؟' : 'Do you want to leave this group?')

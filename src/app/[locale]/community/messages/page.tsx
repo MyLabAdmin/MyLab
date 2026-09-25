@@ -1,12 +1,6 @@
 import { getConversations } from '@/app/[locale]/actions/messaging'
 import ConversationList from './ConversationList'
-
-function formatConversationTime(date: string, locale: string) {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(date))
-}
+import NewConversationButton from './NewConversationButton'
 
 export default async function MessagesPage({
   params,
@@ -48,6 +42,8 @@ export default async function MessagesPage({
         </header>
 
         <ConversationList conversations={conversations} locale={locale} />
+
+        <NewConversationButton locale={locale} />
       </div>
     </main>
   )

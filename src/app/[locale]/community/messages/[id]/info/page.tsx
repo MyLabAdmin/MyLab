@@ -2,6 +2,9 @@ import { getConversation } from '@/app/[locale]/actions/messaging'
 import Avatar from '@/components/community/Avatar'
 import { Link } from '@/i18n/navigation'
 import LeaveConversationButton from './LeaveConversationButton'
+import GroupMemberActions from './GroupMemberActions'
+import GroupManagementMenu from './GroupManagementMenu'
+import ModeratorPermissionsForm from './ModeratorPermissionsForm'
 
 export default async function GroupConversationInfoPage({
   params,
@@ -35,9 +38,29 @@ export default async function GroupConversationInfoPage({
   }
 
   const members = conversation.conversation_members
+  const currentMember = members.find(
+    (member) => member.user_id === result.currentUserId,
+  )
+  const isOwner =
+    result.currentUserId === conversation.created_by
+
+  const canEditInfo =
+    isOwner ||
+    (currentMember?.role === 'moderator' && currentMember.can_edit_info)
+
+  const canTransferOwnership = isOwner
+
+  const canAddMembers =
+    isOwner ||
+    (currentMember?.role === 'moderator' && currentMember.can_add_members)
+
+  const canRemoveMembers =
+    isOwner ||
+    (currentMember?.role === 'moderator' && currentMember.can_remove_members)
+
   const title = conversation.title || (locale === 'ar' ? 'محادثة جماعية' : 'Group conversation')
-  const description = conversation.description || (locale === 'ar' ? 'محادثة جماعية داخل المراسلات' : 'A group conversation inside messaging')
-  const owner = members.find((member) => member.role === 'owner')
+  const description = conversation.description?.trim() || null
+  const owner = members.find((member) => member.user_id === conversation.created_by)
 
   return (
     <main className='min-h-screen bg-gray-50 px-3 py-4 sm:p-6'>
@@ -59,9 +82,10 @@ export default async function GroupConversationInfoPage({
             </div>
             <div className='min-w-0'>
               <h2 className='font-semibold text-gray-900'>{title}</h2>
-              <p className='mt-1 text-sm leading-6 text-gray-600'>{description}</p>
+              {description ? <p className='mt-1 text-sm leading-6 text-gray-600'>{description}</p> : null}
             </div>
           </div>
+
 
           {owner ? (
             <div className='mt-4 flex items-center gap-3 rounded-2xl bg-primary-50 p-4'>
@@ -73,8 +97,20 @@ export default async function GroupConversationInfoPage({
             </div>
           ) : null}
 
+          <GroupManagementMenu
+            conversationId={id}
+            locale={locale}
+            currentUserId={result.currentUserId}
+            members={members}
+            initialTitle={title}
+            initialDescription={description ?? ''}
+            canEditInfo={canEditInfo}
+            canAddMembers={canAddMembers}
+            canTransferOwnership={canTransferOwnership}
+          />
+
           <div className='mt-5'>
-            <LeaveConversationButton conversationId={id} locale={locale} />
+            <LeaveConversationButton conversationId={id} locale={locale} isOwner={result.currentUserId === conversation.created_by} />
           </div>
         </header>
 
@@ -82,7 +118,7 @@ export default async function GroupConversationInfoPage({
           <div className='mb-4 flex items-center justify-between gap-3'>
             <div>
               <h2 className='text-lg font-bold text-gray-900'>{locale === 'ar' ? 'أعضاء المجموعة' : 'Group members'}</h2>
-              <p className='mt-1 text-sm text-gray-500'>{locale === 'ar' ? 'جميع الأعضاء في قائمة واضحة وقابلة للتمرير' : 'All members in a clear, scrollable list'}</p>
+
             </div>
             <span className='shrink-0 rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600'>{members.length}</span>
           </div>
@@ -97,14 +133,42 @@ export default async function GroupConversationInfoPage({
                   : (locale === 'ar' ? 'عضو' : 'Member')
 
               return (
-                <Link key={member.user_id} href={'/community/profile/' + member.user_id} className='group flex items-center gap-3 rounded-2xl bg-gray-50 p-3 transition hover:bg-gray-100 active:scale-[0.99]'>
-                  <Avatar name={name} avatarUrl={member.avatar_url} size='lg' />
-                  <div className='min-w-0 flex-1'>
-                    <p className='truncate font-medium text-gray-900 group-hover:text-primary-700'>{name}</p>
-                    <p className='mt-1 text-xs text-gray-500'>{roleLabel}</p>
-                  </div>
-                  <span className='text-gray-300' aria-hidden='true'>›</span>
-                </Link>
+                <div key={member.user_id}>
+                  <Link href={'/community/profile/' + member.user_id} className='group flex items-center gap-3 rounded-2xl bg-gray-50 p-3 transition hover:bg-gray-100 active:scale-[0.99]'>
+                    <Avatar name={name} avatarUrl={member.avatar_url} size='lg' />
+                    <div className='min-w-0 flex-1'>
+                      <p className='truncate font-medium text-gray-900 group-hover:text-primary-700'>{name}</p>
+                      <p className='mt-1 text-xs text-gray-500'>{roleLabel}</p>
+                    </div>
+                    <span className='text-gray-300' aria-hidden='true'>›</span>
+                  </Link>
+
+                  {canRemoveMembers &&
+                  member.user_id !== conversation.created_by ? (
+                    <>
+                      <GroupMemberActions
+                        conversationId={id}
+                        memberId={member.user_id}
+                        isModerator={member.role === 'moderator'}
+                        locale={locale}
+                        canManageModerators={isOwner}
+                      />
+
+                      {isOwner && member.role === 'moderator' ? (
+                        <ModeratorPermissionsForm
+                          conversationId={id}
+                          memberId={member.user_id}
+                          initialPermissions={{
+                            canEditInfo: member.can_edit_info,
+                            canAddMembers: member.can_add_members,
+                            canRemoveMembers: member.can_remove_members,
+                          }}
+                          locale={locale}
+                        />
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
               )
             })}
           </div>

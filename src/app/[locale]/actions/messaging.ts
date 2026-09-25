@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 type ConversationType = 'direct' | 'group'
 
@@ -16,6 +17,42 @@ function makeDirectKey(userA: string, userB: string) {
   return [userA, userB].sort().join(':')
 }
 
+async function areAcceptedFriends(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  currentUserId: string,
+  userIds: string[],
+) {
+  const uniqueUserIds = Array.from(
+    new Set(userIds.filter((id) => id && id !== currentUserId)),
+  )
+
+  if (uniqueUserIds.length === 0) {
+    return true
+  }
+
+  const { data, error } = await supabase
+    .from('friendships')
+    .select('requester_id, addressee_id')
+    .eq('status', 'accepted')
+    .or(
+      `requester_id.eq.${currentUserId},addressee_id.eq.${currentUserId}`,
+    )
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const friendIds = new Set(
+    (data ?? []).map((friendship) =>
+      friendship.requester_id === currentUserId
+        ? friendship.addressee_id
+        : friendship.requester_id,
+    ),
+  )
+
+  return uniqueUserIds.every((userId) => friendIds.has(userId))
+}
+
 export async function getOrCreateDirectConversation(otherUserId: string) {
   const { supabase, user } = await getCurrentUser()
 
@@ -25,6 +62,19 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
 
   if (!otherUserId || otherUserId === user.id) {
     return { success: false as const, error: 'Invalid recipient' }
+  }
+
+  const isFriend = await areAcceptedFriends(
+    supabase,
+    user.id,
+    [otherUserId],
+  )
+
+  if (!isFriend) {
+    return {
+      success: false as const,
+      error: 'You can only message accepted friends',
+    }
   }
 
   const directKey = makeDirectKey(user.id, otherUserId)
@@ -78,7 +128,7 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
     .insert({
       conversation_id: conversation.id,
       user_id: user.id,
-      role: 'owner',
+      role: 'member',
     })
 
   if (creatorMemberError) {
@@ -121,6 +171,7 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
 
 export async function createGroupConversation(
   title: string,
+  description: string,
   memberIds: string[] = [],
 ) {
   const { supabase, user } = await getCurrentUser()
@@ -130,6 +181,7 @@ export async function createGroupConversation(
   }
 
   const cleanTitle = title.trim()
+  const cleanDescription = description.trim()
 
   if (!cleanTitle) {
     return { success: false as const, error: 'Conversation title is required' }
@@ -138,6 +190,23 @@ export async function createGroupConversation(
   const uniqueMemberIds = Array.from(
     new Set([user.id, ...memberIds.filter(Boolean)]),
   )
+
+  const otherMemberIds = uniqueMemberIds.filter(
+    (memberId) => memberId !== user.id,
+  )
+
+  const areFriends = await areAcceptedFriends(
+    supabase,
+    user.id,
+    otherMemberIds,
+  )
+
+  if (!areFriends) {
+    return {
+      success: false as const,
+      error: 'You can only add accepted friends to a group',
+    }
+  }
 
   if (uniqueMemberIds.length > 100) {
     return {
@@ -151,12 +220,23 @@ export async function createGroupConversation(
     .insert({
       type: 'group' as ConversationType,
       title: cleanTitle,
+      description: cleanDescription || null,
       created_by: user.id,
     })
-    .select('id, type, title, created_by, created_at, updated_at')
+    .select('id, type, title, description, created_by, created_at, updated_at')
     .single()
 
   if (conversationError || !conversation) {
+    if (
+      conversationError?.code === '23505' &&
+      conversationError.message.includes('conversations_group_title_uidx')
+    ) {
+      return {
+        success: false as const,
+        error: 'GROUP_TITLE_ALREADY_EXISTS',
+      }
+    }
+
     return {
       success: false as const,
       error: conversationError?.message ?? 'Failed to create conversation',
@@ -166,7 +246,7 @@ export async function createGroupConversation(
   const members = uniqueMemberIds.map((userId) => ({
     conversation_id: conversation.id,
     user_id: userId,
-    role: userId === user.id ? 'admin' : 'member',
+    role: userId === user.id ? 'owner' : 'member',
   }))
 
   const { error: creatorMemberError } = await supabase
@@ -174,7 +254,7 @@ export async function createGroupConversation(
     .insert({
       conversation_id: conversation.id,
       user_id: user.id,
-      role: 'admin',
+      role: 'owner',
     })
 
   if (creatorMemberError) {
@@ -209,6 +289,8 @@ export async function createGroupConversation(
     }
   }
 
+  revalidatePath('/[locale]/community/messages', 'page')
+
   return {
     success: true as const,
     conversation,
@@ -227,10 +309,160 @@ export async function updateGroupConversation(conversationId: string, title: str
   return { success: true as const, conversation: response.data }
 }
 
+export async function searchGroupMembers(conversationId: string, search: string) {
+  const result = await getCurrentUser()
+
+  if (result.user === null) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  if (conversationId.length === 0) {
+    return { success: false as const, error: 'Conversation ID is required' }
+  }
+
+  const { data: conversation, error: conversationError } = await result.supabase
+    .from('conversations')
+    .select('id, type')
+    .eq('id', conversationId)
+    .eq('type', 'group')
+    .maybeSingle()
+
+  if (conversationError) {
+    return { success: false as const, error: conversationError.message }
+  }
+
+  if (conversation === null) {
+    return { success: false as const, error: 'Group conversation not found' }
+  }
+
+  const { data: currentMember, error: currentMemberError } = await result.supabase
+    .from('conversation_members')
+    .select('user_id, role')
+    .eq('conversation_id', conversationId)
+    .eq('user_id', result.user.id)
+    .maybeSingle()
+
+  if (currentMemberError) {
+    return { success: false as const, error: currentMemberError.message }
+  }
+
+  if (currentMember === null) {
+    return { success: false as const, error: 'You are not a member of this conversation' }
+  }
+
+  if (currentMember.role === 'moderator') {
+    const { data: permission, error: permissionError } = await result.supabase
+      .from('conversation_moderator_permissions')
+      .select('can_add_members')
+      .eq('conversation_id', conversationId)
+      .eq('user_id', result.user.id)
+      .maybeSingle()
+
+    if (permissionError) {
+      return { success: false as const, error: permissionError.message }
+    }
+
+    if (permission?.can_add_members !== true) {
+      return { success: false as const, error: 'You do not have permission to add members' }
+    }
+  } else if (currentMember.role !== 'owner') {
+    return { success: false as const, error: 'You do not have permission to add members' }
+  }
+
+  const cleanSearch = search.trim()
+
+  if (cleanSearch.length < 2) {
+    return { success: true as const, users: [] }
+  }
+
+  const { data: members, error: membersError } = await result.supabase
+    .from('conversation_members')
+    .select('user_id')
+    .eq('conversation_id', conversationId)
+
+  if (membersError) {
+    return { success: false as const, error: membersError.message }
+  }
+
+  const memberIds = (members ?? []).map((member) => member.user_id)
+
+  let query = result.supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .ilike('display_name', '%' + cleanSearch + '%')
+    .order('display_name', { ascending: true })
+    .limit(20)
+
+  if (memberIds.length > 0) {
+    query = query.not('id', 'in', '(' + memberIds.join(',') + ')')
+  }
+
+  const { data: friendships, error: friendshipsError } =
+    await result.supabase
+      .from('friendships')
+      .select('requester_id, addressee_id')
+      .eq('status', 'accepted')
+      .or(
+        `requester_id.eq.${result.user.id},addressee_id.eq.${result.user.id}`,
+      )
+
+  if (friendshipsError) {
+    return {
+      success: false as const,
+      error: friendshipsError.message,
+    }
+  }
+
+  const friendIds = (friendships ?? []).map((friendship) =>
+    friendship.requester_id === result.user.id
+      ? friendship.addressee_id
+      : friendship.requester_id,
+  )
+
+  const availableFriendIds = friendIds.filter(
+    (friendId) => !memberIds.includes(friendId),
+  )
+
+  if (availableFriendIds.length === 0) {
+    return { success: true as const, users: [] }
+  }
+
+  const { data: users, error } = await result.supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', availableFriendIds)
+    .ilike('display_name', '%' + cleanSearch + '%')
+    .order('display_name', { ascending: true })
+    .limit(20)
+
+  if (error) {
+    return { success: false as const, error: error.message }
+  }
+
+  return {
+    success: true as const,
+    users: users ?? [],
+  }
+}
+
 export async function addConversationMember(conversationId: string, userId: string) {
   const result = await getCurrentUser()
   if (result.user === null) return { success: false as const, error: 'Not authenticated' }
   if (conversationId.length === 0 || userId.length === 0) return { success: false as const, error: 'Conversation ID and user ID are required' }
+
+  const isFriend = await areAcceptedFriends(
+    result.supabase,
+    result.user.id,
+    [userId],
+  )
+
+  if (!isFriend) {
+    return {
+      success: false as const,
+      error: 'You can only add accepted friends',
+    }
+  }
+
   const response = await result.supabase.from('conversation_members').insert({ conversation_id: conversationId, user_id: userId, role: 'member' }).select('conversation_id, user_id, role, joined_at').single()
   if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to add member' }
   return { success: true as const, member: response.data }
@@ -251,7 +483,21 @@ export async function setConversationModerator(conversationId: string, userId: s
   if (result.user === null) return { success: false as const, error: 'Not authenticated' }
   const response = await result.supabase.from('conversation_members').update({ role: isModerator ? 'moderator' : 'member' }).eq('conversation_id', conversationId).eq('user_id', userId).neq('role', 'owner').select('conversation_id, user_id, role').single()
   if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to update member role' }
-  if (isModerator === false) await result.supabase.from('conversation_moderator_permissions').delete().eq('conversation_id', conversationId).eq('user_id', userId)
+  if (isModerator === false) {
+    const { error: permissionsError } = await result.supabase
+      .from('conversation_moderator_permissions')
+      .delete()
+      .eq('conversation_id', conversationId)
+      .eq('user_id', userId)
+
+    if (permissionsError) {
+      return {
+        success: false as const,
+        error: permissionsError.message,
+      }
+    }
+  }
+
   return { success: true as const, member: response.data }
 }
 
@@ -399,6 +645,52 @@ export async function getConversations() {
   }
 }
 
+export async function transferConversationOwnership(
+  conversationId: string,
+  newOwnerId: string,
+  previousOwnerRole: 'member' | 'moderator',
+  permissions: {
+    canEditInfo: boolean
+    canAddMembers: boolean
+    canRemoveMembers: boolean
+  } = {
+    canEditInfo: false,
+    canAddMembers: false,
+    canRemoveMembers: false,
+  },
+) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (user === null) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  if (conversationId.length === 0 || newOwnerId.length === 0) {
+    return { success: false as const, error: 'Conversation ID and new owner ID are required' }
+  }
+
+  const response = await supabase.rpc('transfer_conversation_ownership', {
+    p_conversation_id: conversationId,
+    p_new_owner_id: newOwnerId,
+    p_previous_owner_role: previousOwnerRole,
+    p_can_edit_info: permissions.canEditInfo,
+    p_can_add_members: permissions.canAddMembers,
+    p_can_remove_members: permissions.canRemoveMembers,
+  })
+
+  if (response.error || response.data === null) {
+    return {
+      success: false as const,
+      error: response.error?.message ?? 'Failed to transfer conversation ownership',
+    }
+  }
+
+  return {
+    success: true as const,
+    transfer: response.data[0] ?? null,
+  }
+}
+
 export async function getConversation(conversationId: string) {
   const { supabase, user } = await getCurrentUser()
 
@@ -451,12 +743,36 @@ export async function getConversation(conversationId: string) {
 
   const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]))
 
+  const { data: moderatorPermissions, error: permissionsError } = await supabase
+    .from('conversation_moderator_permissions')
+    .select(
+      'user_id, can_edit_info, can_add_members, can_remove_members',
+    )
+    .eq('conversation_id', conversationId)
+    .in('user_id', memberIds)
+
+  if (permissionsError) {
+    return { success: false as const, error: permissionsError.message }
+  }
+
+  const permissionsMap = new Map(
+    (moderatorPermissions ?? []).map((permission) => [
+      permission.user_id,
+      permission,
+    ]),
+  )
+
   const members = conversation.conversation_members.map((member) => {
     const profile = profileMap.get(member.user_id)
+    const permissions = permissionsMap.get(member.user_id)
+
     return {
       ...member,
       display_name: profile?.display_name ?? null,
       avatar_url: profile?.avatar_url ?? null,
+      can_edit_info: permissions?.can_edit_info ?? false,
+      can_add_members: permissions?.can_add_members ?? false,
+      can_remove_members: permissions?.can_remove_members ?? false,
     }
   })
 
@@ -692,6 +1008,8 @@ export async function leaveConversation(conversationId: string) {
   if (error) {
     return { success: false as const, error: error.message }
   }
+
+  revalidatePath('/[locale]/community/messages', 'page')
 
   return { success: true as const }
 }
