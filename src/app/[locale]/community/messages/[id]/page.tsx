@@ -1,6 +1,7 @@
 import { getConversation, getMessages } from '@/app/[locale]/actions/messaging'
 import { Link } from '@/i18n/navigation'
 import Avatar from '@/components/community/Avatar'
+import MessageComposer from './MessageComposer'
 
 export default async function ConversationPage({
   params,
@@ -163,6 +164,11 @@ export default async function ConversationPage({
               })}            </div>
           )}
         </section>
+
+        <MessageComposer
+          conversationId={conversation.id}
+          locale={locale}
+        />
       </div>
     </main>
   )
