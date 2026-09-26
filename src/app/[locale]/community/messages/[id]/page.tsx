@@ -1,7 +1,11 @@
 import { getConversation, getMessages } from '@/app/[locale]/actions/messaging'
+import { createClient } from '@/lib/supabase/server'
 import { Link } from '@/i18n/navigation'
 import Avatar from '@/components/community/Avatar'
+import { ArrowLeft, ArrowRight, Info } from 'lucide-react'
+import ConversationPresence from './ConversationPresence'
 import MessageComposer from './MessageComposer'
+import MessageList from './MessageList'
 
 export default async function ConversationPage({
   params,
@@ -10,9 +14,12 @@ export default async function ConversationPage({
 }) {
   const { locale, id } = await params
 
-  const [conversationResult, messagesResult] = await Promise.all([
+  const supabase = await createClient()
+
+  const [conversationResult, messagesResult, userData] = await Promise.all([
     getConversation(id),
     getMessages(id),
+    supabase.auth.getUser(),
   ])
 
   if (!conversationResult.success || !messagesResult.success) {
@@ -32,6 +39,15 @@ export default async function ConversationPage({
   const conversation = conversationResult.conversation
   const messages = messagesResult.messages
   const currentUserId = conversationResult.currentUserId
+
+  const { data: adminRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userData.data.user?.id ?? '')
+    .eq('role', 'admin')
+    .maybeSingle()
+
+  const isAdmin = !!adminRole
   const conversationMembers = conversation.conversation_members
   const otherMember = conversationMembers.find((member) => member.user_id !== currentUserId)
   const conversationName =
@@ -42,18 +58,26 @@ export default async function ConversationPage({
   return (
     <main className="min-h-screen px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 sm:gap-4">
-        <header className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+        <header className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm sm:gap-3 sm:p-3.5">
           <Link
             href="/community/messages"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl font-medium text-gray-600 transition-colors hover:bg-gray-100"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:h-11 sm:w-11"
             aria-label={locale === 'ar' ? 'العودة' : 'Back'}
           >
-            {locale === 'ar' ? '→' : '←'}
+            {locale === 'ar' ? (
+              <ArrowRight className="h-5 w-5" />
+            ) : (
+              <ArrowLeft className="h-5 w-5" />
+            )}
           </Link>
 
           <Link
-            href={conversation.type === 'direct' ? '/community/profile/' + (otherMember?.user_id ?? '') : '/community/messages/' + conversation.id + '/info'}
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition-colors hover:bg-gray-50"
+            href={
+              conversation.type === 'direct'
+                ? '/community/profile/' + (otherMember?.user_id ?? '')
+                : '/community/messages/' + conversation.id + '/info'
+            }
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1.5 py-1 transition-colors hover:bg-gray-50"
           >
             {conversation.type === 'direct' ? (
               <Avatar
@@ -62,112 +86,60 @@ export default async function ConversationPage({
                 size="md"
               />
             ) : (
-              <div className="flex shrink-0 -space-x-2">
-                {conversationMembers.slice(0, 2).map((member) => (
-                  <Avatar
-                    key={member.user_id}
-                    name={member.display_name || (locale === 'ar' ? 'مستخدم' : 'User')}
-                    avatarUrl={member.avatar_url}
-                    size="sm"
-                  />
-                ))}
-              </div>
+              <Avatar
+                name={conversationName}
+                avatarUrl={conversation.avatar_url ?? null}
+                size="md"
+              />
             )}
 
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-bold text-gray-800 sm:text-lg lg:text-xl">
+              <h1 className="truncate text-sm font-bold text-gray-800 sm:text-base lg:text-lg">
                 {conversationName}
               </h1>
 
-              <p className="mt-0.5 text-xs text-gray-500 sm:text-sm">
-                {conversation.type === 'direct'
-                  ? locale === 'ar'
-                    ? 'محادثة مباشرة'
-                    : 'Direct conversation'
-                  : locale === 'ar'
-                    ? conversationMembers.length + ' أعضاء'
-                    : conversationMembers.length + ' members'}
+              <p className="mt-0.5 truncate text-xs text-gray-500 sm:text-sm">
+                <ConversationPresence
+                  conversationId={conversation.id}
+                  currentUserId={currentUserId}
+                  memberIds={conversationMembers.map(
+                    (member) => member.user_id,
+                  )}
+                  otherMemberId={otherMember?.user_id}
+                  isGroup={conversation.type === 'group'}
+                  locale={locale}
+                />
               </p>
             </div>
+          </Link>
 
-            <span className="shrink-0 text-gray-400" aria-hidden="true">
-              {locale === 'ar' ? '←' : '→'}
-            </span>
+          <Link
+            href={
+              conversation.type === 'direct'
+                ? '/community/profile/' + (otherMember?.user_id ?? '')
+                : '/community/messages/' + conversation.id + '/info'
+            }
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 sm:h-11 sm:w-11"
+            aria-label={
+              locale === 'ar' ? 'معلومات المحادثة' : 'Conversation info'
+            }
+          >
+            <Info className="h-5 w-5" />
           </Link>
         </header>
         <section className="min-h-[60vh] rounded-2xl border border-gray-200 bg-gray-50 p-3 shadow-sm sm:p-5 lg:p-6">
-          {messages.length === 0 ? (
-            <div className="flex min-h-[55vh] items-center justify-center text-center">
-              <div>
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-xl">
-                  💬
-                </div>
-
-                <p className="text-sm text-gray-500 sm:text-base">
-                  {locale === 'ar'
-                    ? 'لا توجد رسائل حتى الآن'
-                    : 'No messages yet'}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {messages.map((message) => {
-                const senderName =
-                  message.sender.display_name ||
-                  (locale === 'ar' ? 'مستخدم' : 'User')
-
-                return (
-                  <article
-                    key={message.id}
-                    className="max-w-[90%] rounded-2xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm sm:max-w-[80%] sm:px-4 sm:py-3"
-                  >
-                    {conversation.type === 'group' && (
-                      <div className="mb-2 flex items-center gap-2">
-                        {message.sender.avatar_url ? (
-                          <img
-                            src={message.sender.avatar_url}
-                            alt=""
-                            className="h-8 w-8 shrink-0 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-                            {senderName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-
-                        <span className="min-w-0 truncate text-xs font-semibold text-gray-700 sm:text-sm">
-                          {senderName}
-                        </span>
-                      </div>
-                    )}
-
-                    <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-800 sm:text-base">
-                      {message.deleted_at
-                        ? locale === 'ar'
-                          ? 'تم حذف هذه الرسالة'
-                          : 'This message was deleted'
-                        : message.body}
-                    </p>
-
-                    <time className="mt-1 block text-[10px] text-gray-400 sm:text-xs">
-                      {new Intl.DateTimeFormat(
-                        locale === 'ar' ? 'ar' : 'en',
-                        {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        },
-                      ).format(new Date(message.created_at))}
-                    </time>
-                  </article>
-                )
-              })}            </div>
-          )}
+          <MessageList
+            messages={messages}
+            currentUserId={currentUserId}
+            isGroup={conversation.type === 'group'}
+            locale={locale}
+          />
         </section>
 
         <MessageComposer
           conversationId={conversation.id}
           locale={locale}
+          isAdmin={isAdmin}
         />
       </div>
     </main>

@@ -1,9 +1,19 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getFeatureAccess } from '@/lib/features/access'
 import { revalidatePath } from 'next/cache'
 
 type ConversationType = 'direct' | 'group'
+
+export type MessageAttachmentInput = {
+  mediaRef: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+  attachmentType: 'image' | 'file'
+  orderIndex?: number
+}
 
 async function getCurrentUser() {
   const supabase = await createClient()
@@ -81,7 +91,7 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
 
   const { data: existing, error: findError } = await supabase
     .from('conversations')
-    .select('id, type, title, description, created_by, created_at, updated_at')
+    .select('id, type, title, description, avatar_url, created_by, created_at, updated_at')
     .eq('type', 'direct')
     .eq('direct_key', directKey)
     .maybeSingle()
@@ -297,16 +307,88 @@ export async function createGroupConversation(
   }
 }
 
-export async function updateGroupConversation(conversationId: string, title: string, description: string) {
+export async function updateGroupConversation(
+  conversationId: string,
+  title: string,
+  description: string,
+  avatarUrl?: string,
+) {
   const result = await getCurrentUser()
-  if (result.user === null) return { success: false as const, error: 'Not authenticated' }
+
+  if (result.user === null) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
   const cleanTitle = title.trim()
   const cleanDescription = description.trim()
-  if (conversationId.length === 0) return { success: false as const, error: 'Conversation ID is required' }
-  if (cleanTitle.length === 0) return { success: false as const, error: 'Conversation title is required' }
-  const response = await result.supabase.from('conversations').update({ title: cleanTitle, description: cleanDescription || null }).eq('id', conversationId).eq('type', 'group').select('id, type, title, description, created_by, created_at, updated_at').single()
-  if (response.error || response.data === null) return { success: false as const, error: response.error?.message ?? 'Failed to update conversation' }
-  return { success: true as const, conversation: response.data }
+
+  if (conversationId.length === 0) {
+    return {
+      success: false as const,
+      error: 'Conversation ID is required',
+    }
+  }
+
+  if (cleanTitle.length === 0) {
+    return {
+      success: false as const,
+      error: 'Conversation title is required',
+    }
+  }
+
+  if (avatarUrl !== undefined && avatarUrl.length > 2000) {
+    return {
+      success: false as const,
+      error: 'Conversation avatar URL is too long',
+    }
+  }
+
+  const payload: {
+    title: string
+    description: string | null
+    avatar_url?: string
+  } = {
+    title: cleanTitle,
+    description: cleanDescription || null,
+  }
+
+  if (avatarUrl !== undefined) {
+    payload.avatar_url = avatarUrl
+  }
+
+  const response = await result.supabase
+    .from('conversations')
+    .update(payload)
+    .eq('id', conversationId)
+    .eq('type', 'group')
+    .select(
+      'id, type, title, description, avatar_url, created_by, created_at, updated_at',
+    )
+    .single()
+
+  if (response.error || response.data === null) {
+    return {
+      success: false as const,
+      error:
+        response.error?.message ??
+        'Failed to update conversation',
+    }
+  }
+
+  revalidatePath('/[locale]/community/messages', 'page')
+  revalidatePath(
+    '/[locale]/community/messages/' + conversationId,
+    'page',
+  )
+  revalidatePath(
+    '/[locale]/community/messages/' + conversationId + '/info',
+    'page',
+  )
+
+  return {
+    success: true as const,
+    conversation: response.data,
+  }
 }
 
 export async function searchGroupMembers(conversationId: string, search: string) {
@@ -528,6 +610,7 @@ export async function getConversations() {
         type,
         title,
         description,
+        avatar_url,
         created_by,
         created_at,
         updated_at
@@ -617,7 +700,14 @@ export async function getConversations() {
 
       const otherUser =
         conversation.type === 'direct'
-          ? otherMembers[0] ?? null
+          ? otherMembers[0]
+            ? {
+                userId: otherMembers[0].userId,
+                role: otherMembers[0].role,
+                displayName: otherMembers[0].displayName,
+                avatarUrl: otherMembers[0].avatarUrl,
+              }
+            : null
           : null
 
       return {
@@ -709,6 +799,7 @@ export async function getConversation(conversationId: string) {
       type,
       title,
       description,
+      avatar_url,
       created_by,
       created_at,
       updated_at,
@@ -862,12 +953,54 @@ export async function getMessages(
     )
   }
 
+  const attachmentMap = new Map<
+    string,
+    Array<{
+      id: string
+      message_id: string
+      media_ref: string
+      file_name: string
+      mime_type: string
+      file_size: number
+      attachment_type: 'image' | 'file'
+      order_index: number
+      created_at: string
+    }>
+  >()
+
+  const messageIds = messages.map((message) => message.id)
+
+  if (messageIds.length > 0) {
+    const { data: attachments, error: attachmentsError } = await supabase
+      .from('message_attachments')
+      .select(
+        'id, message_id, media_ref, file_name, mime_type, file_size, attachment_type, order_index, created_at',
+      )
+      .in('message_id', messageIds)
+      .order('order_index', { ascending: true })
+      .order('created_at', { ascending: true })
+
+    if (attachmentsError) {
+      return {
+        success: false as const,
+        error: attachmentsError.message,
+      }
+    }
+
+    for (const attachment of attachments ?? []) {
+      const list = attachmentMap.get(attachment.message_id) ?? []
+      list.push(attachment)
+      attachmentMap.set(attachment.message_id, list)
+    }
+  }
+
   const messagesWithSenders = messages.map((message) => ({
     ...message,
     sender: profileMap.get(message.sender_id) ?? {
       display_name: null,
       avatar_url: null,
     },
+    attachments: attachmentMap.get(message.id) ?? [],
   }))
 
   return {
@@ -881,6 +1014,7 @@ export async function sendMessage(
   conversationId: string,
   body: string,
   clientMessageId: string,
+  attachments: MessageAttachmentInput[] = [],
 ) {
   const { supabase, user } = await getCurrentUser()
 
@@ -894,69 +1028,174 @@ export async function sendMessage(
     return { success: false as const, error: 'Conversation ID is required' }
   }
 
-  if (!cleanBody) {
-    return { success: false as const, error: 'Message cannot be empty' }
-  }
-
   if (!clientMessageId) {
     return { success: false as const, error: 'Client message ID is required' }
   }
 
-  const { data: existing } = await supabase
-    .from('messages')
-    .select(`
-      id,
-      conversation_id,
-      sender_id,
-      client_message_id,
-      body,
-      created_at,
-      edited_at,
-      deleted_at
-    `)
-    .eq('sender_id', user.id)
-    .eq('client_message_id', clientMessageId)
-    .maybeSingle()
-
-  if (existing) {
+  if (attachments.length > 10) {
     return {
-      success: true as const,
-      message: existing,
-      duplicate: true as const,
+      success: false as const,
+      error: 'A message can have a maximum of 10 attachments',
     }
   }
 
-  const { data: message, error } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      client_message_id: clientMessageId,
-      body: cleanBody,
-    })
-    .select(`
-      id,
-      conversation_id,
-      sender_id,
-      client_message_id,
-      body,
-      created_at,
-      edited_at,
-      deleted_at
-    `)
-    .single()
+  const normalizedAttachments = attachments.map((attachment, index) => ({
+    media_ref: attachment.mediaRef.trim(),
+    file_name: attachment.fileName.trim(),
+    mime_type: attachment.mimeType.trim(),
+    file_size: attachment.fileSize,
+    attachment_type: attachment.attachmentType,
+    order_index: attachment.orderIndex ?? index,
+  }))
 
-  if (error || !message) {
+  for (const attachment of normalizedAttachments) {
+    if (!attachment.media_ref.startsWith('imagekit:')) {
+      return {
+        success: false as const,
+        error: 'Invalid media reference',
+      }
+    }
+
+    if (!attachment.file_name || attachment.file_name.length > 255) {
+      return {
+        success: false as const,
+        error: 'Invalid attachment file name',
+      }
+    }
+
+    if (!attachment.mime_type || attachment.mime_type.length > 255) {
+      return {
+        success: false as const,
+        error: 'Invalid attachment MIME type',
+      }
+    }
+
+    if (
+      !Number.isSafeInteger(attachment.file_size) ||
+      attachment.file_size <= 0 ||
+      attachment.file_size > 5 * 1024 * 1024
+    ) {
+      return {
+        success: false as const,
+        error: 'Attachment exceeds the 5MB limit',
+      }
+    }
+
+    if (
+      attachment.attachment_type !== 'image' &&
+      attachment.attachment_type !== 'file'
+    ) {
+      return {
+        success: false as const,
+        error: 'Invalid attachment type',
+      }
+    }
+  }
+
+  if (!cleanBody && normalizedAttachments.length === 0) {
     return {
       success: false as const,
-      error: error?.message ?? 'Failed to send message',
+      error: 'Message cannot be empty',
     }
+  }
+
+  if (normalizedAttachments.length > 0) {
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+
+    if (rolesError) {
+      return {
+        success: false as const,
+        error: rolesError.message,
+      }
+    }
+
+    const isAdmin = roles?.some((role) => role.role === 'admin') ?? false
+
+    if (!isAdmin) {
+      const access = await getFeatureAccess('message_media')
+
+      if (!access.success) {
+        return {
+          success: false as const,
+          error: access.error,
+        }
+      }
+
+      if (!access.access.hasAccess) {
+        return {
+          success: false as const,
+          error: 'MESSAGE_MEDIA_ACCESS_REQUIRED',
+        }
+      }
+    }
+  }
+
+  const response = await supabase.rpc('send_message_with_attachments', {
+    p_conversation_id: conversationId,
+    p_client_message_id: clientMessageId,
+    p_body: cleanBody || null,
+    p_attachments: normalizedAttachments,
+  })
+
+  if (response.error || !response.data) {
+    const rpcError = response.error?.message ?? ''
+
+    if (rpcError.includes('Daily feature usage limit reached')) {
+      return {
+        success: false as const,
+        error: 'MESSAGE_MEDIA_DAILY_LIMIT_REACHED',
+      }
+    }
+
+    if (
+      rpcError.includes('Feature access required') ||
+      rpcError.includes('Feature is not available')
+    ) {
+      return {
+        success: false as const,
+        error: 'MESSAGE_MEDIA_ACCESS_REQUIRED',
+      }
+    }
+
+    return {
+      success: false as const,
+      error: rpcError || 'Failed to send message',
+    }
+  }
+
+  const result = response.data as {
+    message: {
+      id: string
+      conversation_id: string
+      sender_id: string
+      client_message_id: string
+      body: string | null
+      created_at: string
+      edited_at: string | null
+      deleted_at: string | null
+    }
+    attachments: Array<{
+      id: string
+      message_id: string
+      media_ref: string
+      file_name: string
+      mime_type: string
+      file_size: number
+      attachment_type: 'image' | 'file'
+      order_index: number
+      created_at: string
+    }>
+    duplicate: boolean
   }
 
   return {
     success: true as const,
-    message,
-    duplicate: false as const,
+    message: result.message,
+    attachments: result.attachments,
+    duplicate: result.duplicate,
   }
 }
 
@@ -1058,6 +1297,12 @@ export async function editMessage(
     }
   }
 
+  revalidatePath(
+    '/[locale]/community/messages/[id]',
+    'page',
+  )
+  revalidatePath('/[locale]/community/messages', 'page')
+
   return {
     success: true as const,
     message,
@@ -1098,8 +1343,54 @@ export async function deleteMessage(messageId: string) {
     }
   }
 
+  revalidatePath(
+    '/[locale]/community/messages/[id]',
+    'page',
+  )
+  revalidatePath('/[locale]/community/messages', 'page')
+
   return {
     success: true as const,
     message,
+  }
+}
+
+
+export async function getMessageAttachmentUrl(mediaRef: string) {
+  const result = await getCurrentUser()
+
+  if (result.user === null) {
+    return {
+      success: false as const,
+      error: 'Not authenticated',
+    }
+  }
+
+  const separatorIndex = mediaRef.indexOf(':')
+
+  if (separatorIndex <= 0) {
+    return {
+      success: false as const,
+      error: 'Invalid media reference',
+    }
+  }
+
+  const provider = mediaRef.slice(0, separatorIndex)
+  const path = mediaRef.slice(separatorIndex + 1)
+
+  if (provider !== 'imagekit' || !path) {
+    return {
+      success: false as const,
+      error: 'Unsupported media provider',
+    }
+  }
+
+  const { getImagekitSignedUrl } = await import(
+    '@/lib/storage/imagekit-server'
+  )
+
+  return {
+    success: true as const,
+    url: getImagekitSignedUrl(path, 3600),
   }
 }

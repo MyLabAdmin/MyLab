@@ -1,7 +1,8 @@
 import { getUploadAuthParams } from '@imagekit/next/server'
+import { getFeatureAccess } from '@/lib/features/access'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
 
@@ -14,8 +15,32 @@ export async function GET() {
     .select('role')
     .eq('user_id', userData.user.id)
 
-  if (!roles?.some((r) => r.role === 'admin')) {
-    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  const isAdmin = roles?.some((r) => r.role === 'admin') ?? false
+  const featureKey = new URL(request.url).searchParams.get('feature')
+
+  if (!featureKey) {
+    if (!isAdmin) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  } else {
+    if (isAdmin) {
+      // Admins retain the existing upload capability.
+    } else {
+      const accessResult = await getFeatureAccess(featureKey)
+
+      if (
+        !accessResult.success ||
+        !accessResult.access.hasAccess
+      ) {
+        return Response.json(
+          {
+            error: 'Feature access required',
+            featureKey,
+          },
+          { status: 403 },
+        )
+      }
+    }
   }
 
   const { token, expire, signature } = getUploadAuthParams({

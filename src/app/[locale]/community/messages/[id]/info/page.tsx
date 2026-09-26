@@ -78,7 +78,11 @@ export default async function GroupConversationInfoPage({
 
           <div className='mt-6 flex items-center gap-4 rounded-2xl bg-gray-50 p-4'>
             <div className='shrink-0'>
-              <Avatar name={title} size='lg' />
+              <Avatar
+                name={title}
+                avatarUrl={conversation.avatar_url ?? null}
+                size='lg'
+              />
             </div>
             <div className='min-w-0'>
               <h2 className='font-semibold text-gray-900'>{title}</h2>
@@ -104,6 +108,7 @@ export default async function GroupConversationInfoPage({
             members={members}
             initialTitle={title}
             initialDescription={description ?? ''}
+            initialAvatarUrl={conversation.avatar_url ?? null}
             canEditInfo={canEditInfo}
             canAddMembers={canAddMembers}
             canTransferOwnership={canTransferOwnership}

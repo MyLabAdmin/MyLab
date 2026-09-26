@@ -19,6 +19,7 @@ type Props = {
   members: Member[]
   initialTitle: string
   initialDescription: string
+  initialAvatarUrl: string | null
   canEditInfo: boolean
   canAddMembers: boolean
   canTransferOwnership: boolean
@@ -33,6 +34,7 @@ export default function GroupManagementMenu({
   members,
   initialTitle,
   initialDescription,
+  initialAvatarUrl,
   canEditInfo,
   canAddMembers,
   canTransferOwnership,
@@ -196,6 +198,7 @@ export default function GroupManagementMenu({
                     conversationId={conversationId}
                     initialTitle={initialTitle}
                     initialDescription={initialDescription}
+        initialAvatarUrl={initialAvatarUrl}
                     locale={locale}
                   />
                 ) : null}
