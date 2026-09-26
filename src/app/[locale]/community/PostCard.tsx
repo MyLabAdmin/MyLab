@@ -91,11 +91,15 @@ export default function PostCard({
   post,
   currentUserId,
   isAdmin,
+  canManagePosts,
+  canDeletePosts,
   onDeleted,
 }: {
   post: Post
   currentUserId?: string
   isAdmin: boolean
+  canManagePosts?: boolean
+  canDeletePosts?: boolean
   onDeleted: () => void
 }) {
   const router = useRouter()
@@ -167,6 +171,8 @@ export default function PostCard({
         authorId={post.authorId}
         currentUserId={currentUserId}
         isAdmin={isAdmin}
+        canManagePosts={canManagePosts ?? false}
+        canDeletePosts={canDeletePosts ?? false}
         initialBookmarked={post.bookmarked}
         initialMuted={post.muted}
         commentCount={commentCount}

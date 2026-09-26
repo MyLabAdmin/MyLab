@@ -6,6 +6,8 @@ import { useRouter } from '@/i18n/navigation'
 import { joinGroup, leaveGroup } from '@/app/[locale]/actions/groups'
 import { useToast } from '@/components/ui/Toast'
 import PendingMembersPanel from './PendingMembersPanel'
+import ModeratorManagementPanel from './ModeratorManagementPanel'
+import GroupMembersPanel from './GroupMembersPanel'
 
 export default function GroupHeader({
   group,
@@ -21,6 +23,15 @@ export default function GroupHeader({
     memberCount: number
     myStatus: string | null
     myRole: string | null
+    moderatorPermissions: {
+      canEditGroup: boolean
+      canAddMembers: boolean
+      canRemoveMembers: boolean
+      canManageJoinRequests: boolean
+      canManagePosts: boolean
+      canDeletePosts: boolean
+      canManageModerators: boolean
+    } | null
   }
   pendingCount: number
 }) {
@@ -30,8 +41,19 @@ export default function GroupHeader({
   const [status, setStatus] = useState(group.myStatus)
   const [submitting, setSubmitting] = useState(false)
   const [showPending, setShowPending] = useState(false)
+  const [showModerators, setShowModerators] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
 
   const isManager = group.myRole === 'owner' || group.myRole === 'moderator'
+  const canManageJoinRequests =
+    group.myRole === 'owner' ||
+    group.moderatorPermissions?.canManageJoinRequests === true
+  const canManageModerators =
+    group.myRole === 'owner' ||
+    group.moderatorPermissions?.canManageModerators === true
+  const canRemoveMembers =
+    group.myRole === 'owner' ||
+    group.moderatorPermissions?.canRemoveMembers === true
 
   async function handleJoin() {
     setSubmitting(true)
@@ -94,18 +116,62 @@ export default function GroupHeader({
           </button>
         )}
 
-        {isManager && pendingCount > 0 && (
+        {canManageJoinRequests && pendingCount > 0 && (
           <button
             type="button"
             onClick={() => setShowPending(true)}
             className="flex-1 border border-primary-300 text-primary-700 rounded-lg py-2 text-sm"
           >
-            {locale === 'ar' ? `طلبات (${pendingCount})` : `Requests (${pendingCount})`}
+            {locale === 'ar'
+              ? `طلبات (${pendingCount})`
+              : `Requests (${pendingCount})`}
+          </button>
+        )}
+
+        {canRemoveMembers && (
+          <button
+            type="button"
+            onClick={() => setShowMembers(true)}
+            className="flex-1 border border-primary-300 text-primary-700 rounded-lg py-2 text-sm"
+          >
+            {locale === 'ar' ? 'الأعضاء' : 'Members'}
+          </button>
+        )}
+
+        {canManageModerators && (
+          <button
+            type="button"
+            onClick={() => setShowModerators(true)}
+            className="flex-1 border border-primary-300 text-primary-700 rounded-lg py-2 text-sm"
+          >
+            {locale === 'ar' ? 'المشرفون' : 'Moderators'}
           </button>
         )}
       </div>
 
-      {showPending && <PendingMembersPanel groupId={group.id} onClose={() => setShowPending(false)} />}
+      {showPending && (
+        <PendingMembersPanel
+          groupId={group.id}
+          onClose={() => setShowPending(false)}
+        />
+      )}
+
+      {showModerators && (
+        <ModeratorManagementPanel
+          groupId={group.id}
+          locale={locale}
+          onClose={() => setShowModerators(false)}
+        />
+      )}
+
+      {showMembers && (
+        <GroupMembersPanel
+          groupId={group.id}
+          locale={locale}
+          canRemoveMembers={canRemoveMembers}
+          onClose={() => setShowMembers(false)}
+        />
+      )}
     </div>
   )
 }

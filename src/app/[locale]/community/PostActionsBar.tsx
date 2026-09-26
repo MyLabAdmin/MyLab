@@ -18,6 +18,8 @@ export default function PostActionsBar({
   authorId,
   currentUserId,
   isAdmin,
+  canManagePosts,
+  canDeletePosts,
   initialBookmarked,
   initialMuted,
   commentCount,
@@ -29,6 +31,8 @@ export default function PostActionsBar({
   authorId: string
   currentUserId?: string
   isAdmin: boolean
+  canManagePosts: boolean
+  canDeletePosts: boolean
   initialBookmarked: boolean
   initialMuted: boolean
   commentCount: number
@@ -48,7 +52,8 @@ export default function PostActionsBar({
   const [reportReason, setReportReason] = useState('')
 
   const isOwner = currentUserId === authorId
-  const canManage = isOwner || isAdmin
+  const canEdit = isOwner || isAdmin || canManagePosts
+  const canDelete = isOwner || isAdmin || canDeletePosts
 
   async function handleSaveClick() {
     if (bookmarked) {
@@ -84,7 +89,18 @@ export default function PostActionsBar({
 
   async function handleDelete() {
     setShowMenu(false)
-    await deletePost(postId)
+
+    const result = await deletePost(postId)
+
+    if (!result.success) {
+      showToast(
+        locale === 'ar'
+          ? 'تعذر حذف المنشور'
+          : 'Could not delete post',
+      )
+      return
+    }
+
     onDeleted()
   }
 
@@ -122,7 +138,7 @@ export default function PostActionsBar({
           <button type="button" onClick={handleMute} className="flex items-center gap-2 text-sm py-2 px-2 rounded hover:bg-primary-50 text-start">
             <BellIcon className="w-4 h-4" muted={muted} /> {muted ? t('mutedButton') : t('muteButton')}
           </button>
-          {canManage && (
+          {canEdit && (
             <button
               type="button"
               onClick={() => { setShowMenu(false); onEditRequest() }}
@@ -131,7 +147,7 @@ export default function PostActionsBar({
               <EditIcon className="w-4 h-4" /> {locale === 'ar' ? 'تعديل' : 'Edit'}
             </button>
           )}
-          {canManage && (
+          {canDelete && (
             <button type="button" onClick={handleDelete} className="flex items-center gap-2 text-sm py-2 px-2 rounded hover:bg-red-50 text-red-500 text-start">
               <TrashIcon className="w-4 h-4" /> {locale === 'ar' ? 'حذف' : 'Delete'}
             </button>

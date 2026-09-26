@@ -29,7 +29,32 @@ export default async function EditPostPage({
   }
 
   const isOwner = post!.authorId === userData.user!.id
-  if (!isOwner && !isAdmin) {
+  let canManageGroupPost = false
+
+  if (post!.groupId) {
+    const { data: membership } = await supabase
+      .from('group_members')
+      .select('role, status')
+      .eq('group_id', post!.groupId)
+      .eq('user_id', userData.user!.id)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (membership?.role === 'owner') {
+      canManageGroupPost = true
+    } else if (membership?.role === 'moderator') {
+      const { data: permissions } = await supabase
+        .from('group_moderator_permissions')
+        .select('can_manage_posts')
+        .eq('group_id', post!.groupId)
+        .eq('user_id', userData.user!.id)
+        .maybeSingle()
+
+      canManageGroupPost = permissions?.can_manage_posts === true
+    }
+  }
+
+  if (!isOwner && !isAdmin && !canManageGroupPost) {
     redirect({ href: '/community', locale })
   }
 

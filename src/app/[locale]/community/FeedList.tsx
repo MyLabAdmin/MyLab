@@ -12,6 +12,8 @@ export default function FeedList({
   canAddImage,
   currentUserId,
   isAdmin,
+  canManagePosts,
+  canDeletePosts,
   groupId,
 }: {
   initialPosts: Post[]
@@ -19,6 +21,8 @@ export default function FeedList({
   canAddImage: boolean
   currentUserId?: string
   isAdmin: boolean
+  canManagePosts?: boolean
+  canDeletePosts?: boolean
   groupId?: string
 }) {
   const locale = useLocale()
@@ -60,6 +64,8 @@ export default function FeedList({
             post={post}
             currentUserId={currentUserId}
             isAdmin={isAdmin}
+            canManagePosts={canManagePosts ?? false}
+            canDeletePosts={canDeletePosts ?? false}
             onDeleted={() => setPosts((prev) => prev.filter((p) => p.id !== post.id))}
           />
         ))}

@@ -235,25 +235,33 @@ export async function repostPost(originalPostId: string, content: string) {
   return { success: !error }
 }
 
-export async function editPost(postId: string, content: string, mediaRefs: { type: 'image' | 'video'; ref: string }[]) {
+export async function editPost(
+  postId: string,
+  content: string,
+  mediaRefs: { type: 'image' | 'video'; ref: string }[],
+) {
   const supabase = await createClient()
-  const { error } = await supabase.from('posts').update({ content, updated_at: new Date().toISOString() }).eq('id', postId)
-  if (error) return { success: false }
 
-  await supabase.from('post_media').delete().eq('post_id', postId)
-  if (mediaRefs.length > 0) {
-    await supabase.from('post_media').insert(
-      mediaRefs.map((m, i) => ({ post_id: postId, media_type: m.type, media_ref: m.ref, order_index: i }))
-    )
+  const { error } = await supabase.rpc('edit_post_with_media', {
+    p_post_id: postId,
+    p_content: content,
+    p_media: mediaRefs.map((media, index) => ({
+      media_type: media.type,
+      media_ref: media.ref,
+      order_index: index,
+    })),
+  })
+
+  return {
+    success: !error,
   }
-  return { success: true }
 }
 
 export async function getPostForEdit(postId: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('posts')
-    .select('id, content, author_id, post_media(media_type, media_ref, order_index)')
+    .select('id, content, author_id, group_id, post_media(media_type, media_ref, order_index)')
     .eq('id', postId)
     .single()
 
@@ -264,7 +272,13 @@ export async function getPostForEdit(postId: string) {
     .sort((a: any, b: any) => a.order_index - b.order_index)
     .map((m: any) => m.media_ref)
 
-  return { id: data.id, content: data.content, authorId: data.author_id, imageRefs: images }
+  return {
+    id: data.id,
+    content: data.content,
+    authorId: data.author_id,
+    groupId: data.group_id,
+    imageRefs: images,
+  }
 }
 
 export async function deletePost(postId: string) {
