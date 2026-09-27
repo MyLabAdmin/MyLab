@@ -56,8 +56,8 @@ export default async function ConversationPage({
       : conversation.title || (locale === 'ar' ? 'محادثة جماعية' : 'Group conversation')
 
   return (
-    <main className="min-h-screen px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 sm:gap-4">
+    <main className="h-[100dvh] overflow-hidden px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto flex h-full w-full max-w-4xl min-h-0 flex-col gap-3 sm:gap-4">
         <header className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm sm:gap-3 sm:p-3.5">
           <Link
             href="/community/messages"
@@ -127,7 +127,7 @@ export default async function ConversationPage({
             <Info className="h-5 w-5" />
           </Link>
         </header>
-        <section className="min-h-[60vh] rounded-2xl border border-gray-200 bg-gray-50 p-3 shadow-sm sm:p-5 lg:p-6">
+        <section className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 p-3 shadow-sm sm:p-5 lg:p-6">
           <MessageList
             messages={messages}
             currentUserId={currentUserId}

@@ -2,26 +2,36 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { upload } from '@imagekit/next'
+import { useRouter } from 'next/navigation'
 import {
-  getFeatureAccess,
-  getFeatureDailyUsage,
+  getFeatureCapacityPlans,
+  getFeatureCapacityStatus,
+  type FeatureCapacityPlan,
+  type FeatureCapacityStatus,
 } from '@/lib/features/access'
 import {
   getWalletBalance,
-  purchaseMessageMedia,
+  purchaseMessageMediaPlan,
 } from '@/app/[locale]/actions/wallet'
-import { useRouter } from 'next/navigation'
 import {
   sendMessage,
   type MessageAttachmentInput,
 } from '@/app/[locale]/actions/messaging'
 
+const FEATURE_KEY = 'message_media'
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const MAX_ATTACHMENTS = 10
 
 type PendingAttachment = MessageAttachmentInput & {
   id: string
   previewUrl?: string
+}
+
+type CapacityState = {
+  status: FeatureCapacityStatus | null
+  plans: FeatureCapacityPlan[]
+  marketCode: string | null
+  walletBalance: number | null
 }
 
 export default function MessageComposer({
@@ -40,132 +50,117 @@ export default function MessageComposer({
   const [body, setBody] = useState('')
   const [attachments, setAttachments] = useState<PendingAttachment[]>([])
   const [error, setError] = useState('')
-  const [mediaAccess, setMediaAccess] = useState<Awaited<ReturnType<typeof getFeatureAccess>> | null>(null)
-  const [walletBalance, setWalletBalance] = useState<number | null>(null)
-  const [dailyUsage, setDailyUsage] = useState<
-    Awaited<ReturnType<typeof getFeatureDailyUsage>> | null
-  >(null)
+  const [capacity, setCapacity] = useState<CapacityState>({
+    status: null,
+    plans: [],
+    marketCode: null,
+    walletBalance: null,
+  })
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [showCapacityPanel, setShowCapacityPanel] = useState(false)
+  const [isLoadingCapacity, setIsLoadingCapacity] = useState(true)
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [resetCountdown, setResetCountdown] = useState('')
 
   const isArabic = locale === 'ar'
-
-  useEffect(() => {
-    void loadMediaAccess()
-  }, [])
-
-  useEffect(() => {
-    if (
-      dailyUsage?.success !== true ||
-      dailyUsage.usage.dailyLimit === 0
-    ) {
-      setResetCountdown('')
-      return
-    }
-
-    const updateCountdown = () => {
-      const remainingMs =
-        new Date(dailyUsage.usage.resetAt).getTime() - Date.now()
-
-      if (remainingMs <= 0) {
-        setResetCountdown('')
-        void loadMediaAccess()
-        return
-      }
-
-      setResetCountdown(
-        formatRemainingTime(dailyUsage.usage.resetAt),
-      )
-    }
-
-    updateCountdown()
-
-    const interval = window.setInterval(updateCountdown, 30000)
-
-    return () => window.clearInterval(interval)
-  }, [dailyUsage, isArabic])
   const busy = isPending || isUploading || isPurchasing
 
-  function formatRemainingTime(resetAt: string) {
-    const remainingMs = Math.max(
-      new Date(resetAt).getTime() - Date.now(),
-      0,
-    )
+  useEffect(() => {
+    void loadCapacity()
+  }, [])
 
-    const totalMinutes = Math.ceil(remainingMs / 60000)
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
-
-    if (isArabic) {
-      if (hours > 0) {
-        return minutes > 0
-          ? `${hours} ساعة و${minutes} دقيقة`
-          : `${hours} ساعة`
-      }
-
-      return `${Math.max(minutes, 1)} دقيقة`
-    }
-
-    if (hours > 0) {
-      return minutes > 0
-        ? `${hours}h ${minutes}m`
-        : `${hours}h`
-    }
-
-    return `${Math.max(minutes, 1)}m`
-  }
-
-  async function loadMediaAccess() {
+  async function loadCapacity() {
     if (isAdmin) {
-      setMediaAccess(null)
-      setWalletBalance(null)
-      setDailyUsage(null)
+      setCapacity({
+        status: null,
+        plans: [],
+        marketCode: null,
+        walletBalance: null,
+      })
+      setIsLoadingCapacity(false)
       return
     }
 
-    const [accessResult, walletResult, usageResult] =
-      await Promise.all([
-        getFeatureAccess('message_media'),
-        getWalletBalance(),
-        getFeatureDailyUsage('message_media'),
-      ])
-
-    setMediaAccess(accessResult)
-    setDailyUsage(usageResult)
-
-    if (walletResult.success) {
-      setWalletBalance(walletResult.wallet.balance)
-    }
-  }
-
-  async function purchaseAccess() {
-    if (isPurchasing) {
-      return
-    }
-
-    setError('')
-    setIsPurchasing(true)
+    setIsLoadingCapacity(true)
 
     try {
-      const result = await purchaseMessageMedia()
+      const [statusResult, plansResult, walletResult] =
+        await Promise.all([
+          getFeatureCapacityStatus(FEATURE_KEY),
+          getFeatureCapacityPlans(FEATURE_KEY),
+          getWalletBalance(),
+        ])
 
-      if (!result.success) {
-        setError(
-          isArabic
-            ? 'تعذر شراء الميزة. تحقق من رصيد المحفظة.'
-            : 'Unable to purchase the feature. Check your wallet balance.',
+      if (!statusResult.success) {
+        console.error(
+          '[MessageComposer] capacity status failed:',
+          statusResult.error,
         )
-        return
       }
 
-      await loadMediaAccess()
+      if (!plansResult.success) {
+        console.error(
+          '[MessageComposer] capacity plans failed:',
+          plansResult.error,
+        )
+      }
 
-      setError('')
+      if (!walletResult.success) {
+        console.error(
+          '[MessageComposer] wallet balance failed:',
+          walletResult.error,
+        )
+      }
+
+      setCapacity({
+        status: statusResult.success ? statusResult.status : null,
+        plans: plansResult.success ? plansResult.plans : [],
+        marketCode: plansResult.success
+          ? plansResult.marketCode
+          : null,
+        walletBalance: walletResult.success
+          ? walletResult.wallet.balance
+          : null,
+      })
+
+      if (!plansResult.success) {
+        setError(
+          isArabic
+            ? 'تعذر تحميل خيارات شراء سعة الصور والملفات.'
+            : 'Unable to load image and file capacity options.',
+        )
+      }
     } finally {
-      setIsPurchasing(false)
+      setIsLoadingCapacity(false)
     }
+  }
+
+  function formatDuration(seconds: number) {
+    if (seconds >= 86400) {
+      const days = Math.max(1, Math.round(seconds / 86400))
+      return isArabic ? `${days} يوم${days === 1 ? '' : 'ًا'}` : `${days} days`
+    }
+
+    if (seconds >= 3600) {
+      const hours = Math.max(1, Math.round(seconds / 3600))
+      return isArabic ? `${hours} ساعة` : `${hours} hours`
+    }
+
+    const minutes = Math.max(1, Math.round(seconds / 60))
+    return isArabic ? `${minutes} دقيقة` : `${minutes} minutes`
+  }
+
+  function formatPlanCapacity(plan: FeatureCapacityPlan) {
+    if (plan.capacityKind === 'daily_bonus') {
+      return isArabic
+        ? `+${plan.capacityUnits} استخدام يومي`
+        : `+${plan.capacityUnits} daily uses`
+    }
+
+    return isArabic
+      ? `${plan.capacityUnits} استخدام`
+      : `${plan.capacityUnits} uses`
   }
 
   function removeAttachment(id: string) {
@@ -185,14 +180,6 @@ export default function MessageComposer({
 
     const remaining = MAX_ATTACHMENTS - attachments.length
 
-    if (
-      !isAdmin &&
-      (mediaAccess?.success !== true || !mediaAccess.access.hasAccess)
-    ) {
-      setError('MESSAGE_MEDIA_ACCESS_REQUIRED')
-      return
-    }
-
     if (remaining <= 0) {
       setError(
         isArabic
@@ -200,6 +187,34 @@ export default function MessageComposer({
           : 'You can attach up to 10 files.',
       )
       return
+    }
+
+    if (!isAdmin) {
+      const statusResult = await getFeatureCapacityStatus(FEATURE_KEY)
+
+      if (!statusResult.success) {
+        setError('MESSAGE_MEDIA_ACCESS_REQUIRED')
+        return
+      }
+
+      const status = statusResult.status
+
+      if (
+        status.dailyRemaining <= 0 &&
+        status.totalCapacityRemaining <= 0
+      ) {
+        setCapacity((current) => ({
+          ...current,
+          status,
+        }))
+        setError('MESSAGE_MEDIA_ACCESS_REQUIRED')
+        return
+      }
+
+      setCapacity((current) => ({
+        ...current,
+        status,
+      }))
     }
 
     const selected = Array.from(files).slice(0, remaining)
@@ -234,7 +249,9 @@ export default function MessageComposer({
 
           throw new Error(
             auth.error ??
-              (isArabic ? 'تعذر تجهيز الرفع.' : 'Upload authorization failed.'),
+              (isArabic
+                ? 'تعذر تجهيز الرفع.'
+                : 'Upload authorization failed.'),
           )
         }
 
@@ -261,18 +278,19 @@ export default function MessageComposer({
             ? URL.createObjectURL(file)
             : undefined
 
-        const attachment: PendingAttachment = {
-          id: crypto.randomUUID(),
-          mediaRef: `imagekit:${result.filePath}`,
-          fileName: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          fileSize: file.size,
-          attachmentType,
-          orderIndex: attachments.length,
-          previewUrl,
-        }
-
-        setAttachments((current) => [...current, attachment])
+        setAttachments((current) => [
+          ...current,
+          {
+            id: crypto.randomUUID(),
+            mediaRef: `imagekit:${result.filePath}`,
+            fileName: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            fileSize: file.size,
+            attachmentType,
+            orderIndex: current.length,
+            previewUrl,
+          },
+        ])
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : ''
@@ -292,6 +310,37 @@ export default function MessageComposer({
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
+    }
+  }
+
+  async function purchasePlan(plan: FeatureCapacityPlan) {
+    if (isPurchasing) return
+
+    setError('')
+    setSelectedPlanId(plan.id)
+    setIsPurchasing(true)
+
+    try {
+      const result = await purchaseMessageMediaPlan(
+        plan.id,
+        plan.marketCode,
+        plan.currencyCode,
+      )
+
+      if (!result.success) {
+        setError(
+          isArabic
+            ? 'تعذر شراء السعة. تحقق من رصيد المحفظة.'
+            : 'Unable to purchase capacity. Check your wallet balance.',
+        )
+        return
+      }
+
+      await loadCapacity()
+      setError('')
+    } finally {
+      setIsPurchasing(false)
+      setSelectedPlanId(null)
     }
   }
 
@@ -330,21 +379,18 @@ export default function MessageComposer({
         setBody('')
         setAttachments([])
         setError('')
-        void loadMediaAccess()
+        void loadCapacity()
         router.refresh()
         textareaRef.current?.focus()
         return
       }
 
-      if (result.error === 'MESSAGE_MEDIA_ACCESS_REQUIRED') {
-        setError('MESSAGE_MEDIA_ACCESS_REQUIRED')
-        void loadMediaAccess()
-        return
-      }
-
-      if (result.error === 'MESSAGE_MEDIA_DAILY_LIMIT_REACHED') {
-        setError('MESSAGE_MEDIA_DAILY_LIMIT_REACHED')
-        void loadMediaAccess()
+      if (
+        result.error === 'MESSAGE_MEDIA_ACCESS_REQUIRED' ||
+        result.error === 'MESSAGE_MEDIA_DAILY_LIMIT_REACHED'
+      ) {
+        setError(result.error)
+        void loadCapacity()
         return
       }
 
@@ -365,177 +411,177 @@ export default function MessageComposer({
     }
   }
 
+  const status = capacity.status
+  const hasCapacity =
+    isAdmin ||
+    status === null ||
+    status.dailyRemaining > 0 ||
+    status.totalCapacityRemaining > 0
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
-      {!isAdmin &&
-        mediaAccess?.success === true &&
-        mediaAccess.access.enabled &&
-        mediaAccess.access.price > 0 &&
-        mediaAccess.access.durationSeconds > 0 && (
-          <div
-            dir={isArabic ? 'rtl' : 'ltr'}
-            className={
-              'mb-3 rounded-xl border p-3 ' +
-              (mediaAccess.access.hasAccess
-                ? 'border-green-200 bg-green-50'
-                : 'border-amber-200 bg-amber-50')
+      {!isAdmin && !isLoadingCapacity && (
+        <div
+          dir={isArabic ? 'rtl' : 'ltr'}
+          className="mb-2 flex items-center justify-between gap-2 px-1"
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className={[
+                'text-xs font-medium',
+                status &&
+                (status.dailyRemaining > 0 ||
+                  status.totalCapacityRemaining > 0)
+                  ? 'text-gray-600'
+                  : 'text-amber-700',
+              ].join(' ')}
+            >
+              🖼️{' '}
+              {status
+                ? isArabic
+                  ? `${status.totalRemaining} متبقية`
+                  : `${status.totalRemaining} remaining`
+                : isArabic
+                  ? 'غير متاحة'
+                  : 'Unavailable'}
+            </span>
+
+            {status?.effectiveDailyLimit ? (
+              <span className="text-[10px] text-gray-400">
+                {isArabic
+                  ? `(${status.dailyUsage}/${status.effectiveDailyLimit} اليوم)`
+                  : `(${status.dailyUsage}/${status.effectiveDailyLimit} today)`}
+              </span>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowCapacityPanel((current) => !current)}
+            aria-expanded={showCapacityPanel}
+            aria-label={
+              isArabic
+                ? 'إدارة سعة الصور والملفات'
+                : 'Manage image and file capacity'
             }
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p
-                  className={
-                    'text-sm font-semibold ' +
-                    (mediaAccess.access.hasAccess
-                      ? 'text-green-900'
-                      : 'text-amber-900')
-                  }
-                >
-                  {mediaAccess.access.hasAccess
-                    ? isArabic
-                      ? '✓ ميزة الصور والملفات مفعّلة'
-                      : '✓ Images and files are active'
-                    : isArabic
-                      ? 'الصور والملفات — اشتراك مدفوع'
-                      : 'Images and files — paid subscription'}
+            ⓘ
+          </button>
+        </div>
+      )}
+
+      {!isAdmin && showCapacityPanel && !isLoadingCapacity && (
+        <div
+          dir={isArabic ? 'rtl' : 'ltr'}
+          className="mb-3 rounded-xl border border-gray-200 bg-gray-50 p-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">
+                {isArabic ? 'سعة الصور والملفات' : 'Image & file capacity'}
+              </p>
+
+              {status && (
+                <p className="mt-1 text-xs leading-5 text-gray-500">
+                  {isArabic
+                    ? `المتاح حاليًا: ${status.totalRemaining} استخدام`
+                    : `Available now: ${status.totalRemaining} uses`}
                 </p>
+              )}
 
-                <div className="mt-2 space-y-1 text-xs leading-5">
-                  <p
-                    className={
-                      mediaAccess.access.hasAccess
-                        ? 'text-green-800'
-                        : 'text-amber-800'
-                    }
-                  >
-                    {isArabic
-                      ? 'مقابل هذا الاشتراك يمكنك إرسال الصور والملفات داخل المحادثات.'
-                      : 'This subscription lets you send images and files inside conversations.'}
-                  </p>
-
-                  <p
-                    className={
-                      mediaAccess.access.hasAccess
-                        ? 'text-green-800'
-                        : 'text-amber-800'
-                    }
-                  >
-                    {isArabic
-                      ? `السعر: ${mediaAccess.access.price} · المدة: ${Math.max(1, Math.round(mediaAccess.access.durationSeconds / 86400))} يوم`
-                      : `Price: ${mediaAccess.access.price} · Duration: ${Math.max(1, Math.round(mediaAccess.access.durationSeconds / 86400))} days`}
-                  </p>
-
-                  <p
-                    className={
-                      'font-medium ' +
-                      (mediaAccess.access.hasAccess
-                        ? 'text-green-800'
-                        : 'text-amber-800')
-                    }
-                  >
-                    {mediaAccess.access.dailyLimit === 0
-                      ? isArabic
-                        ? 'الحد اليومي: غير محدود'
-                        : 'Daily limit: Unlimited'
-                      : isArabic
-                        ? `الحد اليومي: ${mediaAccess.access.dailyLimit} رسائل بالمرفقات`
-                        : `Daily limit: ${mediaAccess.access.dailyLimit} messages with attachments`}
-                  </p>
-
-                  {mediaAccess.access.hasAccess &&
-                    mediaAccess.access.expiresAt && (
-                      <p className="text-green-800">
-                        {isArabic
-                          ? `ينتهي الاشتراك: ${new Date(mediaAccess.access.expiresAt).toLocaleString('ar')}`
-                          : `Subscription ends: ${new Date(mediaAccess.access.expiresAt).toLocaleString('en')}`}
-                      </p>
-                    )}
-
-                  {!mediaAccess.access.hasAccess &&
-                    mediaAccess.access.expiresAt &&
-                    new Date(mediaAccess.access.expiresAt).getTime() <= Date.now() && (
-                      <p className="font-semibold text-red-700">
-                        {isArabic
-                          ? '⚠️ انتهى اشتراك الصور والملفات.'
-                          : '⚠️ Your images and files subscription has expired.'}
-                      </p>
-                    )}
-                </div>
-              </div>
-
-              {!mediaAccess.access.hasAccess && (
-                <button
-                  type="button"
-                  onClick={() => void purchaseAccess()}
-                  disabled={
-                    isPurchasing ||
-                    walletBalance === null ||
-                    walletBalance < mediaAccess.access.price
-                  }
-                  className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isPurchasing
-                    ? '...'
-                    : isArabic
-                      ? 'شراء'
-                      : 'Purchase'}
-                </button>
+              {capacity.walletBalance !== null && (
+                <p className="mt-1 text-xs font-medium text-gray-600">
+                  {isArabic
+                    ? `الرصيد: ${capacity.walletBalance} عملة`
+                    : `Balance: ${capacity.walletBalance} coins`}
+                </p>
               )}
             </div>
 
-            {mediaAccess.access.hasAccess &&
-              dailyUsage?.success === true &&
-              dailyUsage.usage.dailyLimit > 0 && (
-                <div className="mt-3 rounded-lg border border-green-200 bg-white/70 p-2.5">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="font-medium text-green-900">
-                      {isArabic ? 'الاستخدام اليومي' : 'Daily usage'}
-                    </span>
-
-                    <span className="text-green-800">
-                      {dailyUsage.usage.usageCount} / {dailyUsage.usage.dailyLimit}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-green-100">
-                    <div
-                      className="h-full rounded-full bg-green-500 transition-all"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (dailyUsage.usage.usageCount /
-                            dailyUsage.usage.dailyLimit) *
-                            100,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-
-                  <p className="mt-1.5 text-xs text-green-800">
-                    {dailyUsage.usage.remaining === 0
-                      ? isArabic
-                        ? 'وصلت إلى الحد اليومي.'
-                        : 'You have reached today’s limit.'
-                      : isArabic
-                        ? `المتبقي: ${dailyUsage.usage.remaining} رسالة بالمرفقات`
-                        : `Remaining: ${dailyUsage.usage.remaining} messages with attachments`}
-                  </p>
-                </div>
-              )}
-
-            {!mediaAccess.access.hasAccess &&
-              walletBalance !== null &&
-              walletBalance < mediaAccess.access.price && (
-                <p className="mt-2 text-xs text-red-600">
-                  {isArabic
-                    ? `رصيد المحفظة غير كافٍ. رصيدك: ${walletBalance}`
-                    : `Insufficient wallet balance. Balance: ${walletBalance}`}
-                </p>
-              )}
+            <button
+              type="button"
+              onClick={() => setShowCapacityPanel(false)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-white hover:text-gray-600"
+              aria-label={isArabic ? 'إغلاق' : 'Close'}
+            >
+              ×
+            </button>
           </div>
-        )}
 
-{attachments.length > 0 && (
+          {capacity.plans.length > 0 ? (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {capacity.plans.map((plan) => {
+                const affordable =
+                  capacity.walletBalance !== null &&
+                  capacity.walletBalance >= plan.amount
+
+                const purchasing = selectedPlanId === plan.id
+
+                return (
+                  <div
+                    key={plan.id}
+                    className="rounded-xl border border-gray-200 bg-white p-3"
+                  >
+                    <p className="text-sm font-semibold text-gray-900">
+                      {isArabic ? plan.nameAr : plan.nameEn}
+                    </p>
+
+                    <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+                      <p>{formatPlanCapacity(plan)}</p>
+                      <p>
+                        {isArabic
+                          ? `المدة: ${formatDuration(plan.durationSeconds)}`
+                          : `Duration: ${formatDuration(plan.durationSeconds)}`}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-gray-900">
+                        {plan.amount} {plan.currencyCode}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => void purchasePlan(plan)}
+                        disabled={
+                          purchasing ||
+                          isPurchasing ||
+                          !affordable
+                        }
+                        className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {purchasing
+                          ? '...'
+                          : isArabic
+                            ? 'شراء'
+                            : 'Purchase'}
+                      </button>
+                    </div>
+
+                    {!affordable &&
+                      capacity.walletBalance !== null && (
+                        <p className="mt-1.5 text-xs text-red-600">
+                          {isArabic
+                            ? 'الرصيد غير كافٍ.'
+                            : 'Insufficient balance.'}
+                        </p>
+                      )}
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-gray-500">
+              {isArabic
+                ? 'لا توجد خطط شراء متاحة حاليًا.'
+                : 'No purchase plans are currently available.'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {attachments.length > 0 && (
         <div
           className={
             'mb-3 flex flex-wrap gap-2 ' +
@@ -585,11 +631,7 @@ export default function MessageComposer({
           disabled={
             busy ||
             attachments.length >= MAX_ATTACHMENTS ||
-            (!isAdmin &&
-              mediaAccess?.success === true &&
-              mediaAccess.access.hasAccess &&
-              dailyUsage?.success === true &&
-              dailyUsage.usage.remaining === 0)
+            !hasCapacity
           }
           aria-label={
             isArabic ? 'إضافة صورة أو ملف' : 'Add image or file'
@@ -656,85 +698,34 @@ export default function MessageComposer({
         </p>
       )}
 
-      {error === 'MESSAGE_MEDIA_ACCESS_REQUIRED' ? (
+      {error === 'MESSAGE_MEDIA_ACCESS_REQUIRED' ||
+      error === 'MESSAGE_MEDIA_DAILY_LIMIT_REACHED' ? (
         <div
           dir={isArabic ? 'rtl' : 'ltr'}
           className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"
         >
-          <p className="font-medium">
-            {isArabic
-              ? 'فعّل ميزة الصور والملفات لإرسال المرفقات.'
-              : 'Enable image and file access to send attachments.'}
-          </p>
-
-          {mediaAccess?.success === true && (
-            <p className="mt-1">
-              {isArabic
-                ? `السعر ${mediaAccess.access.price} · رصيدك ${walletBalance ?? 0}`
-                : `Price ${mediaAccess.access.price} · Your balance ${walletBalance ?? 0}`}
-            </p>
-          )}
-
-          {mediaAccess?.success === true &&
-            mediaAccess.access.enabled &&
-            mediaAccess.access.price > 0 && (
-              <button
-                type="button"
-                onClick={() => void purchaseAccess()}
-                disabled={
-                  isPurchasing ||
-                  walletBalance === null ||
-                  walletBalance < mediaAccess.access.price
-                }
-                className="mt-2 rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isPurchasing
-                  ? '...'
-                  : isArabic
-                    ? 'شراء الميزة'
-                    : 'Purchase feature'}
-              </button>
-            )}
-        </div>
-      ) : error === 'MESSAGE_MEDIA_DAILY_LIMIT_REACHED' ? (
-        <div
-          dir={isArabic ? 'rtl' : 'ltr'}
-          className="mt-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs text-orange-900"
-        >
           <p className="font-semibold">
             {isArabic
-              ? '⏳ وصلت إلى الحد اليومي لإرسال المرفقات.'
-              : '⏳ You have reached today’s attachment limit.'}
+              ? 'لا توجد سعة كافية لإرسال المرفقات حاليًا.'
+              : 'There is not enough capacity to send attachments right now.'}
           </p>
 
-          {dailyUsage?.success === true && (
+          {capacity.plans.length > 0 && (
             <p className="mt-1">
               {isArabic
-                ? `استخدمت ${dailyUsage.usage.usageCount} من ${dailyUsage.usage.dailyLimit} رسائل بالمرفقات.`
-                : `You used ${dailyUsage.usage.usageCount} of ${dailyUsage.usage.dailyLimit} attachment messages.`}
+                ? 'يمكنك شراء إحدى خطط السعة المتاحة أعلاه.'
+                : 'You can purchase one of the capacity plans above.'}
             </p>
           )}
 
-          {resetCountdown && (
-            <p className="mt-1 font-medium">
-              {isArabic
-                ? `يفتح الحد اليومي خلال: ${resetCountdown}`
-                : `Daily limit resets in: ${resetCountdown}`}
-            </p>
-          )}
-
-          {dailyUsage?.success === true && (
-            <p className="mt-1 text-orange-800">
-              {isArabic
-                ? `إعادة الضبط: ${new Date(dailyUsage.usage.resetAt).toLocaleTimeString('ar', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}`
-                : `Reset time: ${new Date(dailyUsage.usage.resetAt).toLocaleTimeString('en', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}`}
-            </p>
+          {capacity.plans.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowCapacityPanel(true)}
+              className="mt-2 rounded-lg bg-amber-100 px-2.5 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-200"
+            >
+              {isArabic ? 'عرض خطط الشراء' : 'View purchase plans'}
+            </button>
           )}
         </div>
       ) : (
@@ -748,8 +739,8 @@ export default function MessageComposer({
           >
             {error}
           </p>
-          )
-        )}
+        )
+      )}
     </div>
   )
 }

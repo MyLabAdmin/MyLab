@@ -8,6 +8,8 @@ import {
   getMessageAttachmentUrl,
 } from '@/app/[locale]/actions/messaging'
 import Avatar from '@/components/community/Avatar'
+import MessageMediaGrid from './MessageMediaGrid'
+import MessageMediaLightbox from './MessageMediaLightbox'
 
 type MessageAttachment = {
   id: string
@@ -64,6 +66,10 @@ export default function MessageList({
   const [actionError, setActionError] = useState('')
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({})
   const [loadingMedia, setLoadingMedia] = useState<Record<string, boolean>>({})
+  const [lightboxImages, setLightboxImages] = useState<
+    { id: string; url: string; fileName: string }[]
+  >([])
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   const [isPending, startTransition] = useTransition()
 
   const isArabic = locale === 'ar'
@@ -144,6 +150,32 @@ export default function MessageList({
       cancelled = true
     }
   }, [messages, mediaUrls])
+
+  function openMessageImage(message: Message, attachmentId: string) {
+    const images = (message.attachments ?? [])
+      .filter((attachment) => attachment.attachment_type === 'image')
+      .map((attachment) => ({
+        id: attachment.id,
+        url: mediaUrls[attachment.id],
+        fileName: attachment.file_name,
+      }))
+      .filter(
+        (image): image is { id: string; url: string; fileName: string } =>
+          Boolean(image.url),
+      )
+
+    const index = images.findIndex((image) => image.id === attachmentId)
+
+    if (index === -1) return
+
+    setLightboxImages(images)
+    setLightboxIndex(index)
+  }
+
+  function closeMessageLightbox() {
+    setLightboxImages([])
+    setLightboxIndex(0)
+  }
 
   function startEditing(message: Message) {
     if (message.deleted_at || (message.attachments?.length ?? 0) > 0) {
@@ -341,95 +373,83 @@ export default function MessageList({
               ) : (
                 <>
                   {hasAttachments && !isDeleted && (
-                    <div className="mb-2 flex flex-col gap-2">
-                      {attachments.map((attachment) => {
-                        const imageUrl = mediaUrls[attachment.id]
-                        const isLoading =
-                          loadingMedia[attachment.id]
+                    <>
+                      <MessageMediaGrid
+                        items={attachments
+                          .filter(
+                            (attachment) =>
+                              attachment.attachment_type === 'image',
+                          )
+                          .map((attachment) => ({
+                            id: attachment.id,
+                            url: mediaUrls[attachment.id] ?? null,
+                            fileName: attachment.file_name,
+                            loading: loadingMedia[attachment.id],
+                          }))}
+                        isArabic={isArabic}
+                        onOpen={(attachmentId) =>
+                          openMessageImage(message, attachmentId)
+                        }
+                      />
 
-                        if (
-                          attachment.attachment_type === 'image'
-                        ) {
-                          return (
+                      <div className="mb-2 flex flex-col gap-2">
+                        {attachments
+                          .filter(
+                            (attachment) =>
+                              attachment.attachment_type !== 'image',
+                          )
+                          .map((attachment) => (
                             <a
                               key={attachment.id}
-                              href={imageUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block overflow-hidden rounded-xl"
-                            >
-                              {imageUrl ? (
-                                <img
-                                  src={imageUrl}
-                                  alt={attachment.file_name}
-                                  className="max-h-72 w-auto max-w-full rounded-xl object-contain"
-                                />
-                              ) : (
-                                <div className="flex h-32 min-w-40 items-center justify-center rounded-xl bg-black/5 text-xs opacity-70">
-                                  {isLoading
-                                    ? isArabic
-                                      ? 'جاري تحميل الصورة...'
-                                      : 'Loading image...'
-                                    : isArabic
-                                      ? 'تعذر تحميل الصورة'
-                                      : 'Unable to load image'}
-                                </div>
-                              )}
-                            </a>
-                          )
-                        }
+                              href={undefined}
+                              onClick={async (event) => {
+                                event.preventDefault()
 
-                        return (
-                          <a
-                            key={attachment.id}
-                            href={undefined}
-                            onClick={async (event) => {
-                              event.preventDefault()
+                                const result =
+                                  await getMessageAttachmentUrl(
+                                    attachment.media_ref,
+                                  )
 
-                              const result =
-                                await getMessageAttachmentUrl(
-                                  attachment.media_ref,
-                                )
-
-                              if (result.success) {
-                                window.open(
-                                  result.url,
-                                  '_blank',
-                                  'noopener,noreferrer',
-                                )
-                              }
-                            }}
-                            className={[
-                              'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition',
-                              isMine
-                                ? 'border-white/20 bg-white/10 hover:bg-white/15'
-                                : 'border-gray-200 bg-gray-50 hover:bg-gray-100',
-                            ].join(' ')}
-                          >
-                            <span className="text-xl">📎</span>
-
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-medium sm:text-sm">
-                                {attachment.file_name}
-                              </span>
-                              <span
-                                className={
-                                  'mt-0.5 block text-[10px] ' +
-                                  (isMine
-                                    ? 'text-primary-100'
-                                    : 'text-gray-400')
+                                if (result.success) {
+                                  window.open(
+                                    result.url,
+                                    '_blank',
+                                    'noopener,noreferrer',
+                                  )
                                 }
-                              >
-                                {formatFileSize(
-                                  attachment.file_size,
-                                  isArabic,
-                                )}
+                              }}
+                              className={[
+                                'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition',
+                                isMine
+                                  ? 'border-white/20 bg-white/10 hover:bg-white/15'
+                                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100',
+                              ].join(' ')}
+                            >
+                              <span className="text-xl">📎</span>
+
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-xs font-medium sm:text-sm">
+                                  {attachment.file_name}
+                                </span>
+
+                                <span
+                                  className={
+                                    'mt-0.5 block text-[10px] ' +
+                                    (isMine
+                                      ? 'text-primary-100'
+                                      : 'text-gray-400')
+                                  }
+                                >
+                                  {formatFileSize(
+                                    attachment.file_size,
+                                    isArabic,
+                                  )}
+                                </span>
                               </span>
-                            </span>
-                          </a>
-                        )
-                      })}
-                    </div>
+                            </a>
+                          ))}
+                      </div>
+                    </>
                   )}
 
                   {message.body && (
@@ -534,6 +554,15 @@ export default function MessageList({
       })}
 
       <div ref={bottomRef} aria-hidden="true" />
+
+      {lightboxImages.length > 0 && (
+        <MessageMediaLightbox
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          isArabic={isArabic}
+          onClose={closeMessageLightbox}
+        />
+      )}
     </div>
   )
 }

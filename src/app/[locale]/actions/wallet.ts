@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { purchaseFeatureCapacityPlan } from '@/lib/features/access'
 
 export async function getWalletBalance() {
   const supabase = await createClient()
@@ -75,4 +76,21 @@ export async function purchaseMessageMedia() {
     success: true as const,
     purchase: data[0],
   }
+}
+
+
+export async function purchaseMessageMediaPlan(
+  planId: string,
+  marketCode: string,
+  currencyCode = 'COINS',
+) {
+  const result = await purchaseFeatureCapacityPlan(
+    planId,
+    marketCode,
+    currencyCode,
+  )
+
+  console.log('[purchaseMessageMediaPlan] result:', result)
+
+  return result
 }

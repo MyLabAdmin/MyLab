@@ -1,5 +1,5 @@
 import { getUploadAuthParams } from '@imagekit/next/server'
-import { getFeatureAccess } from '@/lib/features/access'
+import { getFeatureCapacityStatus } from '@/lib/features/access'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
@@ -26,12 +26,26 @@ export async function GET(request: Request) {
     if (isAdmin) {
       // Admins retain the existing upload capability.
     } else {
-      const accessResult = await getFeatureAccess(featureKey)
+      const statusResult =
+        await getFeatureCapacityStatus(featureKey)
 
-      if (
-        !accessResult.success ||
-        !accessResult.access.hasAccess
-      ) {
+      if (!statusResult.success) {
+        return Response.json(
+          {
+            error: 'Feature access required',
+            featureKey,
+          },
+          { status: 403 },
+        )
+      }
+
+      const status = statusResult.status
+
+      const hasCapacity =
+        status.dailyRemaining > 0 ||
+        status.totalCapacityRemaining > 0
+
+      if (!hasCapacity) {
         return Response.json(
           {
             error: 'Feature access required',

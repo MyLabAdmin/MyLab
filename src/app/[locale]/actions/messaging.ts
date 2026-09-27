@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { getFeatureAccess } from '@/lib/features/access'
 import { revalidatePath } from 'next/cache'
 
 type ConversationType = 'direct' | 'group'
@@ -1099,45 +1098,16 @@ export async function sendMessage(
     }
   }
 
-  if (normalizedAttachments.length > 0) {
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-
-    if (rolesError) {
-      return {
-        success: false as const,
-        error: rolesError.message,
-      }
-    }
-
-    const isAdmin = roles?.some((role) => role.role === 'admin') ?? false
-
-    if (!isAdmin) {
-      const access = await getFeatureAccess('message_media')
-
-      if (!access.success) {
-        return {
-          success: false as const,
-          error: access.error,
-        }
-      }
-
-      if (!access.access.hasAccess) {
-        return {
-          success: false as const,
-          error: 'MESSAGE_MEDIA_ACCESS_REQUIRED',
-        }
-      }
-    }
-  }
-
   const response = await supabase.rpc('send_message_with_attachments', {
     p_conversation_id: conversationId,
     p_client_message_id: clientMessageId,
     p_body: cleanBody || null,
     p_attachments: normalizedAttachments,
+  })
+
+  console.log('[sendMessage] RPC response:', {
+    data: response.data,
+    error: response.error,
   })
 
   if (response.error || !response.data) {
