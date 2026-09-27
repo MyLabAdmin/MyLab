@@ -67,7 +67,7 @@ export default function NewGroupForm() {
         <label className="text-sm font-medium text-gray-700">
           {locale === 'ar' ? 'صورة الغلاف' : 'Cover Image'}
         </label>
-        <ImageUpload value={coverRef} onChange={setCoverRef} folder="/groups" scope="groups" />
+        <ImageUpload value={coverRef} onChange={setCoverRef} folder="/groups" scope="groups" feature="group_cover" />
       </div>
 
       <div>

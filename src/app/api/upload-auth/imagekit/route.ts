@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 const ALLOWED_USER_UPLOAD_FEATURES = new Set([
   'post_media',
   'message_media',
+  'group_cover',
 ])
 
 export async function GET(request: Request) {
@@ -41,8 +42,9 @@ export async function GET(request: Request) {
         )
       }
 
-      const statusResult =
-        await getFeatureCapacityStatus(featureKey)
+      if (featureKey !== 'group_cover') {
+        const statusResult =
+          await getFeatureCapacityStatus(featureKey)
 
       if (!statusResult.success) {
         return Response.json(
@@ -68,6 +70,7 @@ export async function GET(request: Request) {
           },
           { status: 403 },
         )
+      }
       }
     }
   }

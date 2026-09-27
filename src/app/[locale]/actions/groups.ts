@@ -49,6 +49,89 @@ export async function createGroup(input: {
   }
 }
 
+export async function updateGroup(input: {
+  groupId: string
+  name: string
+  description: string
+  coverImageRef: string
+  privacy: 'public' | 'private'
+  joinPolicy: 'instant' | 'approval'
+}) {
+  const supabase = await createClient()
+
+  const { data: userData } = await supabase.auth.getUser()
+
+  if (!userData.user) {
+    return {
+      success: false as const,
+      error: 'Not authenticated',
+    }
+  }
+
+  const name = input.name.trim()
+  const description = input.description.trim()
+
+  if (!name) {
+    return {
+      success: false as const,
+      error: 'GROUP_NAME_REQUIRED',
+    }
+  }
+
+  if (name.length > 100) {
+    return {
+      success: false as const,
+      error: 'GROUP_NAME_TOO_LONG',
+    }
+  }
+
+  if (description.length > 500) {
+    return {
+      success: false as const,
+      error: 'GROUP_DESCRIPTION_TOO_LONG',
+    }
+  }
+
+  const { data: group, error } = await supabase
+    .from('groups')
+    .update({
+      name,
+      description: description || null,
+      cover_image_ref: input.coverImageRef.trim() || null,
+      privacy: input.privacy,
+      join_policy: input.joinPolicy,
+    })
+    .eq('id', input.groupId)
+    .select(
+      'id, name, description, cover_image_ref, privacy, join_policy, created_by',
+    )
+    .single()
+
+  if (error || !group) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Failed to update group',
+    }
+  }
+
+  revalidatePath('/[locale]/community/groups', 'page')
+  revalidatePath(`/[locale]/community/groups/${input.groupId}`, 'page')
+  revalidatePath(`/[locale]/community/groups/${input.groupId}/manage`, 'page')
+
+  return {
+    success: true as const,
+    group: {
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      coverUrl: await resolveMedia(group.cover_image_ref),
+      privacy: group.privacy as 'public' | 'private',
+      joinPolicy: group.join_policy as 'instant' | 'approval',
+      createdBy: group.created_by,
+    },
+  }
+}
+
 export async function getGroups() {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -114,6 +197,41 @@ export async function getGroups() {
       }
     }),
   )
+}
+
+export async function getGroupManagementMembers(groupId: string) {
+  const supabase = await createClient()
+
+  const { data: userData } = await supabase.auth.getUser()
+
+  if (!userData.user) {
+    return []
+  }
+
+  const { data, error } = await supabase.rpc(
+    'get_group_management_members',
+    {
+      p_group_id: groupId,
+    },
+  )
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data ?? []).map((member: {
+    user_id: string
+    display_name: string | null
+    avatar_url: string | null
+    role: string
+    joined_at: string
+  }) => ({
+    userId: member.user_id,
+    displayName: member.display_name,
+    avatarUrl: member.avatar_url,
+    role: member.role as 'owner' | 'moderator' | 'member',
+    joinedAt: member.joined_at,
+  }))
 }
 
 export async function getGroupDetail(groupId: string) {
@@ -194,6 +312,7 @@ export async function getGroupDetail(groupId: string) {
     id: group.id,
     name: group.name,
     description: group.description,
+    coverImageRef: group.cover_image_ref ?? '',
     coverUrl: await resolveMedia(group.cover_image_ref),
     privacy: group.privacy as 'public' | 'private',
     joinPolicy: group.join_policy as 'instant' | 'approval',

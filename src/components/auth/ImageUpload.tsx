@@ -15,11 +15,13 @@ export default function ImageUpload({
   onChange,
   folder,
   scope = 'knowledge',
+  feature,
 }: {
   value: string
   onChange: (ref: string) => void
   folder: string
   scope?: string
+  feature?: string
 }) {
   const t = useTranslations('KnowledgeAdmin')
   const [mode, setMode] = useState<'upload' | 'library'>('upload')
@@ -40,7 +42,13 @@ export default function ImageUpload({
 
     setUploading(true)
     try {
-      const authRes = await fetch('/api/upload-auth/imagekit')
+      const authUrl = new URL('/api/upload-auth/imagekit', window.location.origin)
+
+      if (feature) {
+        authUrl.searchParams.set('feature', feature)
+      }
+
+      const authRes = await fetch(authUrl.toString())
       if (!authRes.ok) throw new Error('Auth failed')
       const auth = await authRes.json()
 
