@@ -162,7 +162,7 @@ export default function PostMediaCapacity() {
                     type="button"
                     disabled={purchasing !== null}
                     onClick={() => void purchase(plan)}
-                    className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="btn-primary w-auto shrink-0 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {purchasing === plan.id
                       ? isArabic

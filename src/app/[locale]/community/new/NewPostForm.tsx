@@ -19,7 +19,7 @@ export default function NewPostForm({ groupId }: { groupId?: string }) {
   const [error, setError] = useState('')
 
   async function handleSubmit() {
-    if (!content.trim()) {
+    if (!content.trim() && imageRefs.length === 0) {
       setError(locale === 'ar' ? 'اكتب محتوى المنشور' : 'Write something first')
       return
     }

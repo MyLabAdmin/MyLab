@@ -1355,6 +1355,46 @@ export async function getMessageAttachmentUrl(mediaRef: string) {
     }
   }
 
+  const { data: attachment, error: attachmentError } = await result.supabase
+    .from('message_attachments')
+    .select('id, message_id')
+    .eq('media_ref', mediaRef)
+    .maybeSingle()
+
+  if (attachmentError || !attachment) {
+    return {
+      success: false as const,
+      error: 'Attachment not found',
+    }
+  }
+
+  const { data: message, error: messageError } = await result.supabase
+    .from('messages')
+    .select('id, conversation_id')
+    .eq('id', attachment.message_id)
+    .maybeSingle()
+
+  if (messageError || !message) {
+    return {
+      success: false as const,
+      error: 'Message not found',
+    }
+  }
+
+  const { data: membership, error: membershipError } = await result.supabase
+    .from('conversation_members')
+    .select('user_id')
+    .eq('conversation_id', message.conversation_id)
+    .eq('user_id', result.user.id)
+    .maybeSingle()
+
+  if (membershipError || !membership) {
+    return {
+      success: false as const,
+      error: 'Forbidden',
+    }
+  }
+
   const { getImagekitSignedUrl } = await import(
     '@/lib/storage/imagekit-server'
   )

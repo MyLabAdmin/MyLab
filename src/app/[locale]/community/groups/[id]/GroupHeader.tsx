@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { joinGroup, leaveGroup } from '@/app/[locale]/actions/groups'
@@ -39,6 +39,10 @@ export default function GroupHeader({
   const router = useRouter()
   const { showToast } = useToast()
   const [status, setStatus] = useState(group.myStatus)
+
+  useEffect(() => {
+    setStatus(group.myStatus)
+  }, [group.myStatus])
   const [submitting, setSubmitting] = useState(false)
   const [showPending, setShowPending] = useState(false)
   const [showModerators, setShowModerators] = useState(false)
@@ -57,25 +61,67 @@ export default function GroupHeader({
 
   async function handleJoin() {
     setSubmitting(true)
-    const result = await joinGroup(group.id)
-    setSubmitting(false)
-    if (result.success) {
-      setStatus(result.status ?? 'active')
-      showToast(
-        result.status === 'pending'
-          ? (locale === 'ar' ? 'طلبك بانتظار الموافقة' : 'Your request is pending approval')
-          : (locale === 'ar' ? 'تم الانضمام ✅' : 'Joined ✅')
+
+    try {
+      const result = await joinGroup(group.id)
+
+      if (!result.success) {
+        alert(
+          locale === 'ar'
+            ? 'تعذر الانضمام إلى المجموعة'
+            : 'Could not join the group',
+        )
+        return
+      }
+
+      if (!result.status) {
+        alert(
+          locale === 'ar'
+            ? 'تعذر تحديد حالة الانضمام'
+            : 'Could not determine the membership status',
+        )
+        return
+      }
+
+      setStatus(result.status)
+      router.refresh()
+    } catch {
+      alert(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء الانضمام إلى المجموعة'
+          : 'An error occurred while joining the group',
       )
+    } finally {
+      setSubmitting(false)
     }
   }
 
   async function handleLeave() {
     setSubmitting(true)
-    await leaveGroup(group.id)
-    setSubmitting(false)
-    setStatus(null)
-    showToast(locale === 'ar' ? 'تم مغادرة المجموعة' : 'Left the group')
-    router.push('/community/groups')
+
+    try {
+      const result = await leaveGroup(group.id)
+
+      if (!result.success) {
+        alert(
+          locale === 'ar'
+            ? 'تعذر مغادرة المجموعة'
+            : 'Could not leave the group',
+        )
+        return
+      }
+
+      setStatus(null)
+      router.refresh()
+    } catch {
+      alert(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء مغادرة المجموعة'
+          : 'An error occurred while leaving the group',
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

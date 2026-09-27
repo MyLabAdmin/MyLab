@@ -56,33 +56,83 @@ export type Post = {
   sharedPost?: SharedPost | null
 }
 
-function ImageGrid({ images, onOpen }: { images: string[]; onOpen: (index: number) => void }) {
-  if (images.length === 1) {
-    return <img src={images[0]} alt="" onClick={() => onOpen(0)} className="w-full rounded-lg cursor-pointer" />
+function ImageGrid({
+  images,
+  onOpen,
+}: {
+  images: string[]
+  onOpen: (index: number) => void
+}) {
+  if (images.length === 0) return null
+
+  const visible = images.slice(0, 4)
+  const extraCount = Math.max(0, images.length - 4)
+
+  function renderItem(
+    src: string,
+    index: number,
+    className = '',
+  ) {
+    return (
+      <button
+        key={index}
+        type="button"
+        onClick={() => onOpen(index)}
+        className={[
+          'group relative min-h-0 overflow-hidden rounded-xl bg-black/5 text-left',
+          'cursor-pointer',
+          className,
+        ].join(' ')}
+        aria-label={`Open image ${index + 1}`}
+      >
+        <img
+          src={src}
+          alt=""
+          className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.02]"
+        />
+
+        {index === 3 && extraCount > 0 && (
+          <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-xl font-semibold text-white">
+            +{extraCount}
+          </span>
+        )}
+      </button>
+    )
   }
+
+  if (images.length === 1) {
+    return (
+      <div className="mb-2 max-w-full overflow-hidden rounded-xl">
+        {renderItem(images[0], 0, 'max-h-80')}
+      </div>
+    )
+  }
+
   if (images.length === 2) {
     return (
-      <div className="grid grid-cols-2 gap-1 h-56">
-        {images.map((src, i) => (
-          <img key={i} src={src} alt="" onClick={() => onOpen(i)} className="w-full h-full object-cover rounded-lg cursor-pointer" />
-        ))}
+      <div className="mb-2 grid grid-cols-2 gap-1 overflow-hidden rounded-xl">
+        {visible.map((src, index) =>
+          renderItem(src, index, 'aspect-square'),
+        )}
       </div>
     )
   }
+
   if (images.length === 3) {
     return (
-      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-64">
-        <img src={images[0]} alt="" onClick={() => onOpen(0)} className="row-span-2 w-full h-full object-cover rounded-lg cursor-pointer" />
-        <img src={images[1]} alt="" onClick={() => onOpen(1)} className="w-full h-full object-cover rounded-lg cursor-pointer" />
-        <img src={images[2]} alt="" onClick={() => onOpen(2)} className="w-full h-full object-cover rounded-lg cursor-pointer" />
+      <div className="mb-2 grid grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-xl">
+        {renderItem(visible[0], 0, 'row-span-2 aspect-[1/2]')}
+        {renderItem(visible[1], 1, 'aspect-square')}
+        {renderItem(visible[2], 2, 'aspect-square')}
       </div>
     )
   }
+
   return (
-    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-64">
-      {images.slice(0, 4).map((src, i) => (
-        <img key={i} src={src} alt="" onClick={() => onOpen(i)} className="w-full h-full object-cover rounded-lg cursor-pointer" />
-      ))}
+    <div className="mb-2 grid grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-xl">
+      {visible.map((src, index) =>
+        renderItem(src, index, 'aspect-square'),
+      )}
     </div>
   )
 }

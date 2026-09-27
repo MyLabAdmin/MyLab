@@ -2,6 +2,11 @@ import { getUploadAuthParams } from '@imagekit/next/server'
 import { getFeatureCapacityStatus } from '@/lib/features/access'
 import { createClient } from '@/lib/supabase/server'
 
+const ALLOWED_USER_UPLOAD_FEATURES = new Set([
+  'post_media',
+  'message_media',
+])
+
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
@@ -26,6 +31,16 @@ export async function GET(request: Request) {
     if (isAdmin) {
       // Admins retain the existing upload capability.
     } else {
+      if (!ALLOWED_USER_UPLOAD_FEATURES.has(featureKey)) {
+        return Response.json(
+          {
+            error: 'Unsupported upload feature',
+            featureKey,
+          },
+          { status: 403 },
+        )
+      }
+
       const statusResult =
         await getFeatureCapacityStatus(featureKey)
 

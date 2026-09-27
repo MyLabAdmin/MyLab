@@ -152,13 +152,15 @@ export default function PostActionsBar({
               <TrashIcon className="w-4 h-4" /> {locale === 'ar' ? 'حذف' : 'Delete'}
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => { setShowMenu(false); setShowReport(true) }}
-            className="flex items-center gap-2 text-sm py-2 px-2 rounded hover:bg-red-50 text-red-500 text-start"
-          >
-            <FlagIcon className="w-4 h-4" /> {t('reportButton')}
-          </button>
+          {!isOwner && (
+            <button
+              type="button"
+              onClick={() => { setShowMenu(false); setShowReport(true) }}
+              className="flex items-center gap-2 text-sm py-2 px-2 rounded hover:bg-red-50 text-red-500 text-start"
+            >
+              <FlagIcon className="w-4 h-4" /> {t('reportButton')}
+            </button>
+          )}
         </div>
       )}
 

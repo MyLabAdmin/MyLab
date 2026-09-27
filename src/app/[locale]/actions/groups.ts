@@ -1,5 +1,6 @@
-import { revalidatePath } from 'next/cache'
 'use server'
+
+import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
 import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
@@ -53,39 +54,45 @@ export async function getGroups() {
   const { data: userData } = await supabase.auth.getUser()
   const currentUserId = userData.user?.id
 
-  const { data: groupsData } = await supabase
+  const { data: groupsData, error: groupsError } = await supabase
     .from('groups')
     .select(
       'id, name, description, cover_image_ref, privacy, join_policy, created_at',
     )
     .order('created_at', { ascending: false })
 
-  if (!groupsData) return []
+  if (groupsError) {
+    throw new Error(groupsError.message)
+  }
 
-  const { data: myMemberships } = currentUserId
+  if (!groupsData?.length) return []
+
+  const groupIds = groupsData.map((group) => group.id)
+
+  const { data: countData, error: countError } = await supabase.rpc(
+    'get_group_member_counts',
+    { p_group_ids: groupIds },
+  )
+
+  if (countError) {
+    throw new Error(countError.message)
+  }
+
+  const { data: myMemberships, error: membershipError } = currentUserId
     ? await supabase
         .from('group_members')
         .select('group_id, role, status')
         .eq('user_id', currentUserId)
-    : { data: [] }
+    : { data: [], error: null }
 
-  const groupIds = groupsData.map((group) => group.id)
-
-  const { data: activeMembers } = groupIds.length
-    ? await supabase
-        .from('group_members')
-        .select('group_id')
-        .in('group_id', groupIds)
-        .eq('status', 'active')
-    : { data: [] }
+  if (membershipError) {
+    throw new Error(membershipError.message)
+  }
 
   const memberCounts = new Map<string, number>()
 
-  for (const member of activeMembers ?? []) {
-    memberCounts.set(
-      member.group_id,
-      (memberCounts.get(member.group_id) ?? 0) + 1,
-    )
+  for (const item of countData ?? []) {
+    memberCounts.set(item.group_id, Number(item.member_count))
   }
 
   return Promise.all(
@@ -134,11 +141,16 @@ export async function getGroupDetail(groupId: string) {
         .maybeSingle()
     : { data: null }
 
-  const { count } = await supabase
-    .from('group_members')
-    .select('id', { count: 'exact', head: true })
-    .eq('group_id', groupId)
-    .eq('status', 'active')
+  const { data: countData, error: countError } = await supabase.rpc(
+    'get_group_member_counts',
+    { p_group_ids: [groupId] },
+  )
+
+  if (countError) {
+    throw new Error(countError.message)
+  }
+
+  const memberCount = Number(countData?.[0]?.member_count ?? 0)
 
   let moderatorPermissions: GroupModeratorPermissionSet | null = null
 
@@ -185,7 +197,7 @@ export async function getGroupDetail(groupId: string) {
     coverUrl: await resolveMedia(group.cover_image_ref),
     privacy: group.privacy as 'public' | 'private',
     joinPolicy: group.join_policy as 'instant' | 'approval',
-    memberCount: count ?? 0,
+    memberCount,
     myStatus: myMembership?.status ?? null,
     myRole: myMembership?.role ?? null,
     moderatorPermissions,
@@ -211,6 +223,27 @@ export async function joinGroup(groupId: string) {
     return { success: false, error: 'Group not found' }
   }
 
+  const { data: existingMembership, error: membershipError } = await supabase
+    .from('group_members')
+    .select('status')
+    .eq('group_id', groupId)
+    .eq('user_id', userData.user.id)
+    .maybeSingle()
+
+  if (membershipError) {
+    return {
+      success: false,
+      error: membershipError.message,
+    }
+  }
+
+  if (existingMembership) {
+    return {
+      success: true,
+      status: existingMembership.status,
+    }
+  }
+
   const status = group.join_policy === 'approval' ? 'pending' : 'active'
 
   const { error } = await supabase.from('group_members').insert({
@@ -226,6 +259,9 @@ export async function joinGroup(groupId: string) {
       error: error.message,
     }
   }
+
+  revalidatePath('/[locale]/community/groups', 'page')
+  revalidatePath('/[locale]/community/groups/[id]', 'page')
 
   return {
     success: true,
@@ -330,9 +366,18 @@ export async function leaveGroup(groupId: string) {
     .eq('group_id', groupId)
     .eq('user_id', userData.user.id)
 
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    }
+  }
+
+  revalidatePath('/[locale]/community/groups', 'page')
+  revalidatePath('/[locale]/community/groups/[id]', 'page')
+
   return {
-    success: !error,
-    error: error?.message,
+    success: true,
   }
 }
 
@@ -584,7 +629,7 @@ export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
     .eq('status', 'active')
     .neq('role', 'owner')
     .neq('role', 'moderator')
-    .order('created_at', { ascending: true })
+    .order('joined_at', { ascending: true })
 
   if (error || !members?.length) {
     return []
