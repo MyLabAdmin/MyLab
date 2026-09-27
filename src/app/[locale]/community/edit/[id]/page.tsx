@@ -63,7 +63,6 @@ export default async function EditPostPage({
       postId={post!.id}
       initialContent={post!.content}
       initialImageRefs={post!.imageRefs}
-      canAddImage={isAdmin}
     />
   )
 }

@@ -18,12 +18,5 @@ export default async function NewPostPage({
     redirect({ href: '/login', locale })
   }
 
-  const { data: roles } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userData.user!.id)
-
-  const isAdmin = roles?.some((r) => r.role === 'admin') ?? false
-
-  return <NewPostForm canAddImage={isAdmin} groupId={group} />
+  return <NewPostForm groupId={group} />
 }

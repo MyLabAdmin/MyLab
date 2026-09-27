@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import PostMediaCapacity from '../../PostMediaCapacity'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import MultiImageUpload from '../../MultiImageUpload'
@@ -11,15 +12,12 @@ export default function EditPostForm({
   postId,
   initialContent,
   initialImageRefs,
-  canAddImage,
 }: {
   postId: string
   initialContent: string
   initialImageRefs: string[]
-  canAddImage: boolean
 }) {
   const locale = useLocale()
-  const t = useTranslations('KnowledgeAdmin')
   const router = useRouter()
   const { showToast } = useToast()
 
@@ -64,11 +62,14 @@ export default function EditPostForm({
         autoFocus
       />
 
-      {canAddImage ? (
-        <MultiImageUpload refs={imageRefs} onChange={setImageRefs} folder="/community" scope="community" />
-      ) : (
-        <span className="text-sm text-gray-400">{t('imageIsPaidFeature')}</span>
-      )}
+      <PostMediaCapacity />
+
+      <MultiImageUpload
+        refs={imageRefs}
+        onChange={setImageRefs}
+        folder="/community"
+        scope="community"
+      />
 
       <button type="button" disabled={submitting} onClick={handleSubmit} className="btn-primary disabled:opacity-60">
         {locale === 'ar' ? 'حفظ التعديل' : 'Save Changes'}

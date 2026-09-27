@@ -16,33 +16,57 @@ async function resolveMedia(ref: string) {
 export async function createPost(content: string, mediaRefs: { type: 'image' | 'video'; ref: string }[], groupId?: string | null) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return { success: false as const, error: 'Not authenticated' }
 
-  const { data: post, error } = await supabase
-    .from('posts')
-    .insert({ author_id: userData.user.id, content, group_id: groupId ?? null })
-    .select('id, created_at')
-    .single()
-
-  if (error || !post) return { success: false as const, error: error?.message }
-
-  let media: { type: string; url: string }[] = []
-  if (mediaRefs.length > 0) {
-    await supabase.from('post_media').insert(
-      mediaRefs.map((m, i) => ({ post_id: post.id, media_type: m.type, media_ref: m.ref, order_index: i }))
-    )
-    media = await Promise.all(mediaRefs.map(async (m) => ({ type: m.type, url: await resolveMedia(m.ref) })))
+  if (!userData.user) {
+    return { success: false as const, error: 'Not authenticated' }
   }
 
-  const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', userData.user.id).single()
+  if (mediaRefs.length > 10) {
+    return {
+      success: false as const,
+      error: 'Maximum 10 media items allowed',
+    }
+  }
+
+  const { data: post, error } = await supabase.rpc('create_post_with_media', {
+    p_content: content,
+    p_media: mediaRefs.map((media, index) => ({
+      media_type: media.type,
+      media_ref: media.ref,
+      order_index: index,
+    })),
+    p_group_id: groupId ?? null,
+  })
+
+  if (error || !post?.[0]) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Unable to create post',
+    }
+  }
+
+  const createdPost = post[0]
+
+  const media = await Promise.all(
+    mediaRefs.map(async (media) => ({
+      type: media.type,
+      url: await resolveMedia(media.ref),
+    })),
+  )
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', userData.user.id)
+    .single()
 
   return {
     success: true as const,
     post: {
-      id: post.id,
+      id: createdPost.id,
       authorId: userData.user.id,
       content,
-      createdAt: post.created_at,
+      createdAt: createdPost.created_at,
       authorName: profile?.display_name ?? '—',
       media,
       reactionCounts: {} as Record<string, number>,
@@ -241,6 +265,13 @@ export async function editPost(
   mediaRefs: { type: 'image' | 'video'; ref: string }[],
 ) {
   const supabase = await createClient()
+
+  if (mediaRefs.length > 10) {
+    return {
+      success: false as const,
+      error: 'Maximum 10 media items allowed',
+    }
+  }
 
   const { error } = await supabase.rpc('edit_post_with_media', {
     p_post_id: postId,

@@ -7,7 +7,7 @@ import { saveToMediaLibrary } from '@/app/[locale]/actions/media-library'
 import { makeMediaRef } from '@/lib/storage'
 
 const MAX_SIZE = 5 * 1024 * 1024
-const MAX_IMAGES = 4
+const MAX_IMAGES = 10
 
 export default function MultiImageUpload({
   refs,
@@ -26,8 +26,10 @@ export default function MultiImageUpload({
 
   async function handleFiles(files: FileList) {
     setError('')
+
     const remaining = MAX_IMAGES - refs.length
     const selected = Array.from(files).slice(0, remaining)
+
     if (selected.length === 0) return
 
     setUploading(true)
@@ -38,14 +40,29 @@ export default function MultiImageUpload({
         setError('Invalid file type')
         continue
       }
+
       if (file.size > MAX_SIZE) {
         setError('File too large (max 5MB)')
         continue
       }
 
       try {
-        const authRes = await fetch('/api/upload-auth/imagekit')
+        const authRes = await fetch(
+          '/api/upload-auth/imagekit?feature=post_media',
+        )
         const auth = await authRes.json()
+
+        if (!authRes.ok) {
+          throw new Error(
+            typeof auth?.error === 'string'
+              ? auth.error
+              : 'Upload authorization failed',
+          )
+        }
+
+        if (!auth.publicKey) {
+          throw new Error('ImageKit public key is missing')
+        }
 
         const result = await upload({
           file,
@@ -84,34 +101,46 @@ export default function MultiImageUpload({
   return (
     <div className="flex flex-col gap-2">
       {error && <p className="text-xs text-red-500">{error}</p>}
-      <div className="flex gap-2 flex-wrap">
+
+      <div className="flex flex-wrap gap-2">
         {refs.map((ref) => (
-          <div key={ref} className="relative w-20 h-20">
+          <div key={ref} className="relative h-20 w-20">
             {previews[ref] && (
-              <img src={previews[ref]} alt="" className="w-20 h-20 object-cover rounded-lg" />
+              <img
+                src={previews[ref]}
+                alt=""
+                className="h-20 w-20 rounded-lg object-cover"
+              />
             )}
+
             <button
               type="button"
               onClick={() => removeAt(ref)}
-              className="absolute -top-1.5 -end-1.5 bg-black/70 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+              className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs text-white"
             >
               ×
             </button>
           </div>
         ))}
+
         {refs.length < MAX_IMAGES && (
-          <label className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-2xl cursor-pointer">
+          <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-2xl text-gray-400">
             +
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
               multiple
-              onChange={(e) => e.target.files && handleFiles(e.target.files)}
+              onChange={(e) => {
+                if (e.target.files) {
+                  void handleFiles(e.target.files)
+                }
+              }}
               className="hidden"
             />
           </label>
         )}
       </div>
+
       {uploading && <p className="text-xs text-gray-500">...</p>}
     </div>
   )

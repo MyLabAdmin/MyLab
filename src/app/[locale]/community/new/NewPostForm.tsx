@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import PostMediaCapacity from '../PostMediaCapacity'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import MultiImageUpload from '../MultiImageUpload'
 import { createPost } from '@/app/[locale]/actions/community'
 import { useToast } from '@/components/ui/Toast'
 
-export default function NewPostForm({ canAddImage, groupId }: { canAddImage: boolean; groupId?: string }) {
+export default function NewPostForm({ groupId }: { groupId?: string }) {
   const locale = useLocale()
-  const t = useTranslations('KnowledgeAdmin')
   const router = useRouter()
   const { showToast } = useToast()
 
@@ -55,11 +55,14 @@ export default function NewPostForm({ canAddImage, groupId }: { canAddImage: boo
         autoFocus
       />
 
-      {canAddImage ? (
-        <MultiImageUpload refs={imageRefs} onChange={setImageRefs} folder="/community" scope="community" />
-      ) : (
-        <span className="text-sm text-gray-400">{t('imageIsPaidFeature')}</span>
-      )}
+      <PostMediaCapacity />
+
+      <MultiImageUpload
+        refs={imageRefs}
+        onChange={setImageRefs}
+        folder="/community"
+        scope="community"
+      />
 
       <button type="button" disabled={submitting} onClick={handleSubmit} className="btn-primary disabled:opacity-60">
         {locale === 'ar' ? 'نشر' : 'Post'}
