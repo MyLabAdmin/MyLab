@@ -139,7 +139,7 @@ export default async function GroupConversationInfoPage({
 
               return (
                 <div key={member.user_id}>
-                  <Link href={'/community/profile/' + member.user_id} className='group flex items-center gap-3 rounded-2xl bg-gray-50 p-3 transition hover:bg-gray-100 active:scale-[0.99]'>
+                  <Link href={'/community/profile/' + member.user_id + '?from=group&conversation=' + id} className='group flex items-center gap-3 rounded-2xl bg-gray-50 p-3 transition hover:bg-gray-100 active:scale-[0.99]'>
                     <Avatar name={name} avatarUrl={member.avatar_url} size='lg' />
                     <div className='min-w-0 flex-1'>
                       <p className='truncate font-medium text-gray-900 group-hover:text-primary-700'>{name}</p>

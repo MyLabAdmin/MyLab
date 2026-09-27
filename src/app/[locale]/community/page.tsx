@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from '@/i18n/navigation'
 import { getFeed } from '@/app/[locale]/actions/community'
 import FeedList from './FeedList'
+import { Link } from '@/i18n/navigation'
 
 export default async function CommunityPage({
   params,
@@ -27,9 +28,18 @@ export default async function CommunityPage({
 
   return (
     <main className="max-w-2xl mx-auto p-4 flex flex-col gap-5">
-      <h1 className="text-xl md:text-2xl font-bold text-primary-700">
-        {locale === 'ar' ? 'المجتمع' : 'Community'}
-      </h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold text-primary-700">
+          {locale === 'ar' ? 'المجتمع' : 'Community'}
+        </h1>
+
+        <Link
+          href="/community/friends"
+          className="btn-secondary w-auto shrink-0 px-3 py-1.5 text-sm"
+        >
+          {locale === 'ar' ? 'الأصدقاء' : 'Friends'}
+        </Link>
+      </div>
 
       <FeedList
         initialPosts={posts as any}

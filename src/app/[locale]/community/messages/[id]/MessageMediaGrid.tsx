@@ -81,8 +81,8 @@ export default function MessageMediaGrid({
     const item = items[0]
 
     return (
-      <div className="mb-2 max-w-full overflow-hidden rounded-xl">
-        {renderItem(item, 0, 'max-h-80')}
+      <div className="mb-2 aspect-[4/3] w-full max-w-full overflow-hidden rounded-xl sm:max-w-md">
+        {renderItem(item, 0, 'h-full w-full')}
       </div>
     )
   }

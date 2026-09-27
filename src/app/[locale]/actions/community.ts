@@ -388,7 +388,7 @@ const POSTS_PAGE_SIZE = 10
 const COMMENTS_PREVIEW_SIZE = 3
 const REPLIES_PREVIEW_SIZE = 2
 
-export async function getFeed(cursor: string | null = null, groupId: string | null = null) {
+export async function getFeed(cursor: string | null = null, groupId: string | null = null, authorId: string | null = null) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const currentUserId = userData.user?.id
@@ -406,6 +406,7 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
 
   if (cursor) query = query.lt('created_at', cursor)
   query = groupId ? query.eq('group_id', groupId) : query.is('group_id', null)
+  if (authorId) query = query.eq('author_id', authorId)
 
   const { data: posts, error } = await query
   if (error || !posts) { console.error("[getFeed] posts query failed:", error); return { posts: [], nextCursor: null } }

@@ -1,5 +1,5 @@
-export default function Avatar({ name, size = 'md', avatarUrl }: { name: string; size?: 'sm' | 'md' | 'lg' | 'xl'; avatarUrl?: string | null }) {
-  const dimensions = size === 'sm' ? 'w-6 h-6 text-xs' : size === 'lg' ? 'w-14 h-14 text-lg' : size === 'xl' ? 'w-20 h-20 text-2xl' : 'w-8 h-8 text-sm'
+export default function Avatar({ name, size = 'md', avatarUrl }: { name: string; size?: 'sm' | 'md' | 'ml' | 'lg' | 'xl'; avatarUrl?: string | null }) {
+  const dimensions = size === 'sm' ? 'w-6 h-6 text-xs' : size === 'ml' ? 'w-10 h-10 text-base' : size === 'lg' ? 'w-14 h-14 text-lg' : size === 'xl' ? 'w-20 h-20 text-2xl' : 'w-8 h-8 text-sm'
 
   if (avatarUrl) {
     return (

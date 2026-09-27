@@ -75,8 +75,42 @@ export default function MessageList({
   const isArabic = locale === 'ar'
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+    if (messages.length === 0) return
+
+    const root = bottomRef.current?.parentElement
+    const scrollContainer = root?.parentElement
+
+    if (!root || !scrollContainer) return
+
+    let frame = 0
+    let settleTimer = 0
+
+    const scrollToBottom = () => {
+      cancelAnimationFrame(frame)
+
+      frame = requestAnimationFrame(() => {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      })
+    }
+
+    scrollToBottom()
+
+    const resizeObserver = new ResizeObserver(() => {
+      scrollToBottom()
+    })
+
+    resizeObserver.observe(root)
+
+    settleTimer = window.setTimeout(() => {
+      resizeObserver.disconnect()
+    }, Object.keys(loadingMedia).length > 0 ? 5000 : 2500)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(settleTimer)
+      resizeObserver.disconnect()
+    }
+  }, [messages.length, loadingMedia])
 
   useEffect(() => {
     let cancelled = false

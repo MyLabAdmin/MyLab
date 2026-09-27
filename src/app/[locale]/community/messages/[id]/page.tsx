@@ -83,13 +83,13 @@ export default async function ConversationPage({
               <Avatar
                 name={conversationName}
                 avatarUrl={otherMember?.avatar_url}
-                size="md"
+                size="ml"
               />
             ) : (
               <Avatar
                 name={conversationName}
                 avatarUrl={conversation.avatar_url ?? null}
-                size="md"
+                size="ml"
               />
             )}
 

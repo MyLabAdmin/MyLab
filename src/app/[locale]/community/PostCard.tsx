@@ -170,13 +170,16 @@ export default function PostCard({
 
   return (
     <div id={post.id} className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Avatar name={post.authorName} />
+      <Link
+        href={'/community/profile/' + post.authorId + '?from=post&post=' + post.id}
+        className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+      >
+        <Avatar name={post.authorName} size="ml" />
         <div className="flex flex-col">
           <span className="font-medium text-gray-800 text-sm">{post.authorName}</span>
           <PostTimestamp createdAt={post.createdAt} />
         </div>
-      </div>
+      </Link>
 
       {post.content && (
         <p className="text-gray-700 whitespace-pre-wrap">
