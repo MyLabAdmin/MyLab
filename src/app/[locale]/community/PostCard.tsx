@@ -14,8 +14,10 @@ import type { ReactionKey } from '@/components/community/ReactionIcons'
 
 type Reply = {
   id: string
+  authorId: string
   content: string
   authorName: string
+  avatarUrl: string | null
   createdAt: string
   replyToName: string | null
   reactionCounts: Record<string, number>
@@ -23,8 +25,10 @@ type Reply = {
 }
 type Comment = {
   id: string
+  authorId: string
   content: string
   authorName: string
+  avatarUrl: string | null
   createdAt: string
   reactionCounts: Record<string, number>
   myReaction: ReactionKey | null
@@ -33,8 +37,10 @@ type Comment = {
 }
 type SharedPost = {
   id: string
+  authorId: string
   content: string
   authorName: string
+  avatarUrl: string | null
   media: { type: string; url: string }[]
   reactionCounts: Record<string, number>
   commentCount: number
@@ -45,6 +51,7 @@ export type Post = {
   content: string
   createdAt: string
   authorName: string
+  avatarUrl: string | null
   media: { type: string; url: string }[]
   reactionCounts: Record<string, number>
   myReaction: ReactionKey | null
@@ -174,7 +181,7 @@ export default function PostCard({
         href={'/community/profile/' + post.authorId + '?from=post&post=' + post.id}
         className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
-        <Avatar name={post.authorName} size="ml" />
+        <Avatar name={post.authorName} avatarUrl={post.avatarUrl} size="ml" />
         <div className="flex flex-col">
           <span className="font-medium text-gray-800 text-sm">{post.authorName}</span>
           <PostTimestamp createdAt={post.createdAt} />
@@ -190,14 +197,16 @@ export default function PostCard({
       {imageUrls.length > 0 && <ImageGrid images={imageUrls} onOpen={(i) => openLightbox(imageUrls, i)} />}
 
       {post.sharedPost && (
-        <Link
-          href={`/community/post/${post.sharedPost.id}`}
-          className="border border-gray-200 rounded-lg p-3 flex flex-col gap-2 bg-gray-50 hover:border-primary-300 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Avatar name={post.sharedPost.authorName} size="sm" />
+        <div className="border border-gray-200 rounded-lg p-3 flex flex-col gap-2 bg-gray-50 hover:border-primary-300 transition-colors">
+          <Link
+            href={'/community/profile/' + post.sharedPost.authorId}
+            className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          >
+            <Avatar name={post.sharedPost.authorName} avatarUrl={post.sharedPost.avatarUrl} size="sm" />
             <span className="text-xs font-medium text-gray-500">{post.sharedPost.authorName}</span>
-          </div>
+          </Link>
+
+          <Link href={`/community/post/${post.sharedPost.id}`} className="flex flex-col gap-2">
           <p className="text-sm text-gray-700 whitespace-pre-wrap">
             <ExpandableText text={post.sharedPost.content} maxLength={150} />
           </p>
@@ -206,10 +215,11 @@ export default function PostCard({
               <ImageGrid images={sharedImageUrls} onOpen={(i) => openLightbox(sharedImageUrls, i)} />
             </div>
           )}
-          <span className="text-xs text-gray-400">
-            {Object.values(post.sharedPost.reactionCounts ?? {}).reduce((a, b) => a + b, 0)} reactions · {post.sharedPost.commentCount ?? 0} comments
-          </span>
-        </Link>
+            <span className="text-xs text-gray-400">
+              {Object.values(post.sharedPost.reactionCounts ?? {}).reduce((a, b) => a + b, 0)} reactions · {post.sharedPost.commentCount ?? 0} comments
+            </span>
+          </Link>
+        </div>
       )}
 
       <ReactionDetailsWrapper

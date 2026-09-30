@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAvatarUrl } from '@/lib/storage/avatar-server'
 
 export type FriendProfile = {
   id: string
@@ -48,8 +49,15 @@ async function getProfiles(
     throw new Error(error.message)
   }
 
+  const resolvedProfiles = await Promise.all(
+    (data ?? []).map(async (profile) => ({
+      ...profile,
+      avatar_url: await resolveAvatarUrl(profile.avatar_url),
+    })),
+  )
+
   return new Map(
-    (data ?? []).map((profile) => [
+    resolvedProfiles.map((profile) => [
       profile.id,
       profile as FriendProfile,
     ]),
@@ -163,7 +171,14 @@ export async function getFriendsHub(search = '') {
     })
   }
 
-  const people: FriendItem[] = (peopleResult.data ?? [])
+  const resolvedPeopleProfiles = await Promise.all(
+    (peopleResult.data ?? []).map(async (profile) => ({
+      ...profile,
+      avatar_url: await resolveAvatarUrl(profile.avatar_url),
+    })),
+  )
+
+  const people: FriendItem[] = resolvedPeopleProfiles
     .filter(
       (profile) =>
         !hiddenIds.has(profile.id) ||

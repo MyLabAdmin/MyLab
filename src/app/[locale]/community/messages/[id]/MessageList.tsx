@@ -10,6 +10,7 @@ import {
 import Avatar from '@/components/community/Avatar'
 import MessageMediaGrid from './MessageMediaGrid'
 import MessageMediaLightbox from './MessageMediaLightbox'
+import ExpandableText from '../../ExpandableText'
 
 type MessageAttachment = {
   id: string
@@ -501,7 +502,7 @@ export default function MessageList({
                         ? isArabic
                           ? 'تم حذف هذه الرسالة'
                           : 'This message was deleted'
-                        : message.body}
+                        : <ExpandableText text={message.body} maxLength={300} />}
                     </p>
                   )}
 

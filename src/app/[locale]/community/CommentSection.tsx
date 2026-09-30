@@ -10,11 +10,14 @@ import PostTimestamp from './PostTimestamp'
 import ExpandableText from './ExpandableText'
 import type { ReactionKey } from '@/components/community/ReactionIcons'
 import Avatar from '@/components/community/Avatar'
+import Link from 'next/link'
 
 type Reply = {
   id: string
+  authorId: string
   content: string
   authorName: string
+  avatarUrl: string | null
   createdAt: string
   replyToName: string | null
   reactionCounts: Record<string, number>
@@ -22,8 +25,10 @@ type Reply = {
 }
 type Comment = {
   id: string
+  authorId: string
   content: string
   authorName: string
+  avatarUrl: string | null
   createdAt: string
   reactionCounts: Record<string, number>
   myReaction: ReactionKey | null
@@ -153,52 +158,63 @@ export default function CommentSection({
         <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
           {comments.map((c) => (
             <div key={c.id} className="flex flex-col gap-1.5">
-              <div className="flex items-start gap-2 text-sm">
-                <Avatar name={c.authorName} size="sm" />
-                <div>
-                  <span className="font-medium text-gray-800">{c.authorName}</span>{' '}
-                  <ExpandableText text={c.content} maxLength={100} />
+                <div className="flex items-start gap-2 text-sm">
+                  <Link
+                    href={'/community/profile/' + c.authorId}
+                    className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  >
+                    <Avatar name={c.authorName} avatarUrl={c.avatarUrl} size="sm" />
+                    <span className="font-medium text-gray-800">{c.authorName}</span>
+                  </Link>
+                  <div className="pt-1">
+                    <ExpandableText text={c.content} maxLength={100} />
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <PostTimestamp createdAt={c.createdAt} />
-                <ReactionPicker
-                  targetType="comment"
-                  targetId={c.id}
-                  counts={c.reactionCounts}
-                  myReaction={c.myReaction}
-                  onOpenDetails={() => setDetails({ type: 'comment', id: c.id })}
-                />
-                <button type="button" onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)} className="text-xs text-primary-600">
-                  {locale === 'ar' ? 'رد' : 'Reply'}
-                </button>
-              </div>
+                <div className="flex items-center gap-3">
+                  <PostTimestamp createdAt={c.createdAt} />
+                  <ReactionPicker
+                    targetType="comment"
+                    targetId={c.id}
+                    counts={c.reactionCounts}
+                    myReaction={c.myReaction}
+                    onOpenDetails={() => setDetails({ type: 'comment', id: c.id })}
+                  />
+                  <button type="button" onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)} className="text-xs text-primary-600">
+                    {locale === 'ar' ? 'رد' : 'Reply'}
+                  </button>
+                </div>
 
-              {c.replies.map((r) => (
-                <div key={r.id} className="ms-6 flex flex-col gap-1">
-                  <div className="flex items-start gap-2 text-sm">
-                    <Avatar name={r.authorName} size="sm" />
-                    <div>
-                      <span className="font-medium text-gray-800">{r.authorName}</span>
-                      {r.replyToName && <span className="text-primary-500"> @{r.replyToName}</span>}{' '}
-                      <ExpandableText text={r.content} maxLength={100} />
+                {c.replies.map((r) => (
+                  <div key={r.id} className="ms-6 flex flex-col gap-1">
+                    <div className="flex items-start gap-2 text-sm">
+                      <Link
+                        href={'/community/profile/' + r.authorId}
+                        className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                      >
+                        <Avatar name={r.authorName} avatarUrl={r.avatarUrl} size="sm" />
+                        <span className="font-medium text-gray-800">{r.authorName}</span>
+                      </Link>
+                      <div className="pt-1">
+                        {r.replyToName && <span className="text-primary-500"> @{r.replyToName}</span>}{' '}
+                        <ExpandableText text={r.content} maxLength={100} />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <PostTimestamp createdAt={r.createdAt} />
+                      <ReactionPicker
+                        targetType="reply"
+                        targetId={r.id}
+                        counts={r.reactionCounts}
+                        myReaction={r.myReaction}
+                        onOpenDetails={() => setDetails({ type: 'reply', id: r.id })}
+                      />
+                      <button type="button" onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)} className="text-xs text-primary-600">
+                        {locale === 'ar' ? 'رد' : 'Reply'}
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <PostTimestamp createdAt={r.createdAt} />
-                    <ReactionPicker
-                      targetType="reply"
-                      targetId={r.id}
-                      counts={r.reactionCounts}
-                      myReaction={r.myReaction}
-                      onOpenDetails={() => setDetails({ type: 'reply', id: r.id })}
-                    />
-                    <button type="button" onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)} className="text-xs text-primary-600">
-                      {locale === 'ar' ? 'رد' : 'Reply'}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+
 
               {c.replies.length < c.replyCount && (
                 <RepliesAutoLoader

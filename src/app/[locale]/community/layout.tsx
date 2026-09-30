@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { parseMediaRef } from '@/lib/storage';
-import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server';
+import { resolveAvatarUrl } from '@/lib/storage/avatar-server';
 import CommunityNavigation from './CommunityNavigation';
 
 export default async function CommunityLayout({
@@ -30,19 +29,9 @@ export default async function CommunityLayout({
       .maybeSingle();
 
     if (data) {
-      let resolvedAvatarUrl = data.avatar_url;
-
-      if (data.avatar_url) {
-        const parsedAvatar = parseMediaRef(data.avatar_url);
-
-        if (parsedAvatar.provider === 'imagekit' && parsedAvatar.path.trim()) {
-          resolvedAvatarUrl = await getImagekitSignedUrl(parsedAvatar.path);
-        }
-      }
-
       profile = {
         ...data,
-        avatar_url: resolvedAvatarUrl,
+        avatar_url: await resolveAvatarUrl(data.avatar_url),
       };
     }
   }

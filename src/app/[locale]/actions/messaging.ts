@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { resolveAvatarUrl } from '@/lib/storage/avatar-server'
 import { revalidatePath } from 'next/cache'
 
 type ConversationType = 'direct' | 'group'
@@ -520,9 +521,16 @@ export async function searchGroupMembers(conversationId: string, search: string)
     return { success: false as const, error: error.message }
   }
 
+  const resolvedUsers = await Promise.all(
+    (users ?? []).map(async (profile) => ({
+      ...profile,
+      avatar_url: await resolveAvatarUrl(profile.avatar_url),
+    })),
+  )
+
   return {
     success: true as const,
-    users: users ?? [],
+    users: resolvedUsers,
   }
 }
 
@@ -677,7 +685,7 @@ export async function getConversations() {
       userId: member.user_id,
       role: member.role,
       displayName: profile?.display_name ?? null,
-      avatarUrl: profile?.avatar_url ?? null,
+      avatarUrl: await resolveAvatarUrl(profile?.avatar_url),
     })
 
     membersByConversation.set(member.conversation_id, list)
@@ -852,19 +860,21 @@ export async function getConversation(conversationId: string) {
     ]),
   )
 
-  const members = conversation.conversation_members.map((member) => {
-    const profile = profileMap.get(member.user_id)
-    const permissions = permissionsMap.get(member.user_id)
+  const members = await Promise.all(
+    conversation.conversation_members.map(async (member) => {
+      const profile = profileMap.get(member.user_id)
+      const permissions = permissionsMap.get(member.user_id)
 
-    return {
-      ...member,
-      display_name: profile?.display_name ?? null,
-      avatar_url: profile?.avatar_url ?? null,
-      can_edit_info: permissions?.can_edit_info ?? false,
-      can_add_members: permissions?.can_add_members ?? false,
-      can_remove_members: permissions?.can_remove_members ?? false,
-    }
-  })
+      return {
+        ...member,
+        display_name: profile?.display_name ?? null,
+        avatar_url: await resolveAvatarUrl(profile?.avatar_url),
+        can_edit_info: permissions?.can_edit_info ?? false,
+        can_add_members: permissions?.can_add_members ?? false,
+        can_remove_members: permissions?.can_remove_members ?? false,
+      }
+    }),
+  )
 
   return {
     success: true as const,
@@ -941,8 +951,16 @@ export async function getMessages(
       return { success: false as const, error: profilesError.message }
     }
 
+    const resolvedProfiles = await Promise.all(
+      (profiles ?? []).map(async (profile) => ({
+        id: profile.id,
+        display_name: profile.display_name,
+        avatar_url: await resolveAvatarUrl(profile.avatar_url),
+      })),
+    )
+
     profileMap = new Map(
-      (profiles ?? []).map((profile) => [
+      resolvedProfiles.map((profile) => [
         profile.id,
         {
           display_name: profile.display_name,

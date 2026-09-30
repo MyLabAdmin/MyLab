@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { createClient } from '@/lib/supabase/server'
+import { resolveAvatarUrl } from '@/lib/storage/avatar-server'
 import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 import { parseMediaRef } from '@/lib/storage'
 
@@ -219,19 +220,21 @@ export async function getGroupManagementMembers(groupId: string) {
     throw new Error(error.message)
   }
 
-  return (data ?? []).map((member: {
-    user_id: string
-    display_name: string | null
-    avatar_url: string | null
-    role: string
-    joined_at: string
-  }) => ({
-    userId: member.user_id,
-    displayName: member.display_name,
-    avatarUrl: member.avatar_url,
-    role: member.role as 'owner' | 'moderator' | 'member',
-    joinedAt: member.joined_at,
-  }))
+  return Promise.all(
+    (data ?? []).map(async (member: {
+      user_id: string
+      display_name: string | null
+      avatar_url: string | null
+      role: string
+      joined_at: string
+    }) => ({
+      userId: member.user_id,
+      displayName: member.display_name,
+      avatarUrl: await resolveAvatarUrl(member.avatar_url),
+      role: member.role as 'owner' | 'moderator' | 'member',
+      joinedAt: member.joined_at,
+    })),
+  )
 }
 
 export async function getGroupDetail(groupId: string) {
@@ -761,12 +764,20 @@ export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
     .select('id, display_name, avatar_url')
     .in('id', userIds)
 
+  const resolvedProfiles = await Promise.all(
+    (profiles ?? []).map(async (profile) => ({
+      id: profile.id,
+      name: profile.display_name ?? '—',
+      avatarUrl: await resolveAvatarUrl(profile.avatar_url),
+    })),
+  )
+
   const profileMap = new Map(
-    (profiles ?? []).map((profile) => [
+    resolvedProfiles.map((profile) => [
       profile.id,
       {
-        name: profile.display_name ?? '—',
-        avatarUrl: profile.avatar_url ?? null,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
       },
     ]),
   )
