@@ -86,6 +86,173 @@ export async function updateProfile(
   return { success: true }
 }
 
+
+type HigherEducationInput = {
+  university: string
+  degree: 'higher_diploma' | 'master' | 'phd'
+  yearObtained: number | null
+}
+
+type JobHistoryInput = {
+  employer: string
+  jobTitle: string
+  startYear: number | null
+  endYear: number | null
+}
+
+function validProfileYear(value: number | null) {
+  if (value === null) return true
+  const year = new Date().getFullYear()
+  return Number.isInteger(value) && value >= 1900 && value <= year + 1
+}
+
+async function getProfileActionUser() {
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.getUser()
+  return { supabase, user: error ? null : data.user }
+}
+
+export async function createHigherEducation(input: HigherEducationInput) {
+  const { supabase, user } = await getProfileActionUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const university = input.university.trim()
+  if (!university) return { success: false, error: 'University is required' }
+  if (!['higher_diploma', 'master', 'phd'].includes(input.degree))
+    return { success: false, error: 'Invalid education degree' }
+  if (!validProfileYear(input.yearObtained))
+    return { success: false, error: 'Invalid year obtained' }
+
+  const { error } = await supabase.from('higher_education').insert({
+    user_id: user.id,
+    university,
+    degree: input.degree,
+    year_obtained: input.yearObtained,
+    is_public: true,
+  })
+
+  return error
+    ? { success: false, error: error.message }
+    : { success: true }
+}
+
+export async function updateHigherEducation(id: string, input: HigherEducationInput) {
+  const { supabase, user } = await getProfileActionUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const university = input.university.trim()
+  if (!id.trim() || !university)
+    return { success: false, error: 'Required education data is missing' }
+  if (!['higher_diploma', 'master', 'phd'].includes(input.degree))
+    return { success: false, error: 'Invalid education degree' }
+  if (!validProfileYear(input.yearObtained))
+    return { success: false, error: 'Invalid year obtained' }
+
+  const { error } = await supabase
+    .from('higher_education')
+    .update({
+      university,
+      degree: input.degree,
+      year_obtained: input.yearObtained,
+      is_public: true,
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  return error
+    ? { success: false, error: error.message }
+    : { success: true }
+}
+
+export async function deleteHigherEducation(id: string) {
+  const { supabase, user } = await getProfileActionUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('higher_education')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  return error
+    ? { success: false, error: error.message }
+    : { success: true }
+}
+
+export async function createJobHistory(input: JobHistoryInput) {
+  const { supabase, user } = await getProfileActionUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const employer = input.employer.trim()
+  const jobTitle = input.jobTitle.trim()
+
+  if (!employer || !jobTitle)
+    return { success: false, error: 'Employer and job title are required' }
+  if (!validProfileYear(input.startYear) || !validProfileYear(input.endYear))
+    return { success: false, error: 'Invalid work year' }
+  if (input.startYear !== null && input.endYear !== null && input.endYear < input.startYear)
+    return { success: false, error: 'End year cannot be before start year' }
+
+  const { error } = await supabase.from('job_history').insert({
+    user_id: user.id,
+    employer,
+    job_title: jobTitle,
+    start_year: input.startYear,
+    end_year: input.endYear,
+    is_public: true,
+  })
+
+  return error
+    ? { success: false, error: error.message }
+    : { success: true }
+}
+
+export async function updateJobHistory(id: string, input: JobHistoryInput) {
+  const { supabase, user } = await getProfileActionUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const employer = input.employer.trim()
+  const jobTitle = input.jobTitle.trim()
+
+  if (!id.trim() || !employer || !jobTitle)
+    return { success: false, error: 'Required work data is missing' }
+  if (!validProfileYear(input.startYear) || !validProfileYear(input.endYear))
+    return { success: false, error: 'Invalid work year' }
+  if (input.startYear !== null && input.endYear !== null && input.endYear < input.startYear)
+    return { success: false, error: 'End year cannot be before start year' }
+
+  const { error } = await supabase
+    .from('job_history')
+    .update({
+      employer,
+      job_title: jobTitle,
+      start_year: input.startYear,
+      end_year: input.endYear,
+      is_public: true,
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  return error
+    ? { success: false, error: error.message }
+    : { success: true }
+}
+
+export async function deleteJobHistory(id: string) {
+  const { supabase, user } = await getProfileActionUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('job_history')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  return error
+    ? { success: false, error: error.message }
+    : { success: true }
+}
+
 export async function updateProfileAvatar(
   mediaRef: string,
 ): Promise<{ success: true } | { success: false; error: string }> {

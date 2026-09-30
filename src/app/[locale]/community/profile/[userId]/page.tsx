@@ -11,6 +11,7 @@ import { getOrCreateDirectConversation } from '@/app/[locale]/actions/messaging'
 import { getProfileFriendship } from '@/app/[locale]/actions/friends'
 import ProfilePosts from './ProfilePosts'
 import ProfilePersonalEdit from '@/components/community/ProfilePersonalEdit'
+import ProfileEducationWorkEdit from '@/components/community/ProfileEducationWorkEdit'
 
 type ProfileRecord = {
   id: string
@@ -475,121 +476,15 @@ export default async function ProfilePage({
           </div>
         </section>
 
-<section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <SectionIcon>
-                <EducationIcon />
-              </SectionIcon>
-              <h2 className="font-bold text-gray-900">
-                {isArabic ? 'التعليم' : 'Education'}
-              </h2>
-            </div>
-
-            {isOwner ? (
-              <button
-                type="button"
-                disabled
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-400"
-              >
-                {isArabic ? 'تعديل' : 'Edit'}
-              </button>
-            ) : null}
-          </div>
-
-          <div className="space-y-3">
-            {profile.base_degree || profile.base_university ? (
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="font-semibold text-gray-900">
-                  {[profile.base_degree, profile.base_university]
-                    .filter(Boolean)
-                    .join(' — ')}
-                </p>
-                {profile.base_graduation_year ? (
-                  <p className="mt-1 text-xs text-gray-500">
-                    {isArabic ? 'سنة التخرج: ' : 'Graduation: '}
-                    {profile.base_graduation_year}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {(education ?? []).map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-gray-100 bg-white p-4"
-              >
-                <p className="font-semibold text-gray-900">
-                  {item.degree}
-                </p>
-                <p className="mt-1 text-sm text-gray-600">
-                  {item.university}
-                </p>
-                {item.year_obtained ? (
-                  <p className="mt-1 text-xs text-gray-500">
-                    {item.year_obtained}
-                  </p>
-                ) : null}
-              </div>
-            ))}
-
-            {!profile.base_degree &&
-            !profile.base_university &&
-            (education ?? []).length === 0 ? (
-              <p className="py-4 text-sm text-gray-500">
-                {isArabic ? 'لا توجد بيانات تعليمية.' : 'No education information.'}
-              </p>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <SectionIcon>
-                <WorkIcon />
-              </SectionIcon>
-              <h2 className="font-bold text-gray-900">
-                {isArabic ? 'العمل والخبرة' : 'Work & experience'}
-              </h2>
-            </div>
-
-            {isOwner ? (
-              <button
-                type="button"
-                disabled
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-400"
-              >
-                {isArabic ? 'تعديل' : 'Edit'}
-              </button>
-            ) : null}
-          </div>
-
-          <div className="space-y-3">
-            {(work ?? []).map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl bg-gray-50 p-4"
-              >
-                <p className="font-semibold text-gray-900">
-                  {item.job_title}
-                </p>
-                <p className="mt-1 text-sm text-gray-600">
-                  {item.employer}
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  {item.start_year ?? '—'} — {item.end_year ?? (isArabic ? 'حتى الآن' : 'Present')}
-                </p>
-              </div>
-            ))}
-
-            {(work ?? []).length === 0 ? (
-              <p className="py-4 text-sm text-gray-500">
-                {isArabic ? 'لا توجد خبرات عمل.' : 'No work experience.'}
-              </p>
-            ) : null}
-          </div>
-        </section>
+        <ProfileEducationWorkEdit
+          isArabic={isArabic}
+          isOwner={isOwner}
+          education={education ?? []}
+          work={work ?? []}
+          baseDegree={profile.base_degree}
+          baseUniversity={profile.base_university}
+          baseGraduationYear={profile.base_graduation_year}
+        />
 
         <section className="flex flex-col gap-4">
           <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white p-2">
