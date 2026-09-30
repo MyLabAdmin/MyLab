@@ -468,7 +468,7 @@ export async function searchGroupMembers(conversationId: string, search: string)
   const memberIds = (members ?? []).map((member) => member.user_id)
 
   let query = result.supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name, avatar_url')
     .ilike('display_name', '%' + cleanSearch + '%')
     .order('display_name', { ascending: true })
@@ -509,7 +509,7 @@ export async function searchGroupMembers(conversationId: string, search: string)
   }
 
   const { data: users, error } = await result.supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name, avatar_url')
     .in('id', availableFriendIds)
     .ilike('display_name', '%' + cleanSearch + '%')
@@ -646,7 +646,7 @@ export async function getConversations() {
   )
 
   const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name, avatar_url')
     .in('id', userIds)
 
@@ -823,7 +823,7 @@ export async function getConversation(conversationId: string) {
   const memberIds = conversation.conversation_members.map((member) => member.user_id)
 
   const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name, avatar_url')
     .in('id', memberIds)
 
@@ -933,7 +933,7 @@ export async function getMessages(
 
   if (senderIds.length > 0) {
     const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
+      .from('profiles_public')
       .select('id, display_name, avatar_url')
       .in('id', senderIds)
 

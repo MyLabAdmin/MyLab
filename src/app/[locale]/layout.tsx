@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import "./globals.css";
 import { ToastProvider } from '@/components/ui/Toast';
+import AppNavigation from '@/components/navigation/AppNavigation';
 
 export const metadata: Metadata = {
   title: "MyLab",
@@ -28,7 +29,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={dir}>
       <body>
-        <NextIntlClientProvider><ToastProvider>{children}</ToastProvider></NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <ToastProvider>
+            <AppNavigation locale={locale} />
+            {children}
+          </ToastProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -514,7 +514,7 @@ export async function getPendingMembers(groupId: string) {
   const userIds = data.map((member) => member.user_id)
 
   const { data: profiles } = await supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name')
     .in('id', userIds)
 
@@ -670,7 +670,7 @@ export async function getGroupModerators(groupId: string) {
   const [{ data: profiles }, { data: permissionRows, error: permissionsError }] =
     await Promise.all([
       supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('id, display_name')
         .in('id', userIds),
       supabase
@@ -757,7 +757,7 @@ export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
   const userIds = members.map((member) => member.user_id)
 
   const { data: profiles } = await supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name, avatar_url')
     .in('id', userIds)
 

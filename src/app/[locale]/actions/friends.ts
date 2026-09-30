@@ -40,7 +40,7 @@ async function getProfiles(
   }
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('id, display_name, avatar_url')
     .in('id', userIds)
 
@@ -78,7 +78,7 @@ export async function getFriendsHub(search = '') {
     hiddenResult,
   ] = await Promise.all([
     supabase
-      .from('profiles')
+      .from('profiles_public')
       .select('id, display_name, avatar_url')
       .neq('id', user.id)
       .ilike('display_name', '%' + escapedSearch + '%')

@@ -33,12 +33,6 @@ export default async function CommunityPage({
           {locale === 'ar' ? 'المجتمع' : 'Community'}
         </h1>
 
-        <Link
-          href="/community/friends"
-          className="btn-secondary w-auto shrink-0 px-3 py-1.5 text-sm"
-        >
-          {locale === 'ar' ? 'الأصدقاء' : 'Friends'}
-        </Link>
       </div>
 
       <FeedList

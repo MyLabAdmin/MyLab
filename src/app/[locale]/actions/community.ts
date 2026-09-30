@@ -55,7 +55,7 @@ export async function createPost(content: string, mediaRefs: { type: 'image' | '
   )
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles_public')
     .select('display_name')
     .eq('id', userData.user.id)
     .single()
@@ -114,7 +114,7 @@ export async function getReactionDetails(targetType: TargetType, targetId: strin
   if (!data || data.length === 0) return { counts: {}, byReaction: {} }
 
   const userIds = Array.from(new Set(data.map((r) => r.user_id)))
-  const { data: profilesData } = await supabase.from('profiles').select('id, display_name').in('id', userIds)
+  const { data: profilesData } = await supabase.from('profiles_public').select('id, display_name').in('id', userIds)
   const nameOf = (id: string) => profilesData?.find((p) => p.id === id)?.display_name ?? '—'
 
   const counts: Record<string, number> = {}
@@ -139,7 +139,7 @@ export async function addComment(postId: string, content: string) {
 
   if (error || !data) return { success: false as const }
 
-  const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', userData.user.id).single()
+  const { data: profile } = await supabase.from('profiles_public').select('display_name').eq('id', userData.user.id).single()
 
   return {
     success: true as const,
@@ -170,7 +170,7 @@ export async function addReply(commentId: string, content: string, replyToUserId
   if (error || !data) return { success: false as const }
 
   const authorIds = [userData.user.id, ...(replyToUserId ? [replyToUserId] : [])]
-  const { data: profiles } = await supabase.from('profiles').select('id, display_name').in('id', authorIds)
+  const { data: profiles } = await supabase.from('profiles_public').select('id, display_name').in('id', authorIds)
   const nameOf = (id: string) => profiles?.find((p) => p.id === id)?.display_name ?? '—'
 
   return {
@@ -420,7 +420,7 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
       .in('id', sharedPostIds)
 
     const sharedAuthorIds = Array.from(new Set((sharedPostsData ?? []).map((sp: any) => sp.author_id)))
-    const { data: sharedProfiles } = await supabase.from('profiles').select('id, display_name').in('id', sharedAuthorIds)
+    const { data: sharedProfiles } = await supabase.from('profiles_public').select('id, display_name').in('id', sharedAuthorIds)
     const sharedNameOf = (id: string) => sharedProfiles?.find((pr) => pr.id === id)?.display_name ?? '—'
 
     const { data: sharedReactionsData } = await supabase
@@ -451,7 +451,7 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
     ...posts.flatMap((p: any) => (p.post_comments ?? []).flatMap((c: any) => (c.comment_replies ?? []).map((r: any) => r.author_id))),
   ]))
 
-  const { data: profilesData } = await supabase.from('profiles').select('id, display_name').in('id', authorIds)
+  const { data: profilesData } = await supabase.from('profiles_public').select('id, display_name').in('id', authorIds)
   const nameOf = (id: string) => profilesData?.find((pr) => pr.id === id)?.display_name ?? '—'
 
   const allTargetIds: string[] = []
@@ -576,7 +576,7 @@ export async function loadMoreComments(postId: string, skipIds: string[]) {
     ...nextBatch.map((c: any) => c.author_id),
     ...nextBatch.flatMap((c: any) => (c.comment_replies ?? []).map((r: any) => r.author_id)),
   ]))
-  const { data: profilesData } = await supabase.from('profiles').select('id, display_name').in('id', authorIds)
+  const { data: profilesData } = await supabase.from('profiles_public').select('id, display_name').in('id', authorIds)
   const nameOf = (id: string) => profilesData?.find((pr) => pr.id === id)?.display_name ?? '—'
 
   const targetIds = nextBatch.flatMap((c: any) => [c.id, ...(c.comment_replies ?? []).map((r: any) => r.id)])
@@ -638,7 +638,7 @@ export async function loadMoreReplies(commentId: string, skipIds: string[]) {
   const nextBatch = filtered.slice(0, REPLIES_PREVIEW_SIZE)
 
   const authorIds = Array.from(new Set(nextBatch.flatMap((r: any) => [r.author_id, r.reply_to_user_id].filter(Boolean))))
-  const { data: profilesData } = await supabase.from('profiles').select('id, display_name').in('id', authorIds)
+  const { data: profilesData } = await supabase.from('profiles_public').select('id, display_name').in('id', authorIds)
   const nameOf = (id: string) => profilesData?.find((pr) => pr.id === id)?.display_name ?? '—'
 
   const { data: reactionsData } = await supabase
@@ -689,7 +689,7 @@ export async function getPostDetail(postId: string) {
     ...((p.post_comments ?? []).map((c: any) => c.author_id)),
     ...((p.post_comments ?? []).flatMap((c: any) => (c.comment_replies ?? []).map((r: any) => r.author_id))),
   ]))
-  const { data: profilesData } = await supabase.from('profiles').select('id, display_name').in('id', authorIds)
+  const { data: profilesData } = await supabase.from('profiles_public').select('id, display_name').in('id', authorIds)
   const nameOf = (id: string) => profilesData?.find((pr) => pr.id === id)?.display_name ?? '—'
 
   const allTargetIds: string[] = [p.id]
@@ -735,7 +735,7 @@ export async function getPostDetail(postId: string) {
       .single()
 
     if (sp) {
-      const { data: spProfile } = await supabase.from('profiles').select('display_name').eq('id', sp.author_id).single()
+      const { data: spProfile } = await supabase.from('profiles_public').select('display_name').eq('id', sp.author_id).single()
       const media = await Promise.all(
         ((sp as any).post_media ?? [])
           .sort((a: any, b: any) => a.order_index - b.order_index)

@@ -3,10 +3,35 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Avatar from '@/components/community/Avatar'
+import ProfileAvatarUpload from '@/components/community/ProfileAvatarUpload'
+import { parseMediaRef } from '@/lib/storage'
+import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 import { Link } from '@/i18n/navigation'
 import { getOrCreateDirectConversation } from '@/app/[locale]/actions/messaging'
 import { getProfileFriendship } from '@/app/[locale]/actions/friends'
 import ProfilePosts from './ProfilePosts'
+import ProfilePersonalEdit from '@/components/community/ProfilePersonalEdit'
+
+type ProfileRecord = {
+  id: string
+  display_name: string | null
+  avatar_url: string | null
+  bio: string | null
+  country: string | null
+  preferred_locale: string | null
+  is_verified_professional: boolean
+  created_at: string
+  updated_at: string
+  first_name: string | null
+  last_name: string | null
+  date_of_birth: string | null
+  gender: string | null
+  city: string | null
+  phone: string | null
+  base_degree: string | null
+  base_university: string | null
+  base_graduation_year: number | null
+}
 
 async function startDirectMessage(formData: FormData) {
   'use server'
@@ -109,37 +134,52 @@ export default async function ProfilePage({
   const isOwner = currentUserId === userId
   const isArabic = locale === 'ar'
 
-  const [{ data: profile, error }, { data: education }, { data: work }, friendship, feed] =
-    await Promise.all([
-      supabase
-        .from('profiles')
-        .select(
-          'id, display_name, avatar_url, bio, country, city, is_verified_professional, base_degree, base_university, base_graduation_year',
-        )
-        .eq('id', userId)
-        .maybeSingle(),
+  const [
+    { data: rawProfile, error },
+    { data: education },
+    { data: work },
+    { data: visibilityRows },
+    friendship,
+    feed,
+  ] = await Promise.all([
+    supabase.rpc('get_profile_for_viewer', { target_user_id: userId }).maybeSingle(),
+    supabase
+      .from('higher_education')
+      .select('id, university, degree, year_obtained')
+      .eq('user_id', userId)
+      .order('year_obtained', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('job_history')
+      .select('id, employer, job_title, start_year, end_year')
+      .eq('user_id', userId)
+      .order('start_year', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('profile_field_visibility')
+      .select('field_key, is_public')
+      .eq('user_id', userId),
+    getProfileFriendship(userId),
+    import('@/app/[locale]/actions/community').then(({ getFeed }) =>
+      getFeed(null, null, userId),
+    ),
+  ])
 
-      supabase
-        .from('higher_education')
-        .select('id, university, degree, year_obtained')
-        .eq('user_id', userId)
-        .order('year_obtained', { ascending: false, nullsFirst: false }),
+  const visibility = Object.fromEntries(
+    (visibilityRows ?? []).map((row) => [row.field_key, row.is_public]),
+  )
 
-      supabase
-        .from('job_history')
-        .select('id, employer, job_title, start_year, end_year')
-        .eq('user_id', userId)
-        .order('start_year', { ascending: false, nullsFirst: false }),
-
-      getProfileFriendship(userId),
-
-      import('@/app/[locale]/actions/community').then(({ getFeed }) =>
-        getFeed(null, null, userId),
-      ),
-    ])
-
+  const profile = rawProfile as ProfileRecord | null
   if (error || !profile) {
     notFound()
+  }
+
+  let resolvedAvatarUrl = profile.avatar_url
+
+  if (profile.avatar_url) {
+    const parsedAvatar = parseMediaRef(profile.avatar_url)
+
+    if (parsedAvatar.provider === 'imagekit' && parsedAvatar.path.trim()) {
+      resolvedAvatarUrl = await getImagekitSignedUrl(parsedAvatar.path)
+    }
   }
 
   const displayName =
@@ -188,17 +228,25 @@ export default async function ProfilePage({
 
         <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
           <div className="bg-gradient-to-b from-primary-50/70 to-white px-5 pb-6 pt-8 text-center sm:px-8">
-            <div className="flex justify-center pt-12">
-              <div className="scale-200">
-                <Avatar
-                  name={displayName}
-                  avatarUrl={profile.avatar_url}
-                  size="xl"
-                />
+            <div className="flex flex-col items-center pt-8">
+              <div className="flex h-40 w-40 items-center justify-center">
+                <div className="scale-200">
+                  <Avatar
+                    name={displayName}
+                    avatarUrl={resolvedAvatarUrl}
+                    size="xl"
+                  />
+                </div>
               </div>
+
+              {isOwner ? (
+                <div className="mt-4">
+                  <ProfileAvatarUpload />
+                </div>
+              ) : null}
             </div>
 
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
               <h1 className="text-2xl font-bold text-gray-900">
                 {displayName}
               </h1>
@@ -256,52 +304,170 @@ export default async function ProfilePage({
                   {isArabic ? 'المعلومات الشخصية' : 'Personal information'}
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {isArabic ? 'نبذة ومعلومات عامة' : 'About and general information'}
+                  {isArabic ? 'المعلومات العامة الظاهرة في الملف' : 'Public information shown on the profile'}
                 </p>
               </div>
             </div>
 
             {isOwner ? (
-              <button
-                type="button"
-                disabled
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-400"
-              >
-                {isArabic ? 'تعديل' : 'Edit'}
-              </button>
+              <ProfilePersonalEdit
+                profile={{
+                  display_name: profile.display_name,
+                  first_name: profile.first_name,
+                  last_name: profile.last_name,
+                  bio: profile.bio,
+                  country: profile.country,
+                  city: profile.city,
+                  date_of_birth: profile.date_of_birth,
+                  gender: profile.gender,
+                  phone: profile.phone,
+                  base_degree: profile.base_degree,
+                  base_university: profile.base_university,
+                  base_graduation_year: profile.base_graduation_year,
+                }}
+                visibility={visibility}
+                isArabic={isArabic}
+              />
             ) : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-gray-50 p-4">
-              <p className="text-xs font-medium text-gray-500">
-                {isArabic ? 'الموقع' : 'Location'}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-gray-500">
+                  {isArabic ? 'الموقع' : 'Location'}
+                </p>
+                {isOwner ? (
+                  <span
+                    className="text-xs text-gray-400"
+                    title={
+                      visibility.country === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                    aria-label={
+                      visibility.country === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                  >
+                    {visibility.country === false ? '🔒' : '🌐'}
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-1 font-semibold text-gray-900">
-                {[profile.city, profile.country]
-                  .filter(Boolean)
-                  .join('، ') || '—'}
+                {[profile.city, profile.country].filter(Boolean).join('، ') || '—'}
               </p>
             </div>
 
             <div className="rounded-xl bg-gray-50 p-4">
-              <p className="text-xs font-medium text-gray-500">
-                {isArabic ? 'التحقق المهني' : 'Professional verification'}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-gray-500">
+                  {isArabic ? 'تاريخ الميلاد' : 'Date of birth'}
+                </p>
+                {isOwner ? (
+                  <span
+                    className="text-xs text-gray-400"
+                    title={
+                      visibility.date_of_birth === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                    aria-label={
+                      visibility.date_of_birth === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                  >
+                    {visibility.date_of_birth === false ? '🔒' : '🌐'}
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-1 font-semibold text-gray-900">
-                {profile.is_verified_professional
-                  ? isArabic
-                    ? 'موثق مهنيًا'
-                    : 'Professionally verified'
-                  : isArabic
-                    ? 'غير موثق'
-                    : 'Not verified'}
+                {profile.date_of_birth || '—'}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-gray-50 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-gray-500">
+                  {isArabic ? 'الجنس' : 'Gender'}
+                </p>
+                {isOwner ? (
+                  <span
+                    className="text-xs text-gray-400"
+                    title={
+                      visibility.gender === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                    aria-label={
+                      visibility.gender === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                  >
+                    {visibility.gender === false ? '🔒' : '🌐'}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 font-semibold text-gray-900">
+                {profile.gender === 'male'
+                  ? isArabic ? 'ذكر' : 'Male'
+                  : profile.gender === 'female'
+                    ? isArabic ? 'أنثى' : 'Female'
+                    : '—'}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-gray-50 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-gray-500">
+                  {isArabic ? 'رقم الهاتف' : 'Phone'}
+                </p>
+                {isOwner ? (
+                  <span
+                    className="text-xs text-gray-400"
+                    title={
+                      visibility.phone === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                    aria-label={
+                      visibility.phone === false
+                        ? isArabic ? 'خاص' : 'Private'
+                        : isArabic ? 'عام' : 'Public'
+                    }
+                  >
+                    {visibility.phone === false ? '🔒' : '🌐'}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 font-semibold text-gray-900">
+                {profile.phone || '—'}
               </p>
             </div>
           </div>
+
+          <div className="mt-3 rounded-xl bg-gray-50 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium text-gray-500">
+                {isArabic ? 'التحقق المهني' : 'Professional verification'}
+              </p>
+            </div>
+            <p className="mt-1 font-semibold text-gray-900">
+              {profile.is_verified_professional
+                ? isArabic
+                  ? 'موثق مهنيًا'
+                  : 'Professionally verified'
+                : isArabic
+                  ? 'غير موثق'
+                  : 'Not verified'}
+            </p>
+          </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+<section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <SectionIcon>

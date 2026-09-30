@@ -6,6 +6,7 @@ const ALLOWED_USER_UPLOAD_FEATURES = new Set([
   'post_media',
   'message_media',
   'group_cover',
+  'profile_avatar',
 ])
 
 export async function GET(request: Request) {
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
         )
       }
 
-      if (featureKey !== 'group_cover') {
+      if (featureKey !== 'group_cover' && featureKey !== 'profile_avatar') {
         const statusResult =
           await getFeatureCapacityStatus(featureKey)
 
