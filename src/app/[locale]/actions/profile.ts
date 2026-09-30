@@ -2,6 +2,7 @@
 
 import { makeMediaRef, parseMediaRef } from '@/lib/storage'
 import { createClient } from '@/lib/supabase/server'
+import { deleteImagekitFileByPath } from '@/lib/storage/imagekit-server'
 
 type UpdateProfileInput = {
   displayName?: string
@@ -115,6 +116,18 @@ export async function updateProfileAvatar(
 
   const normalizedRef = makeMediaRef('imagekit', parsed.path)
 
+  const { data: currentProfile, error: currentProfileError } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', userData.user.id)
+    .maybeSingle()
+
+  if (currentProfileError) {
+    return { success: false, error: currentProfileError.message }
+  }
+
+  const previousAvatarUrl = currentProfile?.avatar_url ?? null
+
   const { error } = await supabase
     .from('profiles')
     .update({ avatar_url: normalizedRef })
@@ -122,6 +135,80 @@ export async function updateProfileAvatar(
 
   if (error) {
     return { success: false, error: error.message }
+  }
+
+  if (previousAvatarUrl && previousAvatarUrl !== normalizedRef) {
+    try {
+      const previous = parseMediaRef(previousAvatarUrl)
+
+      if (previous.provider === 'imagekit' && previous.path.trim()) {
+        await deleteImagekitFileByPath(previous.path)
+      }
+    } catch {
+      // The new avatar is already saved successfully.
+      // Keep the new avatar even if cleanup of the previous file fails.
+    }
+  }
+
+  return { success: true }
+}
+
+
+export async function deleteProfileAvatar(): Promise<
+  { success: true } | { success: false; error: string }
+> {
+  const supabase = await createClient()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !userData.user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', userData.user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    return { success: false, error: profileError.message }
+  }
+
+  if (!profile?.avatar_url) {
+    return { success: true }
+  }
+
+  let parsed: { provider: string; path: string }
+
+  try {
+    parsed = parseMediaRef(profile.avatar_url)
+  } catch {
+    return { success: false, error: 'Invalid avatar reference' }
+  }
+
+  if (parsed.provider !== 'imagekit' || !parsed.path.trim()) {
+    return { success: false, error: 'Invalid avatar reference' }
+  }
+
+  try {
+    await deleteImagekitFileByPath(parsed.path)
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete the ImageKit file',
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('id', userData.user.id)
+
+  if (updateError) {
+    return { success: false, error: updateError.message }
   }
 
   return { success: true }

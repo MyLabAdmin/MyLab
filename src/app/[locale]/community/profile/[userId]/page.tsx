@@ -241,7 +241,15 @@ export default async function ProfilePage({
 
               {isOwner ? (
                 <div className="mt-4">
-                  <ProfileAvatarUpload />
+                  <ProfileAvatarUpload
+                    avatarUrl={resolvedAvatarUrl}
+                    avatarFileName={
+                      profile.avatar_url
+                        ? parseMediaRef(profile.avatar_url).path.split('/').pop() || 'profile-avatar'
+                        : 'profile-avatar'
+                    }
+                    isArabic={isArabic}
+                  />
                 </div>
               ) : null}
             </div>
