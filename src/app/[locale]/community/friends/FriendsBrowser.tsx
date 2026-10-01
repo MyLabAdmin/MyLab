@@ -176,7 +176,7 @@ export default function FriendsBrowser({
     <div className="flex w-full flex-col gap-4">
       <div className="w-full rounded-2xl border border-gray-200 bg-white p-2">
         <div className="w-full overflow-x-auto overscroll-x-contain">
-          <div className="flex min-w-max gap-2 pb-1">
+          <div className="flex min-w-max justify-center gap-2 pb-1">
             {(
               [
                 ['people', t('الأشخاص', 'People')],

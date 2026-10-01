@@ -44,7 +44,7 @@ export default function GroupsBrowser({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-1.5 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-1">
+      <div className="flex justify-center gap-1.5 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-1">
         {(['all', 'mine', 'discover'] as Filter[]).map((item) => (
           <button
             key={item}

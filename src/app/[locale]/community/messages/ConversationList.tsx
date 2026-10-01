@@ -69,7 +69,7 @@ export default function ConversationList({
           dir={locale === 'ar' ? 'rtl' : 'ltr'}
         />
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-3 flex justify-center gap-2 overflow-x-auto pb-1">
           {(['all', 'direct', 'group'] as const).map((value) => {
             const active = filter === value
 
