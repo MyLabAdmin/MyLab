@@ -311,8 +311,7 @@ export default async function ProfilePage({
                   <input type="hidden" name="locale" value={locale} />
                   <button
                     type="submit"
-                    disabled={relationship !== 'accepted'}
-                    className="btn-secondary w-auto px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                    className="btn-secondary w-auto px-4 py-2 text-sm"
                   >
                     {isArabic ? 'رسالة' : 'Message'}
                   </button>
