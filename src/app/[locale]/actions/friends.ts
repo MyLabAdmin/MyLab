@@ -23,6 +23,7 @@ export type FriendItem = {
   userId: string
   profile: FriendProfile
   relationship: FriendRelationship
+  following: boolean
 }
 
 export type BlockedUser = {
@@ -92,6 +93,7 @@ export async function getFriendsHub(search = '') {
     peopleResult,
     relationshipsResult,
     hiddenResult,
+    followsResult,
   ] = await Promise.all([
     supabase
       .from('profiles_public')
@@ -123,6 +125,10 @@ export async function getFriendsHub(search = '') {
       .from('friend_discovery_hidden')
       .select('hidden_user_id')
       .eq('user_id', user.id),
+    supabase
+      .from('follows')
+      .select('followed_id')
+      .eq('follower_id', user.id),
   ])
 
   if (peopleResult.error) {
@@ -145,6 +151,19 @@ export async function getFriendsHub(search = '') {
       error: hiddenResult.error.message,
     }
   }
+
+  if (followsResult.error) {
+    return {
+      success: false as const,
+      error: followsResult.error.message,
+    }
+  }
+
+  const followedIds = new Set(
+    (followsResult.data ?? []).map(
+      (row) => row.followed_id,
+    ),
+  )
 
   const relationships = relationshipsResult.data ?? []
 
@@ -199,6 +218,7 @@ export async function getFriendsHub(search = '') {
         relationshipMap.get(profile.id)?.relationship ?? 'none',
       friendshipId:
         relationshipMap.get(profile.id)?.id ?? null,
+      following: followedIds.has(profile.id),
     }))
 
   const incomingRows = relationships.filter(
@@ -258,6 +278,7 @@ export async function getFriendsHub(search = '') {
       userId,
       profile,
       relationship,
+      following: followedIds.has(userId),
     }
   }
 
@@ -311,6 +332,104 @@ export async function getFriendsHub(search = '') {
     incoming,
     sent,
     friends,
+  }
+}
+
+export async function followUser(userId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false as const,
+      error: 'Unauthorized',
+    }
+  }
+
+  if (!userId || userId === user.id) {
+    return {
+      success: false as const,
+      error: 'INVALID_USER',
+    }
+  }
+
+  const { error } = await supabase
+    .from('follows')
+    .insert({
+      follower_id: user.id,
+      followed_id: userId,
+    })
+
+  if (error) {
+    if (error.code === '23505') {
+      return {
+        success: false as const,
+        error: 'ALREADY_FOLLOWING',
+      }
+    }
+
+    return {
+      success: false as const,
+      error: error.message,
+    }
+  }
+
+  revalidatePath(
+    '/[locale]/community/friends',
+    'page',
+  )
+
+  revalidatePath(
+    '/[locale]/community/profile/[userId]',
+    'page',
+  )
+
+  return {
+    success: true as const,
+  }
+}
+
+export async function unfollowUser(userId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false as const,
+      error: 'Unauthorized',
+    }
+  }
+
+  if (!userId || userId === user.id) {
+    return {
+      success: false as const,
+      error: 'INVALID_USER',
+    }
+  }
+
+  const { error } = await supabase
+    .from('follows')
+    .delete()
+    .eq('follower_id', user.id)
+    .eq('followed_id', userId)
+
+  if (error) {
+    return {
+      success: false as const,
+      error: error.message,
+    }
+  }
+
+  revalidatePath(
+    '/[locale]/community/friends',
+    'page',
+  )
+
+  revalidatePath(
+    '/[locale]/community/profile/[userId]',
+    'page',
+  )
+
+  return {
+    success: true as const,
   }
 }
 

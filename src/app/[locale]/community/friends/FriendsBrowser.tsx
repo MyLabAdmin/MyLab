@@ -6,6 +6,8 @@ import { Link } from '@/i18n/navigation'
 import {
   acceptFriendRequest,
   blockUser,
+  followUser,
+  unfollowUser,
   cancelFriendRequest,
   hidePersonFromDiscovery,
   rejectFriendRequest,
@@ -22,6 +24,7 @@ type FriendItem = {
   userId: string
   profile: FriendProfile
   relationship: FriendRelationship
+  following: boolean
 }
 
 type Props = {
@@ -166,11 +169,39 @@ export default function FriendsBrowser({
   const renderAction = (item: FriendItem) => {
     const friendshipId = item.friendshipId
 
-    if (tab === 'friends' || item.relationship === 'accepted') {
+    const followButton = (
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() =>
+          run(() =>
+            item.following
+              ? unfollowUser(item.userId)
+              : followUser(item.userId),
+          )
+        }
+        className={
+          item.following
+            ? 'btn-secondary w-32 shrink-0 px-3 py-1.5 text-xs'
+            : 'w-32 shrink-0 rounded-lg border border-blue-600 bg-white px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50'
+        }
+      >
+        {item.following
+          ? t('إلغاء المتابعة', 'Unfollow')
+          : t('متابعة', 'Follow')}
+      </button>
+    )
+
+    if (
+      tab === 'friends' ||
+      item.relationship === 'accepted'
+    ) {
       if (!friendshipId) return null
 
       return (
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {followButton}
+
           <button
             type="button"
             disabled={isPending}
@@ -241,7 +272,7 @@ export default function FriendsBrowser({
     }
 
     return (
-      <div className="flex w-full justify-center gap-2">
+      <div className="flex w-full flex-wrap justify-center gap-2">
         <button
           type="button"
           disabled={isPending}
@@ -252,6 +283,8 @@ export default function FriendsBrowser({
         >
           {t('إضافة صديق', 'Add friend')}
         </button>
+
+        {followButton}
 
         <button
           type="button"

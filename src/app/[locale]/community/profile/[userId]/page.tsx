@@ -8,7 +8,7 @@ import { parseMediaRef } from '@/lib/storage'
 import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 import { Link } from '@/i18n/navigation'
 import { getOrCreateDirectConversation } from '@/app/[locale]/actions/messaging'
-import { cancelFriendRequest, acceptFriendRequest, removeFriend, sendFriendRequest, getProfileFriendship } from '@/app/[locale]/actions/friends'
+import { cancelFriendRequest, acceptFriendRequest, removeFriend, sendFriendRequest, getProfileFriendship, followUser, unfollowUser } from '@/app/[locale]/actions/friends'
 import ProfilePosts from './ProfilePosts'
 import ProfilePersonalEdit from '@/components/community/ProfilePersonalEdit'
 import ProfileEducationWorkEdit from '@/components/community/ProfileEducationWorkEdit'
@@ -78,6 +78,26 @@ async function handleFriendshipAction(formData: FormData) {
 
   if (action === 'remove') {
     await removeFriend(friendshipId)
+  }
+}
+
+async function handleFollowAction(formData: FormData) {
+  'use server'
+
+  const action = String(formData.get('action') ?? '')
+  const userId = String(formData.get('userId') ?? '')
+
+  if (!userId) {
+    return
+  }
+
+  if (action === 'follow') {
+    await followUser(userId)
+    return
+  }
+
+  if (action === 'unfollow') {
+    await unfollowUser(userId)
   }
 }
 
@@ -173,6 +193,7 @@ export default async function ProfilePage({
     { data: work },
     { data: visibilityRows },
     friendship,
+    follow,
     feed,
   ] = await Promise.all([
     supabase.rpc('get_profile_for_viewer', { target_user_id: userId }).maybeSingle(),
@@ -191,6 +212,14 @@ export default async function ProfilePage({
       .select('field_key, is_public')
       .eq('user_id', userId),
     getProfileFriendship(userId),
+    currentUserId && !isOwner
+      ? supabase
+          .from('follows')
+          .select('followed_id')
+          .eq('follower_id', currentUserId)
+          .eq('followed_id', userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
     import('@/app/[locale]/actions/community').then(({ getFeed }) =>
       getFeed(null, null, userId),
     ),
@@ -230,6 +259,7 @@ export default async function ProfilePage({
             : '/community/friends'
 
   const relationship = friendship.relationship
+  const following = Boolean(follow.data)
 
   const friendshipLabel =
     relationship === 'accepted'
@@ -310,7 +340,7 @@ export default async function ProfilePage({
             ) : null}
 
             {!isOwner ? (
-              <div className="mt-5 flex flex-wrap justify-center gap-10">
+              <div className="mt-5 flex flex-wrap justify-center gap-5">
                 <form action={startDirectMessage}>
                   <input type="hidden" name="otherUserId" value={userId} />
                   <input type="hidden" name="locale" value={locale} />
@@ -351,6 +381,35 @@ export default async function ProfilePage({
                     className="btn-primary w-auto px-4 py-2 text-sm"
                   >
                     {friendshipLabel}
+                  </button>
+                </form>
+
+                <form action={handleFollowAction}>
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={following ? 'unfollow' : 'follow'}
+                  />
+                  <input
+                    type="hidden"
+                    name="userId"
+                    value={userId}
+                  />
+                  <button
+                    type="submit"
+                    className={
+                      following
+                        ? 'w-auto rounded-lg border border-gray-400 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50'
+                        : 'w-auto rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50'
+                    }
+                  >
+                    {following
+                      ? isArabic
+                        ? 'إلغاء المتابعة'
+                        : 'Unfollow'
+                      : isArabic
+                        ? 'متابعة'
+                        : 'Follow'}
                   </button>
                 </form>
               </div>

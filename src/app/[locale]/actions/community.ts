@@ -399,33 +399,126 @@ export async function unsaveBookmark(targetType: TargetType, targetId: string) {
 }
 
 const POSTS_PAGE_SIZE = 10
+const FEED_CANDIDATE_SIZE = 50
 const COMMENTS_PREVIEW_SIZE = 3
 const REPLIES_PREVIEW_SIZE = 2
 
+type FeedCursor = {
+  score: number
+  createdAt: string
+  id: string
+}
 
-export async function getFeed(cursor: string | null = null, groupId: string | null = null, authorId: string | null = null) {
+function encodeFeedCursor(cursor: FeedCursor) {
+  return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url')
+}
+
+function decodeFeedCursor(cursor: string | null): FeedCursor | null {
+  if (!cursor) return null
+
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString('utf8'),
+    )
+
+    if (
+      typeof parsed?.score !== 'number' ||
+      typeof parsed?.createdAt !== 'string' ||
+      typeof parsed?.id !== 'string'
+    ) {
+      return null
+    }
+
+    return {
+      score: parsed.score,
+      createdAt: parsed.createdAt,
+      id: parsed.id,
+    }
+  } catch {
+    return null
+  }
+}
+
+function feedScore({
+  createdAt,
+  reactionCount,
+  commentCount,
+  replyCount,
+  repostCount,
+  isFollowed,
+  isFriend,
+  wasInteractedWith,
+  now,
+}: {
+  createdAt: string
+  reactionCount: number
+  commentCount: number
+  replyCount: number
+  repostCount: number
+  isFollowed: boolean
+  isFriend: boolean
+  wasInteractedWith: boolean
+  now: number
+}) {
+  const createdAtMs = new Date(createdAt).getTime()
+  const ageMs = Math.max(0, now - createdAtMs)
+  const ageHours = ageMs / (1000 * 60 * 60)
+
+  const engagementBase =
+    reactionCount +
+    commentCount * 3 +
+    replyCount * 2 +
+    repostCount * 4
+
+  const engagementScore = Math.log1p(engagementBase) * 2
+  const freshnessScore = 3 * Math.exp(-ageHours / 72)
+  const newPostBoost = 1.5 * Math.exp(-ageHours / 6)
+
+  const personalRelevanceScore =
+    (isFollowed ? 4 : 0) +
+    (isFriend ? 4 : 0) +
+    (wasInteractedWith ? 2 : 0)
+
+  return (
+    engagementScore +
+    personalRelevanceScore +
+    freshnessScore +
+    newPostBoost
+  )
+}
+
+export async function getFeed(
+  cursor: string | null = null,
+  groupId: string | null = null,
+  authorId: string | null = null,
+) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
   const currentUserId = userData.user?.id
 
+  const isMainFeed = !groupId && !authorId
+  const feedCursor = isMainFeed ? decodeFeedCursor(cursor) : null
+
   let query = supabase
     .from('posts')
-    .select(`
-      id, content, created_at, author_id, shared_post_id,
-      post_media(id, media_type, media_ref, order_index),
-      post_comments(
-        id, content, created_at, author_id,
-        comment_replies(id, content, created_at, author_id, reply_to_user_id)
-      )
-    `)
+    .select(
+      'id, content, created_at, author_id, shared_post_id, post_media(id, media_type, media_ref, order_index), post_comments(id, content, created_at, author_id, comment_replies(id, content, created_at, author_id, reply_to_user_id))',
+    )
     .order('created_at', { ascending: false })
-    .limit(POSTS_PAGE_SIZE)
+    .limit(isMainFeed ? FEED_CANDIDATE_SIZE : POSTS_PAGE_SIZE)
 
-  if (cursor) query = query.lt('created_at', cursor)
+  if (!isMainFeed && cursor) {
+    query = query.lt('created_at', cursor)
+  }
+
   query = groupId ? query.eq('group_id', groupId) : query.is('group_id', null)
-  if (authorId) query = query.eq('author_id', authorId)
+
+  if (authorId) {
+    query = query.eq('author_id', authorId)
+  }
 
   const { data: posts, error } = await query
+
   if (error || !posts) {
     console.error('[getFeed] posts query failed:', error)
     return { posts: [], nextCursor: null }
@@ -449,7 +542,9 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
   if (sharedPostIds.length > 0) {
     const { data: sharedPostsData } = await supabase
       .from('posts')
-      .select('id, content, author_id, post_media(media_type, media_ref, order_index), post_comments(id, comment_replies(id))')
+      .select(
+        'id, content, author_id, post_media(media_type, media_ref, order_index), post_comments(id, comment_replies(id))',
+      )
       .in('id', sharedPostIds)
 
     const sharedAuthorIds = Array.from(
@@ -494,17 +589,21 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
       )
 
       const reactionCounts: Record<string, number> = {}
+
       ;(sharedReactionsData ?? [])
         .filter((r: any) => r.target_id === sp.id)
         .forEach((r: any) => {
-          reactionCounts[r.reaction] = (reactionCounts[r.reaction] ?? 0) + 1
+          reactionCounts[r.reaction] =
+            (reactionCounts[r.reaction] ?? 0) + 1
         })
 
       const sharedComments = (sp as any).post_comments ?? []
+
       const commentCount =
         sharedComments.length +
         sharedComments.reduce(
-          (sum: number, cc: any) => sum + (cc.comment_replies?.length ?? 0),
+          (sum: number, cc: any) =>
+            sum + (cc.comment_replies?.length ?? 0),
           0,
         )
 
@@ -560,8 +659,10 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
 
   posts.forEach((p: any) => {
     allTargetIds.push(p.id)
+
     ;(p.post_comments ?? []).forEach((c: any) => {
       allTargetIds.push(c.id)
+
       ;(c.comment_replies ?? []).forEach((r: any) => {
         allTargetIds.push(r.id)
       })
@@ -587,7 +688,7 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
     const mine =
       rows.find((r) => r.user_id === currentUserId)?.reaction ?? null
 
-    return { counts, mine }
+    return { counts, mine, total: rows.length }
   }
 
   const { data: bookmarksData } = await supabase
@@ -610,14 +711,184 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
     return (mutesData ?? []).some((m) => m.post_id === postId)
   }
 
+  const followedAuthorIds = new Set<string>()
+  const friendIds = new Set<string>()
+
+  if (isMainFeed && currentUserId) {
+    const [
+      { data: followsData, error: followsError },
+      { data: friendshipsData, error: friendshipsError },
+    ] = await Promise.all([
+      supabase
+        .from('follows')
+        .select('followed_id')
+        .eq('follower_id', currentUserId),
+      supabase
+        .from('friendships')
+        .select('requester_id, addressee_id')
+        .eq('status', 'accepted')
+        .or(
+          [
+            'requester_id.eq.',
+            currentUserId,
+            ',addressee_id.eq.',
+            currentUserId,
+          ].join(''),
+        ),
+    ])
+
+    if (followsError) {
+      console.error('[getFeed] follows query failed:', followsError)
+    }
+
+    if (friendshipsError) {
+      console.error(
+        '[getFeed] friendships query failed:',
+        friendshipsError,
+      )
+    }
+
+    for (const follow of followsData ?? []) {
+      followedAuthorIds.add(follow.followed_id)
+    }
+
+    for (const friendship of friendshipsData ?? []) {
+      const friendId =
+        friendship.requester_id === currentUserId
+          ? friendship.addressee_id
+          : friendship.requester_id
+
+      friendIds.add(friendId)
+    }
+  }
+
+  const repostCounts = new Map<string, number>()
+
+  if (isMainFeed) {
+    const candidateIds = posts.map((p: any) => p.id)
+
+    if (candidateIds.length > 0) {
+      const { data: repostRows, error: repostError } = await supabase
+        .from('posts')
+        .select('shared_post_id')
+        .in('shared_post_id', candidateIds)
+        .is('group_id', null)
+
+      if (repostError) {
+        console.error(
+          '[getFeed] repost count query failed:',
+          repostError,
+        )
+      }
+
+      for (const row of repostRows ?? []) {
+        if (row.shared_post_id) {
+          repostCounts.set(
+            row.shared_post_id,
+            (repostCounts.get(row.shared_post_id) ?? 0) + 1,
+          )
+        }
+      }
+    }
+  }
+
+  const now = Date.now()
+
+  const rankedPosts = isMainFeed
+    ? posts
+        .map((p: any) => {
+          const postReactions = reactionsFor('post', p.id)
+          const allComments = p.post_comments ?? []
+
+          const commentCount = allComments.length
+          const replyCount = allComments.reduce(
+            (sum: number, c: any) =>
+              sum + (c.comment_replies?.length ?? 0),
+            0,
+          )
+
+          const wasInteractedWith =
+            postReactions.mine !== null ||
+            allComments.some((c: any) => {
+              if (c.author_id === currentUserId) return true
+
+              return (c.comment_replies ?? []).some(
+                (r: any) => r.author_id === currentUserId,
+              )
+            }) ||
+            isBookmarked('post', p.id)
+
+          const score = feedScore({
+            createdAt: p.created_at,
+            reactionCount: postReactions.total,
+            commentCount,
+            replyCount,
+            repostCount: repostCounts.get(p.id) ?? 0,
+            isFollowed: followedAuthorIds.has(p.author_id),
+            isFriend: friendIds.has(p.author_id),
+            wasInteractedWith,
+            now,
+          })
+
+          return {
+            post: p,
+            score,
+          }
+        })
+        .sort((a, b) => {
+          if (b.score !== a.score) {
+            return b.score - a.score
+          }
+
+          const createdCompare =
+            new Date(b.post.created_at).getTime() -
+            new Date(a.post.created_at).getTime()
+
+          if (createdCompare !== 0) {
+            return createdCompare
+          }
+
+          return String(b.post.id).localeCompare(String(a.post.id))
+        })
+    : posts.map((p: any) => ({
+        post: p,
+        score: 0,
+      }))
+
+  const pageRankedPosts = isMainFeed
+    ? rankedPosts.filter(({ score, post }) => {
+        if (!feedCursor) return true
+
+        if (score < feedCursor.score) return true
+        if (score > feedCursor.score) return false
+
+        const createdCompare =
+          new Date(post.created_at).getTime() -
+          new Date(feedCursor.createdAt).getTime()
+
+        if (createdCompare < 0) return true
+        if (createdCompare > 0) return false
+
+        return String(post.id).localeCompare(feedCursor.id) < 0
+      })
+    : rankedPosts
+
+  const selectedPosts = isMainFeed
+    ? pageRankedPosts.slice(0, POSTS_PAGE_SIZE)
+    : pageRankedPosts
+
+  const selectedPostRows = selectedPosts.map(({ post }) => post)
+
   const result = await Promise.all(
-    posts.map(async (p: any) => {
+    selectedPostRows.map(async (p: any) => {
       const postReactions = reactionsFor('post', p.id)
       const allComments = p.post_comments ?? []
+
       const commentsPreview = [...allComments]
         .sort(
           (a: any, b: any) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+            new Date(a.created_at).getTime() -
+            new Date(b.created_at).getTime(),
         )
         .slice(0, COMMENTS_PREVIEW_SIZE)
 
@@ -635,7 +906,10 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
           ? await Promise.all(
               p.post_media
                 .slice()
-                .sort((a: any, b: any) => a.order_index - b.order_index)
+                .sort(
+                  (a: any, b: any) =>
+                    a.order_index - b.order_index,
+                )
                 .map(async (m: any) => ({
                   type: m.media_type,
                   url: await resolveMedia(m.media_ref),
@@ -649,13 +923,15 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
         commentCount:
           allComments.length +
           allComments.reduce(
-            (sum: number, c: any) => sum + (c.comment_replies?.length ?? 0),
+            (sum: number, c: any) =>
+              sum + (c.comment_replies?.length ?? 0),
             0,
           ),
         topLevelCommentCount: allComments.length,
         comments: commentsPreview.map((c: any) => {
           const commentReactions = reactionsFor('comment', c.id)
           const allReplies = c.comment_replies ?? []
+
           const repliesPreview = [...allReplies]
             .sort(
               (a: any, b: any) =>
@@ -697,10 +973,19 @@ export async function getFeed(cursor: string | null = null, groupId: string | nu
     }),
   )
 
-  const nextCursor =
-    posts.length === POSTS_PAGE_SIZE
-      ? posts[posts.length - 1].created_at
-      : null
+  let nextCursor: string | null = null
+
+  if (isMainFeed && selectedPosts.length === POSTS_PAGE_SIZE) {
+    const last = selectedPosts[selectedPosts.length - 1]
+
+    nextCursor = encodeFeedCursor({
+      score: last.score,
+      createdAt: last.post.created_at,
+      id: last.post.id,
+    })
+  } else if (!isMainFeed && posts.length === POSTS_PAGE_SIZE) {
+    nextCursor = posts[posts.length - 1].created_at
+  }
 
   return { posts: result, nextCursor }
 }
