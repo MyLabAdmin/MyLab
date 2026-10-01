@@ -182,10 +182,12 @@ export default function ProfileEducationWorkEdit({
       <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-bold text-gray-900">{isArabic?'التعليم':'Education'}</h2>
-          <button type="button" onClick={addEducation}
-            className="rounded-lg border px-3 py-1.5 text-xs font-semibold">
-            {isArabic?'إضافة':'Add'}
-          </button>
+          {isOwner ? (
+            <button type="button" onClick={addEducation}
+              className="rounded-lg border px-3 py-1.5 text-xs font-semibold">
+              {isArabic?'إضافة':'Add'}
+            </button>
+          ) : null}
         </div>
 
         {baseDegree||baseUniversity ? (
@@ -235,10 +237,12 @@ export default function ProfileEducationWorkEdit({
       <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-bold text-gray-900">{isArabic?'العمل والخبرة':'Work & experience'}</h2>
-          <button type="button" onClick={addWork}
-            className="rounded-lg border px-3 py-1.5 text-xs font-semibold">
-            {isArabic?'إضافة':'Add'}
-          </button>
+          {isOwner ? (
+            <button type="button" onClick={addWork}
+              className="rounded-lg border px-3 py-1.5 text-xs font-semibold">
+              {isArabic?'إضافة':'Add'}
+            </button>
+          ) : null}
         </div>
 
         <div className="space-y-3">
