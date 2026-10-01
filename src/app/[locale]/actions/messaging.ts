@@ -74,24 +74,13 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
     return { success: false as const, error: 'Invalid recipient' }
   }
 
-  const isFriend = await areAcceptedFriends(
-    supabase,
-    user.id,
-    [otherUserId],
-  )
-
-  if (!isFriend) {
-    return {
-      success: false as const,
-      error: 'You can only message accepted friends',
-    }
-  }
-
   const directKey = makeDirectKey(user.id, otherUserId)
 
   const { data: existing, error: findError } = await supabase
     .from('conversations')
-    .select('id, type, title, description, avatar_url, created_by, created_at, updated_at')
+    .select(
+      'id, type, title, description, avatar_url, created_by, created_at, updated_at, message_request_status, message_requester_id',
+    )
     .eq('type', 'direct')
     .eq('direct_key', directKey)
     .maybeSingle()
@@ -104,21 +93,34 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
     return { success: true as const, conversation: existing }
   }
 
+  const isFriend = await areAcceptedFriends(
+    supabase,
+    user.id,
+    [otherUserId],
+  )
+
+  const messageRequestStatus = isFriend ? 'accepted' : 'pending'
+
   const { data: conversation, error: conversationError } = await supabase
     .from('conversations')
     .insert({
       type: 'direct' as ConversationType,
       direct_key: directKey,
       created_by: user.id,
+      message_request_status: messageRequestStatus,
+      message_requester_id: isFriend ? null : user.id,
     })
-    .select('id, type, title, created_by, created_at, updated_at')
+    .select(
+      'id, type, title, description, avatar_url, created_by, created_at, updated_at, message_request_status, message_requester_id',
+    )
     .single()
 
   if (conversationError || !conversation) {
-    // Another request may have created it concurrently.
     const { data: concurrent } = await supabase
       .from('conversations')
-      .select('id, type, title, created_by, created_at, updated_at')
+      .select(
+        'id, type, title, description, avatar_url, created_by, created_at, updated_at, message_request_status, message_requester_id',
+      )
       .eq('type', 'direct')
       .eq('direct_key', directKey)
       .maybeSingle()
@@ -172,6 +174,8 @@ export async function getOrCreateDirectConversation(otherUserId: string) {
       error: otherMemberError.message,
     }
   }
+
+  revalidatePath('/[locale]/community/messages', 'page')
 
   return {
     success: true as const,
@@ -612,6 +616,7 @@ export async function getConversations() {
       role,
       last_read_at,
       muted_at,
+      hidden_at,
       conversations (
         id,
         type,
@@ -620,7 +625,9 @@ export async function getConversations() {
         avatar_url,
         created_by,
         created_at,
-        updated_at
+        updated_at,
+        message_request_status,
+        message_requester_id
       )
     `)
     .eq('user_id', user.id)
@@ -638,6 +645,61 @@ export async function getConversations() {
       success: true as const,
       conversations: [],
     }
+  }
+
+  const lastReadByConversation = new Map(
+    (memberships ?? []).map((membership) => [
+      membership.conversation_id,
+      membership.last_read_at,
+    ]),
+  )
+
+  const readDates = (memberships ?? [])
+    .map((membership) => membership.last_read_at)
+    .filter((value): value is string => Boolean(value))
+
+  const oldestReadAt =
+    readDates.length > 0
+      ? readDates.reduce((oldest, value) =>
+          new Date(value).getTime() < new Date(oldest).getTime()
+            ? value
+            : oldest,
+        )
+      : null
+
+  let unreadQuery = supabase
+    .from('messages')
+    .select('conversation_id, sender_id, created_at')
+    .in('conversation_id', conversationIds)
+    .neq('sender_id', user.id)
+
+  if (oldestReadAt) {
+    unreadQuery = unreadQuery.gt('created_at', oldestReadAt)
+  }
+
+  const { data: unreadRows, error: unreadError } = await unreadQuery
+
+  if (unreadError) {
+    return { success: false as const, error: unreadError.message }
+  }
+
+  const unreadCountByConversation = new Map<string, number>()
+
+  for (const message of unreadRows ?? []) {
+    const lastReadAt = lastReadByConversation.get(message.conversation_id)
+
+    if (
+      lastReadAt &&
+      new Date(message.created_at).getTime() <=
+        new Date(lastReadAt).getTime()
+    ) {
+      continue
+    }
+
+    unreadCountByConversation.set(
+      message.conversation_id,
+      (unreadCountByConversation.get(message.conversation_id) ?? 0) + 1,
+    )
   }
 
   const { data: allMembers, error: membersError } = await supabase
@@ -722,6 +784,10 @@ export async function getConversations() {
         role: membership.role,
         lastReadAt: membership.last_read_at,
         mutedAt: membership.muted_at,
+        hiddenAt: membership.hidden_at,
+        messageRequestStatus: conversation.message_request_status,
+        messageRequesterId: conversation.message_requester_id,
+        unreadCount: unreadCountByConversation.get(conversation.id) ?? 0,
         members,
         otherUser,
       }
@@ -788,6 +854,67 @@ export async function transferConversationOwnership(
   }
 }
 
+export async function acceptMessageRequest(conversationId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  if (!conversationId) {
+    return { success: false as const, error: 'Conversation ID is required' }
+  }
+
+  const { data, error } = await supabase.rpc('accept_message_request', {
+    p_conversation_id: conversationId,
+  })
+
+  if (error || !data?.[0]) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Failed to accept message request',
+    }
+  }
+
+  revalidatePath('/[locale]/community/messages', 'page')
+  revalidatePath('/[locale]/community/messages/' + conversationId, 'page')
+
+  return {
+    success: true as const,
+    conversation: data[0],
+  }
+}
+
+export async function hideConversation(conversationId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  if (!conversationId) {
+    return { success: false as const, error: 'Conversation ID is required' }
+  }
+
+  const { data, error } = await supabase.rpc(
+    'hide_conversation_for_user',
+    {
+      p_conversation_id: conversationId,
+    },
+  )
+
+  if (error || data !== true) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Failed to hide conversation',
+    }
+  }
+
+  revalidatePath('/[locale]/community/messages', 'page')
+
+  return { success: true as const }
+}
+
 export async function getConversation(conversationId: string) {
   const { supabase, user } = await getCurrentUser()
 
@@ -810,12 +937,15 @@ export async function getConversation(conversationId: string) {
       created_by,
       created_at,
       updated_at,
+      message_request_status,
+      message_requester_id,
       conversation_members (
         user_id,
         role,
         joined_at,
         last_read_at,
-        muted_at
+        muted_at,
+        hidden_at
       )
     `)
     .eq('id', conversationId)
@@ -1421,4 +1551,36 @@ export async function getMessageAttachmentUrl(mediaRef: string) {
     success: true as const,
     url: getImagekitSignedUrl(path, 3600),
   }
+}
+
+
+export async function unarchiveConversation(conversationId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return { success: false as const, error: 'Not authenticated' }
+  }
+
+  if (!conversationId) {
+    return { success: false as const, error: 'Conversation ID is required' }
+  }
+
+  const { data, error } = await supabase.rpc(
+    'unarchive_conversation_for_user',
+    {
+      p_conversation_id: conversationId,
+    },
+  )
+
+  if (error || data !== true) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Failed to unarchive conversation',
+    }
+  }
+
+  revalidatePath('/[locale]/community/messages', 'page')
+  revalidatePath('/[locale]/community/messages/' + conversationId, 'page')
+
+  return { success: true as const }
 }

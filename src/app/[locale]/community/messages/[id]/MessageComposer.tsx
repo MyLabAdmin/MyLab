@@ -38,10 +38,14 @@ export default function MessageComposer({
   conversationId,
   locale,
   isAdmin,
+  disabled,
+  disabledReason,
 }: {
   conversationId: string
   locale: string
   isAdmin: boolean
+  disabled?: boolean
+  disabledReason?: string
 }) {
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -65,6 +69,7 @@ export default function MessageComposer({
 
   const isArabic = locale === 'ar'
   const busy = isPending || isUploading || isPurchasing
+  const composerDisabled = disabled === true
 
   useEffect(() => {
     void loadCapacity()
@@ -176,6 +181,10 @@ export default function MessageComposer({
   }
 
   async function handleFiles(files: FileList) {
+    if (composerDisabled) {
+      return
+    }
+
     setError('')
 
     const remaining = MAX_ATTACHMENTS - attachments.length
@@ -347,7 +356,11 @@ export default function MessageComposer({
   function submit() {
     const value = body.trim()
 
-    if ((!value && attachments.length === 0) || busy) {
+    if (
+      composerDisabled ||
+      (!value && attachments.length === 0) ||
+      busy
+    ) {
       return
     }
 
@@ -420,6 +433,14 @@ export default function MessageComposer({
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
+      {composerDisabled && disabledReason && (
+        <div
+          dir={isArabic ? 'rtl' : 'ltr'}
+          className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+        >
+          {disabledReason}
+        </div>
+      )}
       {!isAdmin && !isLoadingCapacity && (
         <div
           dir={isArabic ? 'rtl' : 'ltr'}
@@ -629,6 +650,7 @@ export default function MessageComposer({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={
+            composerDisabled ||
             busy ||
             attachments.length >= MAX_ATTACHMENTS ||
             !hasCapacity
@@ -664,7 +686,7 @@ export default function MessageComposer({
             }
           }}
           onKeyDown={handleKeyDown}
-          disabled={busy}
+          disabled={composerDisabled || busy}
           rows={1}
           dir={isArabic ? 'rtl' : 'ltr'}
           placeholder={
@@ -676,7 +698,11 @@ export default function MessageComposer({
         <button
           type="button"
           onClick={submit}
-          disabled={(!body.trim() && attachments.length === 0) || busy}
+          disabled={
+            composerDisabled ||
+            (!body.trim() && attachments.length === 0) ||
+            busy
+          }
           className="flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 px-4 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy

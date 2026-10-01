@@ -1,4 +1,8 @@
-import { getConversation, getMessages } from '@/app/[locale]/actions/messaging'
+import {
+  acceptMessageRequest,
+  getConversation,
+  getMessages,
+} from '@/app/[locale]/actions/messaging'
 import { createClient } from '@/lib/supabase/server'
 import { Link } from '@/i18n/navigation'
 import Avatar from '@/components/community/Avatar'
@@ -50,6 +54,34 @@ export default async function ConversationPage({
   const isAdmin = !!adminRole
   const conversationMembers = conversation.conversation_members
   const otherMember = conversationMembers.find((member) => member.user_id !== currentUserId)
+
+  const isMessageRequest =
+    conversation.type === 'direct' &&
+    conversation.message_request_status === 'pending'
+
+  const isMessageRequester =
+    isMessageRequest &&
+    conversation.message_requester_id === currentUserId
+
+  const hasSentRequestMessage =
+    isMessageRequester &&
+    messages.some(
+      (message) =>
+        message.sender_id === currentUserId &&
+        !message.deleted_at,
+    )
+
+  const acceptMessageRequestFromForm = async (formData: FormData) => {
+    'use server'
+
+    const conversationId = formData.get('conversationId')
+
+    if (typeof conversationId !== 'string' || !conversationId) {
+      return
+    }
+
+    await acceptMessageRequest(conversationId)
+  }
   const conversationName =
     conversation.type === 'direct'
       ? otherMember?.display_name || (locale === 'ar' ? 'مستخدم' : 'User')
@@ -136,10 +168,70 @@ export default async function ConversationPage({
           />
         </section>
 
+        {isMessageRequest && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-amber-900">
+                  {locale === 'ar'
+                    ? 'طلب مراسلة'
+                    : 'Message request'}
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  {isMessageRequester
+                    ? hasSentRequestMessage
+                      ? locale === 'ar'
+                        ? 'تم إرسال طلب المراسلة. لا يمكنك إرسال رسالة أخرى حتى يتم قبول الطلب.'
+                        : 'Your message request was sent. You cannot send another message until it is accepted.'
+                      : locale === 'ar'
+                        ? 'يمكنك إرسال رسالة واحدة فقط أثناء انتظار قبول الطلب.'
+                        : 'You can send only one message while the request is pending.'
+                    : locale === 'ar'
+                      ? 'يمكنك قبول طلب المراسلة للبدء بالمحادثة.'
+                      : 'Accept the message request to start the conversation.'}
+                </p>
+              </div>
+
+              {!isMessageRequester && (
+                <form action={acceptMessageRequestFromForm}>
+                  <input
+                    type="hidden"
+                    name="conversationId"
+                    value={conversation.id}
+                  />
+                  <button
+                    type="submit"
+                    className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-primary-600 px-4 text-sm font-semibold text-white transition hover:bg-primary-700"
+                  >
+                    {locale === 'ar' ? 'قبول الطلب' : 'Accept request'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
         <MessageComposer
           conversationId={conversation.id}
           locale={locale}
           isAdmin={isAdmin}
+          disabled={
+            isMessageRequest &&
+            (isMessageRequester ? hasSentRequestMessage : true)
+          }
+          disabledReason={
+            isMessageRequest
+              ? isMessageRequester
+                ? hasSentRequestMessage
+                  ? locale === 'ar'
+                    ? 'لا يمكنك إرسال رسالة أخرى حتى يتم قبول طلب المراسلة.'
+                    : 'You cannot send another message until the message request is accepted.'
+                  : undefined
+                : locale === 'ar'
+                  ? 'اقبل طلب المراسلة أولًا للبدء في المحادثة.'
+                  : 'Accept the message request first to start the conversation.'
+              : undefined
+          }
         />
       </div>
     </main>
