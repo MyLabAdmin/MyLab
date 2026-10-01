@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { resolveAvatarUrl } from '@/lib/storage/avatar-server'
+import { parseMediaRef } from '@/lib/storage'
+import { deleteImagekitFileByPath } from '@/lib/storage/imagekit-server'
 
 export type FriendProfile = {
   id: string
@@ -21,6 +23,12 @@ export type FriendItem = {
   userId: string
   profile: FriendProfile
   relationship: FriendRelationship
+}
+
+export type BlockedUser = {
+  userId: string
+  display_name: string | null
+  avatar_url: string | null
 }
 
 async function getCurrentUser() {
@@ -303,6 +311,149 @@ export async function getFriendsHub(search = '') {
     incoming,
     sent,
     friends,
+  }
+}
+
+export async function getBlockedUsers() {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false as const,
+      error: 'Unauthorized',
+    }
+  }
+
+  const { data, error } = await supabase.rpc('get_blocked_users')
+
+  if (error) {
+    return {
+      success: false as const,
+      error: error.message,
+    }
+  }
+
+  const blockedUsers = await Promise.all(
+    (data ?? []).map(
+      async (item: {
+        user_id: string
+        display_name: string | null
+        avatar_url: string | null
+      }) => ({
+        userId: item.user_id,
+        display_name: item.display_name,
+        avatar_url: await resolveAvatarUrl(item.avatar_url),
+      }),
+    ),
+  )
+
+  return {
+    success: true as const,
+    blockedUsers,
+  }
+}
+
+export async function blockUser(userId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false as const,
+      error: 'Unauthorized',
+    }
+  }
+
+  if (!userId || userId === user.id) {
+    return {
+      success: false as const,
+      error: 'INVALID_USER',
+    }
+  }
+
+  const { data, error } = await supabase.rpc('block_user', {
+    p_blocked_user_id: userId,
+  })
+
+  if (error) {
+    return {
+      success: false as const,
+      error: error.message,
+    }
+  }
+
+  const mediaRefs: string[] = Array.from(
+    new Set<string>(
+      (data ?? [])
+        .map((row: { media_ref: string | null }) => row.media_ref)
+        .filter(
+          (value: string | null): value is string =>
+            typeof value === 'string' && value.trim().length > 0,
+        ),
+    ),
+  )
+
+  const cleanupResults = await Promise.allSettled(
+    mediaRefs.map(async (mediaRef) => {
+      const parsed = parseMediaRef(mediaRef)
+
+      if (parsed.provider !== 'imagekit' || !parsed.path.trim()) {
+        return
+      }
+
+      await deleteImagekitFileByPath(parsed.path)
+    }),
+  )
+
+  const cleanupFailed = cleanupResults.filter(
+    (result) => result.status === 'rejected',
+  ).length
+
+  revalidatePath(
+    '/[locale]/community/friends',
+    'page',
+  )
+
+  return {
+    success: true as const,
+    cleanupFailed,
+  }
+}
+
+export async function unblockUser(userId: string) {
+  const { supabase, user } = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false as const,
+      error: 'Unauthorized',
+    }
+  }
+
+  if (!userId || userId === user.id) {
+    return {
+      success: false as const,
+      error: 'INVALID_USER',
+    }
+  }
+
+  const { error } = await supabase.rpc('unblock_user', {
+    p_blocked_user_id: userId,
+  })
+
+  if (error) {
+    return {
+      success: false as const,
+      error: error.message,
+    }
+  }
+
+  revalidatePath(
+    '/[locale]/community/friends',
+    'page',
+  )
+
+  return {
+    success: true as const,
   }
 }
 

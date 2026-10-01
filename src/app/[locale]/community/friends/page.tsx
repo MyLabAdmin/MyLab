@@ -1,5 +1,8 @@
 import { redirect } from '@/i18n/navigation'
-import { getFriendsHub } from '@/app/[locale]/actions/friends'
+import {
+  getBlockedUsers,
+  getFriendsHub,
+} from '@/app/[locale]/actions/friends'
 import FriendsBrowser from './FriendsBrowser'
 
 export default async function FriendsPage({
@@ -8,9 +11,13 @@ export default async function FriendsPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  const result = await getFriendsHub()
 
-  if (!result.success) {
+  const [friendsResult, blockedResult] = await Promise.all([
+    getFriendsHub(),
+    getBlockedUsers(),
+  ])
+
+  if (!friendsResult.success) {
     redirect({ href: '/login', locale })
   }
 
@@ -30,10 +37,15 @@ export default async function FriendsPage({
         </header>
 
         <FriendsBrowser
-          people={result.people ?? []}
-          incoming={result.incoming ?? []}
-          sent={result.sent ?? []}
-          friends={result.friends ?? []}
+          people={friendsResult.people ?? []}
+          incoming={friendsResult.incoming ?? []}
+          sent={friendsResult.sent ?? []}
+          friends={friendsResult.friends ?? []}
+          blockedUsers={
+            blockedResult.success
+              ? blockedResult.blockedUsers
+              : []
+          }
           locale={locale}
         />
       </div>
