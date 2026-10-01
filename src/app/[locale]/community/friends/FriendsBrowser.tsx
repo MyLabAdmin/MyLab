@@ -272,7 +272,7 @@ export default function FriendsBrowser({
     }
 
     return (
-      <div className="flex w-full flex-wrap justify-center gap-2">
+      <div className="flex w-full min-w-0 overflow-x-auto overscroll-x-contain flex-nowrap justify-start gap-2">
         <button
           type="button"
           disabled={isPending}
@@ -299,7 +299,6 @@ export default function FriendsBrowser({
           {t('تخطي', 'Skip')}
         </button>
 
-        {renderBlockButton(item, true)}
       </div>
     )
   }
