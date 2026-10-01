@@ -12,6 +12,7 @@ import { cancelFriendRequest, acceptFriendRequest, removeFriend, sendFriendReque
 import ProfilePosts from './ProfilePosts'
 import ProfilePersonalEdit from '@/components/community/ProfilePersonalEdit'
 import ProfileEducationWorkEdit from '@/components/community/ProfileEducationWorkEdit'
+import ProfileActionsMenu from '../ProfileActionsMenu'
 
 type ProfileRecord = {
   id: string
@@ -250,13 +251,17 @@ export default async function ProfilePage({
   return (
     <main className="min-h-screen px-3 py-4 sm:px-6 sm:py-6">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-        <Link
-          href={returnHref}
-          aria-label={isArabic ? 'رجوع' : 'Back'}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50"
-        >
-          <BackIcon />
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href={returnHref}
+            aria-label={isArabic ? 'رجوع' : 'Back'}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50"
+          >
+            <BackIcon />
+          </Link>
+
+          {!isOwner ? <ProfileActionsMenu userId={userId} /> : null}
+        </div>
 
         <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
           <div className="bg-gradient-to-b from-primary-50/70 to-white px-5 pb-6 pt-8 text-center sm:px-8">
@@ -305,13 +310,13 @@ export default async function ProfilePage({
             ) : null}
 
             {!isOwner ? (
-              <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <div className="mt-5 flex flex-wrap justify-center gap-10">
                 <form action={startDirectMessage}>
                   <input type="hidden" name="otherUserId" value={userId} />
                   <input type="hidden" name="locale" value={locale} />
                   <button
                     type="submit"
-                    className="btn-secondary w-auto px-4 py-2 text-sm"
+                    className="w-auto rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
                   >
                     {isArabic ? 'رسالة' : 'Message'}
                   </button>

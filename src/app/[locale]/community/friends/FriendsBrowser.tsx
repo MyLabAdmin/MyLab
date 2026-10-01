@@ -134,7 +134,10 @@ export default function FriendsBrowser({
     })
   }
 
-  const renderBlockButton = (item: FriendItem) => (
+  const renderBlockButton = (
+    item: FriendItem,
+    primary = false,
+  ) => (
     <button
       type="button"
       disabled={isPending}
@@ -150,7 +153,11 @@ export default function FriendsBrowser({
 
         run(() => blockUser(item.userId))
       }}
-      className="btn-secondary w-auto shrink-0 px-3 py-1.5 text-xs"
+      className={
+        primary
+          ? 'w-32 rounded-lg border border-red-600 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50'
+          : 'btn-secondary w-auto shrink-0 px-3 py-1.5 text-xs'
+      }
     >
       {t('حظر', 'Block')}
     </button>
@@ -234,14 +241,14 @@ export default function FriendsBrowser({
     }
 
     return (
-      <div className="flex shrink-0 gap-2">
+      <div className="flex w-full justify-center gap-2">
         <button
           type="button"
           disabled={isPending}
           onClick={() =>
             run(() => sendFriendRequest(item.userId))
           }
-          className="btn-primary w-auto px-3 py-1.5 text-xs"
+          className="btn-primary w-32 px-3 py-1.5 text-xs"
         >
           {t('إضافة صديق', 'Add friend')}
         </button>
@@ -254,12 +261,12 @@ export default function FriendsBrowser({
               hidePersonFromDiscovery(item.userId),
             )
           }
-          className="btn-secondary w-auto px-3 py-1.5 text-xs"
+          className="w-32 rounded-lg border border-blue-600 bg-white px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
         >
           {t('تخطي', 'Skip')}
         </button>
 
-        {renderBlockButton(item)}
+        {renderBlockButton(item, true)}
       </div>
     )
   }
@@ -281,20 +288,18 @@ export default function FriendsBrowser({
         {blockedUsers.map((item) => (
           <div
             key={item.userId}
-            className="flex items-center justify-between gap-3 p-3 sm:p-4"
+            className="flex flex-col gap-3 p-3 sm:p-4"
           >
-            <Link
-              href={'/community/profile/' + item.userId}
-              className="flex min-w-0 items-center gap-3 rounded-xl outline-none transition hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primary-500"
-            >
+            <div className="flex min-w-0 items-center gap-3">
+
               <Avatar
                 name={item.display_name ?? '—'}
                 avatarUrl={item.avatar_url}
                 size="lg"
               />
 
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <p className="break-words font-semibold text-gray-900">
                   {item.display_name ??
                     t('مستخدم', 'User')}
                 </p>
@@ -303,9 +308,11 @@ export default function FriendsBrowser({
                   {t('محظور', 'Blocked')}
                 </p>
               </div>
-            </Link>
 
-            <button
+            </div>
+
+            <div className="flex w-full justify-center">
+              <button
               type="button"
               disabled={isPending}
               onClick={() => {
@@ -320,10 +327,11 @@ export default function FriendsBrowser({
 
                 run(() => unblockUser(item.userId))
               }}
-              className="btn-secondary w-auto shrink-0 px-3 py-1.5 text-xs"
+              className="w-32 shrink-0 rounded-lg border border-green-600 bg-white px-3 py-1.5 text-xs font-medium text-green-600 transition hover:bg-green-50 disabled:opacity-50"
             >
               {t('إلغاء الحظر', 'Unblock')}
             </button>
+            </div>
           </div>
         ))}
       </div>
@@ -417,7 +425,7 @@ export default function FriendsBrowser({
             {currentItems.map((item) => (
               <div
                 key={item.userId}
-                className="flex items-center justify-between gap-3 p-3 sm:p-4"
+                className="flex flex-col gap-3 p-3 sm:p-4"
               >
                 <Link
                   href={'/community/profile/' + item.userId}
@@ -431,8 +439,8 @@ export default function FriendsBrowser({
                     size="lg"
                   />
 
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words font-semibold text-gray-900">
                       {item.profile.display_name ??
                         t('مستخدم', 'User')}
                     </p>
@@ -446,7 +454,9 @@ export default function FriendsBrowser({
                   </div>
                 </Link>
 
-                {renderAction(item)}
+                <div className="flex flex-wrap gap-2">
+                  {renderAction(item)}
+                </div>
               </div>
             ))}
           </div>
