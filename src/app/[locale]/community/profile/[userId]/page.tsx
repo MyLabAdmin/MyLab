@@ -8,7 +8,7 @@ import { parseMediaRef } from '@/lib/storage'
 import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 import { Link } from '@/i18n/navigation'
 import { getOrCreateDirectConversation } from '@/app/[locale]/actions/messaging'
-import { getProfileFriendship } from '@/app/[locale]/actions/friends'
+import { cancelFriendRequest, acceptFriendRequest, removeFriend, sendFriendRequest, getProfileFriendship } from '@/app/[locale]/actions/friends'
 import ProfilePosts from './ProfilePosts'
 import ProfilePersonalEdit from '@/components/community/ProfilePersonalEdit'
 import ProfileEducationWorkEdit from '@/components/community/ProfileEducationWorkEdit'
@@ -47,6 +47,37 @@ async function startDirectMessage(formData: FormData) {
   }
 
   redirect('/' + locale + '/community/friends')
+}
+
+async function handleFriendshipAction(formData: FormData) {
+  'use server'
+
+  const action = String(formData.get('action') ?? '')
+  const friendshipId = String(formData.get('friendshipId') ?? '')
+  const userId = String(formData.get('userId') ?? '')
+
+  if (action === 'send') {
+    await sendFriendRequest(userId)
+    return
+  }
+
+  if (!friendshipId) {
+    return
+  }
+
+  if (action === 'cancel') {
+    await cancelFriendRequest(friendshipId)
+    return
+  }
+
+  if (action === 'accept') {
+    await acceptFriendRequest(friendshipId)
+    return
+  }
+
+  if (action === 'remove') {
+    await removeFriend(friendshipId)
+  }
 }
 
 function SectionIcon({
@@ -287,16 +318,37 @@ export default async function ProfilePage({
                   </button>
                 </form>
 
-                <Link
-                  href={
-                    relationship === 'accepted'
-                      ? '/community/friends'
-                      : '/community/friends'
-                  }
-                  className="btn-primary w-auto px-4 py-2 text-sm"
-                >
-                  {friendshipLabel}
-                </Link>
+                <form action={handleFriendshipAction}>
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={
+                      relationship === 'accepted'
+                        ? 'remove'
+                        : relationship === 'sent'
+                          ? 'cancel'
+                          : relationship === 'received'
+                            ? 'accept'
+                            : 'send'
+                    }
+                  />
+                  <input
+                    type="hidden"
+                    name="friendshipId"
+                    value={friendship.friendshipId ?? ''}
+                  />
+                  <input
+                    type="hidden"
+                    name="userId"
+                    value={userId}
+                  />
+                  <button
+                    type="submit"
+                    className="btn-primary w-auto px-4 py-2 text-sm"
+                  >
+                    {friendshipLabel}
+                  </button>
+                </form>
               </div>
             ) : null}
           </div>
