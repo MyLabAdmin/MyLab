@@ -407,6 +407,7 @@ type FeedCursor = {
   score: number
   createdAt: string
   id: string
+  seenIds: string[]
 }
 
 function encodeFeedCursor(cursor: FeedCursor) {
@@ -433,6 +434,11 @@ function decodeFeedCursor(cursor: string | null): FeedCursor | null {
       score: parsed.score,
       createdAt: parsed.createdAt,
       id: parsed.id,
+      seenIds: Array.isArray(parsed.seenIds)
+        ? parsed.seenIds.filter(
+            (id: unknown): id is string => typeof id === 'string',
+          )
+        : [],
     }
   } catch {
     return null
@@ -855,8 +861,11 @@ export async function getFeed(
         score: 0,
       }))
 
+  const seenIds = new Set(feedCursor?.seenIds ?? [])
+
   const pageRankedPosts = isMainFeed
     ? rankedPosts.filter(({ score, post }) => {
+        if (seenIds.has(String(post.id))) return false
         if (!feedCursor) return true
 
         if (score < feedCursor.score) return true
@@ -982,6 +991,12 @@ export async function getFeed(
       score: last.score,
       createdAt: last.post.created_at,
       id: last.post.id,
+      seenIds: Array.from(
+        new Set([
+          ...(feedCursor?.seenIds ?? []),
+          ...selectedPosts.map(({ post }) => String(post.id)),
+        ]),
+      ).slice(-FEED_CANDIDATE_SIZE),
     })
   } else if (!isMainFeed && posts.length === POSTS_PAGE_SIZE) {
     nextCursor = posts[posts.length - 1].created_at
