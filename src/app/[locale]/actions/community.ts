@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 import { parseMediaRef } from '@/lib/storage'
 import { resolveAvatarUrl } from '@/lib/storage/avatar-server'
+import { getFeatureAccess } from '@/lib/features/access'
 import type { ReactionKey } from '@/components/community/ReactionIcons'
 
 type TargetType = 'post' | 'comment' | 'reply' | 'profile' | 'knowledge_item'
@@ -332,39 +333,97 @@ export async function deletePost(postId: string) {
   return { success: !error }
 }
 
+export type BookmarkFolder = {
+  id: string
+  name: string
+  folder_kind: 'community_default' | 'knowledge_default' | 'custom'
+}
+
 export async function getBookmarkFolders() {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return []
+
+  if (!userData.user) {
+    return {
+      folders: [] as BookmarkFolder[],
+      hasCustomFolderAccess: false,
+    }
+  }
+
+  await supabase.rpc('ensure_bookmark_default_folders')
+
+  const featureAccess = await getFeatureAccess('bookmark_custom_folders')
 
   const { data } = await supabase
     .from('bookmark_folders')
-    .select('id, name')
+    .select('id, name, folder_kind')
     .eq('user_id', userData.user.id)
     .order('created_at', { ascending: true })
 
-  return data ?? []
+  return {
+    folders: (data ?? []) as BookmarkFolder[],
+    hasCustomFolderAccess:
+      featureAccess.success && featureAccess.access.hasAccess,
+  }
 }
 
 export async function createBookmarkFolder(name: string) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return { success: false }
+
+  if (!userData.user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  const featureAccess = await getFeatureAccess('bookmark_custom_folders')
+
+  if (!featureAccess.success || !featureAccess.access.hasAccess) {
+    return {
+      success: false,
+      error: 'Custom bookmark folders are not available',
+    }
+  }
+
+  const cleanName = name.trim()
+
+  if (!cleanName) {
+    return { success: false, error: 'Folder name is required' }
+  }
 
   const { data, error } = await supabase
     .from('bookmark_folders')
-    .insert({ user_id: userData.user.id, name })
-    .select('id, name')
+    .insert({
+      user_id: userData.user.id,
+      name: cleanName,
+      folder_kind: 'custom',
+    })
+    .select('id, name, folder_kind')
     .single()
 
-  if (error || !data) return { success: false }
-  return { success: true, folder: data }
+  if (error || !data) {
+    return {
+      success: false,
+      error: error?.message ?? 'Unable to create folder',
+    }
+  }
+
+  return {
+    success: true,
+    folder: data as BookmarkFolder,
+  }
 }
 
-export async function saveBookmark(targetType: TargetType, targetId: string, folderId: string | null) {
+export async function saveBookmark(
+  targetType: TargetType,
+  targetId: string,
+  folderId: string,
+) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return { success: false }
+
+  if (!userData.user) {
+    return { success: false }
+  }
 
   const { data: existing } = await supabase
     .from('bookmarks')
@@ -375,12 +434,24 @@ export async function saveBookmark(targetType: TargetType, targetId: string, fol
     .maybeSingle()
 
   if (existing) {
-    await supabase.from('bookmarks').update({ folder_id: folderId }).eq('id', existing.id)
-  } else {
-    await supabase.from('bookmarks').insert({ target_type: targetType, target_id: targetId, user_id: userData.user.id, folder_id: folderId })
+    const { error } = await supabase
+      .from('bookmarks')
+      .update({ folder_id: folderId })
+      .eq('id', existing.id)
+
+    return { success: !error }
   }
 
-  return { success: true }
+  const { error } = await supabase
+    .from('bookmarks')
+    .insert({
+      target_type: targetType,
+      target_id: targetId,
+      user_id: userData.user.id,
+      folder_id: folderId,
+    })
+
+  return { success: !error }
 }
 
 export async function unsaveBookmark(targetType: TargetType, targetId: string) {

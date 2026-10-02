@@ -28,7 +28,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={dir}>
-      <body>
+      <body className="pb-28">
         <NextIntlClientProvider>
           <ToastProvider>
             <AppNavigation locale={locale} />

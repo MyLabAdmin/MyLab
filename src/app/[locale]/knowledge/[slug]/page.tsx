@@ -8,8 +8,11 @@ import KnowledgePurchaseButton from './KnowledgePurchaseButton'
 
 async function resolveMedia(ref: string | null) {
   if (!ref) return null
+
   const { provider, path } = parseMediaRef(ref)
+
   if (provider === 'imagekit') return getImagekitSignedUrl(path)
+
   return ref
 }
 
@@ -23,23 +26,47 @@ export default async function KnowledgeItemPage({
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()
 
-  const { data: item } = await supabase
+  const { data: item, error: itemError } = await supabase
     .from('knowledge_items')
     .select(
       `id, cover_image_url, price, pricing,
        knowledge_item_translations(locale, title, excerpt),
-       knowledge_blocks(id, block_type, is_paid, order_index, media_url,
-         knowledge_block_translations(locale, content))`
+       knowledge_blocks(
+         id,
+         block_type,
+         is_paid,
+         order_index,
+         media_url,
+         knowledge_block_translations(locale, content)
+       )`,
     )
     .eq('slug', slug)
     .single()
 
+  if (itemError) {
+    console.error(
+      '[KnowledgeItemPage] Supabase query error JSON:',
+      JSON.stringify({
+        slug,
+        message: itemError.message,
+        code: itemError.code,
+        details: itemError.details,
+        hint: itemError.hint,
+      }),
+    )
+  }
+
   if (!item) notFound()
 
-  const translation = item.knowledge_item_translations.find((tr) => tr.locale === locale)
+  const translation = item.knowledge_item_translations.find(
+    (tr) => tr.locale === locale,
+  )
+
   const coverUrl = await resolveMedia(item.cover_image_url)
 
-  const sortedBlocks = [...item.knowledge_blocks].sort((a, b) => a.order_index - b.order_index)
+  const sortedBlocks = [...item.knowledge_blocks].sort(
+    (a, b) => a.order_index - b.order_index,
+  )
 
   const { data: purchaseRow } = userData.user
     ? await supabase
@@ -67,12 +94,19 @@ export default async function KnowledgeItemPage({
 
   const renderedBlocks = await Promise.all(
     sortedBlocks.map(async (b) => {
-      const bt = b.knowledge_block_translations.find((tr) => tr.locale === locale)
+      const bt = b.knowledge_block_translations.find(
+        (tr) => tr.locale === locale,
+      )
+
       const locked = b.is_paid && !userHasPaidAccess
+
       const mediaUrl =
-        (b.block_type === 'image' || b.block_type === 'video') && b.media_url && !locked
+        (b.block_type === 'image' || b.block_type === 'video') &&
+        b.media_url &&
+        !locked
           ? await resolveMedia(b.media_url)
           : null
+
       return {
         id: b.id,
         blockType: b.block_type,
@@ -81,97 +115,154 @@ export default async function KnowledgeItemPage({
         text: bt?.content?.text as string | null,
         mediaUrl,
       }
-    })
+    }),
   )
 
   return (
-    <main className="max-w-2xl mx-auto p-4 flex flex-col gap-5">
-      {coverUrl && <img src={coverUrl} alt="" className="w-full rounded-lg" />}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl md:text-2xl font-bold text-primary-700">
-          {translation?.title}
-        </h1>
-
-        {userData.user && (
-          <KnowledgeBookmarkButton
-            itemId={item.id}
-            initialBookmarked={isBookmarked}
-          />
-        )}
-      </div>
-      <p className="text-gray-500">{translation?.excerpt}</p>
-
-
-      {hasPaidContent && !userHasPaidAccess && (
-        <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 flex flex-col gap-3">
-          <div>
-            <p className="font-semibold text-primary-800">
-              {locale === 'ar' ? 'هذا المحتوى يحتوي على أجزاء مدفوعة' : 'This Knowledge contains paid content'}
-            </p>
-            <p className="text-sm text-primary-700">
-              {locale === 'ar'
-                ? `الوصول الكامل مقابل ${item.price} Coins، والشراء مرة واحدة ويمنحك وصولًا دائمًا.`
-                : `Full access for ${item.price} Coins. One-time purchase with permanent access.`}
-            </p>
-          </div>
-          {userData.user ? (
-            <KnowledgePurchaseButton
-              itemId={item.id}
-              price={item.price!}
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <article className="mx-auto flex w-full max-w-3xl flex-col">
+        {coverUrl && (
+          <div className="mb-7 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm sm:mb-9">
+            <img
+              src={coverUrl}
+              alt=""
+              className="h-auto max-h-[28rem] w-full object-cover object-center"
             />
-          ) : (
-            <p className="text-sm text-gray-600">
-              {locale === 'ar' ? 'سجّل الدخول لإتمام الشراء.' : 'Sign in to purchase this Knowledge.'}
+          </div>
+        )}
+
+        <header className="relative mb-8 text-center sm:mb-10">
+          {userData.user && (
+            <div className="absolute end-0 top-0">
+              <KnowledgeBookmarkButton
+                itemId={item.id}
+                initialBookmarked={isBookmarked}
+              />
+            </div>
+          )}
+
+          <h1 className="mx-auto max-w-3xl px-10 text-2xl font-bold leading-tight tracking-tight text-primary-700 sm:px-12 sm:text-3xl lg:text-4xl">
+            {translation?.title}
+          </h1>
+
+          {translation?.excerpt && (
+            <p className="mx-auto mt-4 max-w-2xl px-4 text-sm leading-7 text-gray-500 sm:text-base sm:leading-8">
+              {translation.excerpt}
             </p>
           )}
+        </header>
+
+        {hasPaidContent && !userHasPaidAccess && (
+          <section className="mb-8 rounded-2xl border border-primary-200 bg-primary-50/70 p-5 shadow-sm sm:mb-10 sm:p-6">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-base font-semibold text-primary-800 sm:text-lg">
+                  {locale === 'ar'
+                    ? 'هذا المحتوى يحتوي على أجزاء مدفوعة'
+                    : 'This Knowledge contains paid content'}
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-primary-700 sm:text-base sm:leading-7">
+                  {locale === 'ar'
+                    ? `الوصول الكامل مقابل ${item.price} Coins، والشراء مرة واحدة ويمنحك وصولًا دائمًا.`
+                    : `Full access for ${item.price} Coins. One-time purchase with permanent access.`}
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                {userData.user ? (
+                  <KnowledgePurchaseButton
+                    itemId={item.id}
+                    price={item.price!}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    {locale === 'ar'
+                      ? 'سجّل الدخول لإتمام الشراء.'
+                      : 'Sign in to purchase this Knowledge.'}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <div className="flex flex-col gap-5 sm:gap-6">
+          {renderedBlocks.map((b) => (
+            <section
+              key={b.id}
+              className="min-w-0"
+            >
+              {b.locked ? (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-8 text-center sm:px-8 sm:py-10">
+                  <p className="text-sm font-medium text-gray-500 sm:text-base">
+                    {t('lockedContent')}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex min-w-0 flex-col gap-3">
+                  {b.subtitle && (
+                    <h2 className="text-lg font-semibold leading-snug text-gray-900 sm:text-xl">
+                      {b.subtitle}
+                    </h2>
+                  )}
+
+                  {b.blockType === 'text' && b.text && (
+                    <div className="rounded-2xl border border-gray-100 bg-white px-1 py-1">
+                      <p className="whitespace-pre-line text-[15px] leading-8 text-gray-700 sm:text-base sm:leading-8">
+                        {b.text}
+                      </p>
+                    </div>
+                  )}
+
+                  {b.blockType === 'list' && b.text && (
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/70 px-5 py-5 sm:px-6 sm:py-6">
+                      <ul className="list-disc space-y-3 ps-6 text-[15px] leading-7 text-gray-700 sm:text-base sm:leading-8">
+                        {b.text
+                          .split(/\r?\n/)
+                          .map((item) => item.trim())
+                          .filter(Boolean)
+                          .map((item, index) => (
+                            <li key={index} className="ps-1">
+                              {item}
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {b.blockType === 'quote' && b.text && (
+                    <blockquote className="rounded-2xl border-s-4 border-primary-300 bg-primary-50/60 px-5 py-5 text-[15px] leading-8 text-gray-700 sm:px-6 sm:py-6 sm:text-base">
+                      <p className="italic">{b.text}</p>
+                    </blockquote>
+                  )}
+
+                  {b.blockType === 'image' && b.mediaUrl && (
+                    <figure className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
+                      <img
+                        src={b.mediaUrl}
+                        alt={b.subtitle ?? ''}
+                        className="h-auto max-h-[38rem] w-full object-contain"
+                      />
+                    </figure>
+                  )}
+
+                  {b.blockType === 'video' && b.mediaUrl && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-black shadow-sm">
+                      <video
+                        src={b.mediaUrl}
+                        controls
+                        preload="metadata"
+                        className="h-auto max-h-[38rem] w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          ))}
         </div>
-      )}
-
-      {renderedBlocks.map((b) => (
-        <div key={b.id} className="flex flex-col gap-2">
-          {b.subtitle && <h3 className="font-semibold text-gray-800">{b.subtitle}</h3>}
-          {b.locked ? (
-            <p className="bg-gray-100 rounded-lg p-4 text-gray-400 text-center">{t('lockedContent')}</p>
-          ) : (
-            <>
-              {b.blockType === 'image' && b.mediaUrl && (
-                <img src={b.mediaUrl} alt="" className="w-full rounded-lg" />
-              )}
-
-              {b.blockType === 'video' && b.mediaUrl && (
-                <video
-                  src={b.mediaUrl}
-                  controls
-                  preload="metadata"
-                  className="w-full rounded-lg"
-                />
-              )}
-
-              {b.blockType === 'list' && b.text && (
-                <ul className="list-disc ps-6 space-y-1 text-gray-700">
-                  {b.text
-                    .split(/\r?\n/)
-                    .map((item) => item.trim())
-                    .filter(Boolean)
-                    .map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                </ul>
-              )}
-
-              {b.blockType === 'quote' && b.text && (
-                <blockquote className="border-s-4 border-gray-300 ps-4 italic text-gray-600">
-                  {b.text}
-                </blockquote>
-              )}
-
-              {b.blockType === 'text' && b.text && (
-                <p className="text-gray-700 leading-relaxed">{b.text}</p>
-              )}
-            </>
-          )}
-        </div>
-      ))}
+      </article>
     </main>
   )
 }

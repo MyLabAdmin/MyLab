@@ -58,6 +58,13 @@ export default async function KnowledgeListPage({
     }))
   )
 
+  const selectedCategoryHasChildren =
+    category ? childrenOf(category).length > 0 : false
+
+  const shouldShowResults =
+    Boolean(q?.trim()) ||
+    Boolean(category && !selectedCategoryHasChildren)
+
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-7 p-4 md:p-6">
       <div className="flex flex-col gap-2">
@@ -76,33 +83,42 @@ export default async function KnowledgeListPage({
         categories={categories ?? []}
         initialQuery={q ?? ''}
         initialCategory={category ?? ''}
-      />
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {withCovers.map((item) => {
-          const tr = item.knowledge_item_translations.find((x: any) => x.locale === locale)
-          return (
-            <Link
-              key={item.id}
-              href={`/knowledge/${item.slug}`}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+        results={
+          shouldShowResults ? (
+            <div
+              key="knowledge-search-results"
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {item.coverUrl && (
-                <img src={item.coverUrl} alt="" className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+              {withCovers.map((item) => {
+                const tr = item.knowledge_item_translations.find(
+                  (x: any) => x.locale === locale,
+                )
+
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/knowledge/${item.slug}`}
+                    className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+                  >
+                    <div className="flex flex-col gap-1.5 p-4">
+                      <h3 className="line-clamp-1 text-sm font-semibold text-gray-800">{tr?.title}</h3>
+                      <p className="text-sm text-gray-500 line-clamp-2">
+                        {tr?.excerpt}
+                      </p>
+                    </div>
+                  </Link>
+                )
+              })}
+
+              {withCovers.length === 0 && (
+                <p className="col-span-full py-8 text-center text-sm text-gray-400">
+                  {locale === 'ar' ? 'لا توجد نتائج' : 'No results found'}
+                </p>
               )}
-              <div className="flex flex-col gap-1 p-4">
-                <h3 className="font-semibold text-gray-800">{tr?.title}</h3>
-                <p className="text-sm text-gray-500 line-clamp-2">{tr?.excerpt}</p>
-              </div>
-            </Link>
-          )
-        })}
-        {withCovers.length === 0 && (
-          <p className="text-gray-400 text-sm col-span-full text-center py-8">
-            {locale === 'ar' ? 'لا توجد نتائج' : 'No results found'}
-          </p>
-        )}
-      </div>
+            </div>
+          ) : null
+        }
+      />
     </main>
   )
 }
