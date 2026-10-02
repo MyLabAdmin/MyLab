@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
@@ -74,17 +74,19 @@ export default function KnowledgeFilters({
   const syncedRootId = urlCategoryParent ?? urlCategory
   const syncedSubId = urlCategoryParent ? urlCategory : ''
 
-  if (rootId !== syncedRootId) {
-    setRootId(syncedRootId)
-  }
+  useEffect(() => {
+    if (rootId !== syncedRootId) {
+      setRootId(syncedRootId)
+    }
 
-  if (subId !== syncedSubId) {
-    setSubId(syncedSubId)
-  }
+    if (subId !== syncedSubId) {
+      setSubId(syncedSubId)
+    }
 
-  if (q !== urlQuery) {
-    setQ(urlQuery)
-  }
+    if (q !== urlQuery) {
+      setQ(urlQuery)
+    }
+  }, [rootId, syncedRootId, subId, syncedSubId, q, urlQuery])
 
   const effectiveRootId = syncedRootId
   const effectiveSubId = syncedSubId

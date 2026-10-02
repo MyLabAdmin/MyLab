@@ -22,6 +22,7 @@ export type KnowledgeItemInput = {
   coverImageRef?: string
   blocks: BlockInput[]
   status: 'draft' | 'published'
+  price?: number | null
 }
 
 function slugify(text: string) {
@@ -65,6 +66,7 @@ export async function createKnowledgeItem(input: KnowledgeItemInput) {
     p_excerpt_ar: input.excerptAr,
     p_cover_image_ref: input.coverImageRef || null,
     p_status: input.status,
+    p_price: input.price ?? null,
     p_blocks: input.blocks,
   })
 
@@ -76,4 +78,24 @@ export async function createKnowledgeItem(input: KnowledgeItemInput) {
   }
 
   return { success: true, itemId }
+}
+
+export async function purchaseKnowledgeItem(knowledgeItemId: string) {
+  const supabase = await createClient()
+
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { success: false, error: 'Not authenticated' }
+
+  const { data, error } = await supabase.rpc('purchase_knowledge_item', {
+    p_knowledge_item_id: knowledgeItemId,
+  })
+
+  if (error || !data) {
+    return {
+      success: false,
+      error: error?.message ?? 'Failed to purchase knowledge item',
+    }
+  }
+
+  return { success: true, purchase: data }
 }

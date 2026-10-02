@@ -36,7 +36,10 @@ export default function UploadForm({ categories }: { categories: CategoryOption[
   const [coverImageRef, setCoverImageRef] = useState('')
 
   const [blocks, setBlocks] = useState<BlockInput[]>([])
+  const [price, setPrice] = useState('')
   const [previewMode, setPreviewMode] = useState<'free' | 'paid'>('free')
+
+  const hasPaidBlocks = blocks.some((block) => block.isPaid)
 
   const roots = useMemo(() => categories.filter((c) => !c.parent_id), [categories])
   const childrenOf = (parentId: string) => categories.filter((c) => c.parent_id === parentId)
@@ -86,6 +89,8 @@ export default function UploadForm({ categories }: { categories: CategoryOption[
     titleAr: locale === 'ar' ? 'العنوان بالعربي مطلوب' : 'Arabic title is required',
     excerptEn: locale === 'ar' ? 'المقتطف بالإنجليزي مطلوب' : 'English excerpt is required',
     excerptAr: locale === 'ar' ? 'المقتطف بالعربي مطلوب' : 'Arabic excerpt is required',
+    priceRequired: locale === 'ar' ? 'سعر المحتوى المدفوع مطلوب' : 'Price is required for paid content',
+    priceInvalid: locale === 'ar' ? 'السعر يجب أن يكون رقمًا صحيحًا أكبر من صفر' : 'Price must be a positive whole number',
   }
 
   function validateStep1() {
@@ -144,7 +149,16 @@ export default function UploadForm({ categories }: { categories: CategoryOption[
   async function handleSave(status: 'draft' | 'published') {
     const err1 = validateStep1()
     const err2 = validateBlocks()
-    if (err1 || err2) { setError(err1 || err2); return }
+
+    const parsedPrice = price.trim() ? Number(price) : null
+    const priceErr = hasPaidBlocks
+      ? (!price.trim() ? msg.priceRequired : (parsedPrice === null || !Number.isInteger(parsedPrice) || parsedPrice <= 0 ? msg.priceInvalid : ''))
+      : ''
+
+    if (err1 || err2 || priceErr) {
+      setError(err1 || err2 || priceErr)
+      return
+    }
 
     setSubmitting(true)
     setError('')
@@ -158,6 +172,7 @@ export default function UploadForm({ categories }: { categories: CategoryOption[
       coverImageRef,
       blocks,
       status,
+      price: hasPaidBlocks ? parsedPrice : null,
     })
 
     setSubmitting(false)
@@ -307,6 +322,30 @@ export default function UploadForm({ categories }: { categories: CategoryOption[
               )
             })}
           </div>
+
+
+          {hasPaidBlocks && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                {locale === 'ar' ? 'سعر الـKnowledge (Coins)' : 'Knowledge price (Coins)'}
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="input"
+                placeholder={locale === 'ar' ? 'مثال: 100' : 'Example: 100'}
+              />
+              <p className="text-xs text-gray-500">
+                {locale === 'ar'
+                  ? 'السعر مطلوب لأن هذا المحتوى يحتوي على Blocks مدفوعة.'
+                  : 'A price is required because this content contains paid blocks.'}
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <button type="button" onClick={() => setStep(2)} className="flex-1 sm:flex-none sm:px-8 rounded-lg border border-gray-300 py-2.5">

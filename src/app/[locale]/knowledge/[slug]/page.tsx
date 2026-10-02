@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { parseMediaRef } from '@/lib/storage'
 import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 import KnowledgeBookmarkButton from './KnowledgeBookmarkButton'
+import KnowledgePurchaseButton from './KnowledgePurchaseButton'
 
 async function resolveMedia(ref: string | null) {
   if (!ref) return null
@@ -25,7 +26,7 @@ export default async function KnowledgeItemPage({
   const { data: item } = await supabase
     .from('knowledge_items')
     .select(
-      `id, cover_image_url,
+      `id, cover_image_url, price, pricing,
        knowledge_item_translations(locale, title, excerpt),
        knowledge_blocks(id, block_type, is_paid, order_index, media_url,
          knowledge_block_translations(locale, content))`
@@ -40,7 +41,17 @@ export default async function KnowledgeItemPage({
 
   const sortedBlocks = [...item.knowledge_blocks].sort((a, b) => a.order_index - b.order_index)
 
-  const userHasPaidAccess = false // TODO: يتغير لما نبني نظام الاشتراكات/الشراء
+  const { data: purchaseRow } = userData.user
+    ? await supabase
+        .from('knowledge_item_purchases')
+        .select('id')
+        .eq('knowledge_item_id', item.id)
+        .eq('user_id', userData.user.id)
+        .maybeSingle()
+    : { data: null }
+
+  const userHasPaidAccess = !!purchaseRow
+  const hasPaidContent = item.pricing !== 'free' && !!item.price
 
   const { data: bookmarkRow } = userData.user
     ? await supabase
@@ -89,6 +100,32 @@ export default async function KnowledgeItemPage({
         )}
       </div>
       <p className="text-gray-500">{translation?.excerpt}</p>
+
+
+      {hasPaidContent && !userHasPaidAccess && (
+        <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 flex flex-col gap-3">
+          <div>
+            <p className="font-semibold text-primary-800">
+              {locale === 'ar' ? 'هذا المحتوى يحتوي على أجزاء مدفوعة' : 'This Knowledge contains paid content'}
+            </p>
+            <p className="text-sm text-primary-700">
+              {locale === 'ar'
+                ? `الوصول الكامل مقابل ${item.price} Coins، والشراء مرة واحدة ويمنحك وصولًا دائمًا.`
+                : `Full access for ${item.price} Coins. One-time purchase with permanent access.`}
+            </p>
+          </div>
+          {userData.user ? (
+            <KnowledgePurchaseButton
+              itemId={item.id}
+              price={item.price!}
+            />
+          ) : (
+            <p className="text-sm text-gray-600">
+              {locale === 'ar' ? 'سجّل الدخول لإتمام الشراء.' : 'Sign in to purchase this Knowledge.'}
+            </p>
+          )}
+        </div>
+      )}
 
       {renderedBlocks.map((b) => (
         <div key={b.id} className="flex flex-col gap-2">
