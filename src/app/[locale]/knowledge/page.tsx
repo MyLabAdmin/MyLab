@@ -44,8 +44,11 @@ export default async function KnowledgeListPage({
 
   const filtered = (items ?? []).filter((item) => {
     if (!q) return true
-    const title = item.knowledge_item_translations.find((tr: any) => tr.locale === locale)?.title ?? ''
-    return title.toLowerCase().includes(q.toLowerCase())
+    const translation = item.knowledge_item_translations.find((tr: any) => tr.locale === locale)
+    const title = translation?.title ?? ''
+    const excerpt = translation?.excerpt ?? ''
+    const searchText = `${title} ${excerpt}`.toLowerCase()
+    return searchText.includes(q.trim().toLowerCase())
   })
 
   const withCovers = await Promise.all(
@@ -56,10 +59,18 @@ export default async function KnowledgeListPage({
   )
 
   return (
-    <main className="max-w-2xl mx-auto p-4 flex flex-col gap-5">
-      <h1 className="text-xl md:text-2xl font-bold text-primary-700">
-        {locale === 'ar' ? 'المعرفة' : 'Knowledge'}
-      </h1>
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-7 p-4 md:p-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-primary-700 md:text-3xl">
+          {locale === 'ar' ? 'المعرفة' : 'Knowledge'}
+        </h1>
+
+        <p className="max-w-2xl text-sm leading-6 text-gray-500 md:text-base">
+          {locale === 'ar'
+            ? 'مرجعك للوصول السريع إلى الاختبارات والأجهزة ومسببات الأمراض والمقالات.'
+            : 'Your quick reference for tests, devices, pathogens, and articles.'}
+        </p>
+      </div>
 
       <KnowledgeFilters
         categories={categories ?? []}
@@ -67,19 +78,19 @@ export default async function KnowledgeListPage({
         initialCategory={category ?? ''}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {withCovers.map((item) => {
           const tr = item.knowledge_item_translations.find((x: any) => x.locale === locale)
           return (
             <Link
               key={item.id}
               href={`/knowledge/${item.slug}`}
-              className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+              className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
             >
               {item.coverUrl && (
-                <img src={item.coverUrl} alt="" className="w-full h-32 object-cover" />
+                <img src={item.coverUrl} alt="" className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
               )}
-              <div className="p-3 flex flex-col gap-1">
+              <div className="flex flex-col gap-1 p-4">
                 <h3 className="font-semibold text-gray-800">{tr?.title}</h3>
                 <p className="text-sm text-gray-500 line-clamp-2">{tr?.excerpt}</p>
               </div>
