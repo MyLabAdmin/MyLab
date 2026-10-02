@@ -1,5 +1,7 @@
 'use client';
 
+import { BookOpen, GraduationCap } from 'lucide-react';
+
 import { Link, usePathname } from '@/i18n/navigation';
 
 type AppNavigationProps = {
@@ -16,13 +18,7 @@ function HomeIcon() {
 }
 
 function KnowledgeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20" strokeLinecap="round" />
-      <path d="M8 7h8M8 10h6" strokeLinecap="round" />
-    </svg>
-  );
+  return <BookOpen className="h-6 w-6" strokeWidth={1.8} />;
 }
 
 function CommunityIcon() {
@@ -36,12 +32,7 @@ function CommunityIcon() {
 }
 
 function CoursesIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="m3 7 9-4 9 4-9 4-9-4Z" strokeLinejoin="round" />
-      <path d="M6 9.5V14c0 2 2.7 4 6 4s6-2 6-4V9.5M21 7v6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <GraduationCap className="h-6 w-6" strokeWidth={1.8} />;
 }
 
 function AssistantIcon() {
@@ -99,7 +90,7 @@ export default function AppNavigation({ locale }: AppNavigationProps) {
     },
     {
       key: 'courses',
-      label: isArabic ? 'الكورسات' : 'Courses',
+      label: isArabic ? 'دورات' : 'Courses',
       icon: <CoursesIcon />,
       disabled: true,
     },
