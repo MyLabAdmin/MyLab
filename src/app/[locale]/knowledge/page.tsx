@@ -29,7 +29,7 @@ export default async function KnowledgeListPage({
   let categoryIds: string[] | null = null
   if (category) {
     const children = childrenOf(category)
-    categoryIds = children.length > 0 ? children.map((c) => c.id) : [category]
+    categoryIds = [category, ...children.map((c) => c.id)]
   }
 
   let query = supabase

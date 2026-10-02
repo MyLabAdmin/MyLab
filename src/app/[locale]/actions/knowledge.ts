@@ -56,54 +56,24 @@ export async function createKnowledgeItem(input: KnowledgeItemInput) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return { success: false, error: 'Not authenticated' }
 
-  const { data: item, error: itemError } = await supabase
-    .from('knowledge_items')
-    .insert({
-      category_id: input.categoryId,
-      slug: slugify(input.titleEn),
-      status: input.status,
-      pricing: input.blocks.every((b) => !b.isPaid)
-        ? 'free'
-        : input.blocks.every((b) => b.isPaid)
-          ? 'paid'
-          : 'mixed',
-      cover_image_url: input.coverImageRef || null,
-      created_by: userData.user.id,
-      published_at: input.status === 'published' ? new Date().toISOString() : null,
-    })
-    .select('id')
-    .single()
+  const { data: itemId, error } = await supabase.rpc('create_knowledge_item', {
+    p_category_id: input.categoryId,
+    p_slug: slugify(input.titleEn),
+    p_title_en: input.titleEn,
+    p_title_ar: input.titleAr,
+    p_excerpt_en: input.excerptEn,
+    p_excerpt_ar: input.excerptAr,
+    p_cover_image_ref: input.coverImageRef || null,
+    p_status: input.status,
+    p_blocks: input.blocks,
+  })
 
-  if (itemError || !item) {
-    return { success: false, error: itemError?.message ?? 'Failed to create item' }
+  if (error || !itemId) {
+    return {
+      success: false,
+      error: error?.message ?? 'Failed to create item',
+    }
   }
 
-  await supabase.from('knowledge_item_translations').insert([
-    { item_id: item.id, locale: 'en', title: input.titleEn, excerpt: input.excerptEn },
-    { item_id: item.id, locale: 'ar', title: input.titleAr, excerpt: input.excerptAr },
-  ])
-
-  for (let i = 0; i < input.blocks.length; i++) {
-    const b = input.blocks[i]
-    const { data: block, error: blockError } = await supabase
-      .from('knowledge_blocks')
-      .insert({
-        item_id: item.id,
-        block_type: b.blockType,
-        is_paid: b.isPaid,
-        order_index: i,
-        media_url: b.mediaRef || null,
-      })
-      .select('id')
-      .single()
-
-    if (blockError || !block) continue
-
-    await supabase.from('knowledge_block_translations').insert([
-      { block_id: block.id, locale: 'en', content: { text: b.contentEn, subtitle: b.subtitleEn || null } },
-      { block_id: block.id, locale: 'ar', content: { text: b.contentAr, subtitle: b.subtitleAr || null } },
-    ])
-  }
-
-  return { success: true, itemId: item.id }
+  return { success: true, itemId }
 }

@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { getBookmarkFolders, createBookmarkFolder, saveBookmark } from '@/app/[locale]/actions/community'
 import { useToast } from '@/components/ui/Toast'
 
-type TargetType = 'post' | 'comment' | 'reply'
+type TargetType = 'post' | 'comment' | 'reply' | 'knowledge_item'
 
 export default function SaveModal({
   targetType,

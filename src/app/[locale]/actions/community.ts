@@ -6,7 +6,7 @@ import { parseMediaRef } from '@/lib/storage'
 import { resolveAvatarUrl } from '@/lib/storage/avatar-server'
 import type { ReactionKey } from '@/components/community/ReactionIcons'
 
-type TargetType = 'post' | 'comment' | 'reply' | 'profile'
+type TargetType = 'post' | 'comment' | 'reply' | 'profile' | 'knowledge_item'
 
 async function resolveMedia(ref: string) {
   const { provider, path } = parseMediaRef(ref)
