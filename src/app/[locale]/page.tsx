@@ -11,7 +11,7 @@ import {
   Layers,
   Users,
   Wallet,
-  Wrench,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 type HomePageProps = {
@@ -28,6 +28,7 @@ export default async function HomePage({ params }: HomePageProps) {
 
   let displayName: string | null = null;
   let avatarUrl: string | null = null;
+  let isAdmin = false;
 
   if (userId) {
     const { data: profile } = await supabase
@@ -38,6 +39,29 @@ export default async function HomePage({ params }: HomePageProps) {
 
     displayName = profile?.display_name ?? null;
     avatarUrl = await resolveAvatarUrl(profile?.avatar_url);
+
+    const { data: role, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    isAdmin = Boolean(role);
+    console.log('[MyLab Home admin check]', {
+      email: userData.user?.email ?? null,
+      userId,
+      role: role?.role ?? null,
+      roleError: roleError
+        ? {
+            message: roleError.message,
+            code: roleError.code,
+            details: roleError.details,
+            hint: roleError.hint,
+          }
+        : null,
+      isAdmin,
+    });
   }
 
   const greeting = displayName
@@ -76,7 +100,7 @@ export default async function HomePage({ params }: HomePageProps) {
     },
     
     {
-      icon: Wrench,
+      icon: SlidersHorizontal,
       title: isArabic ? 'الأدوات' : 'Tools',
     },
     {
@@ -173,18 +197,47 @@ export default async function HomePage({ params }: HomePageProps) {
             })}</div>
         </section>
       </div>
-              <button
+      <div className="fixed bottom-20 end-4 z-40 flex flex-col items-center gap-3 sm:bottom-16">
+        {isAdmin && (
+          <button
             type="button"
             disabled
-            aria-label={isArabic ? 'المساعد الذكي - قريباً' : 'AI Assistant - Coming soon'}
+            aria-label={isArabic ? 'لوحة الإدارة - قريباً' : 'Admin Panel - Coming soon'}
             title={isArabic ? 'قريباً' : 'Coming soon'}
-            className="fixed bottom-24 end-4 z-40 flex h-14 w-14 cursor-not-allowed items-center justify-center rounded-full border border-primary-100 bg-white shadow-lg opacity-80 sm:h-16 sm:w-16"
+            className="relative flex h-14 w-14 cursor-not-allowed items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-lg opacity-80 sm:h-16 sm:w-16"
           >
-            <MyLabPixelsIcon className="h-9 w-9 sm:h-10 sm:w-10" />
+            <svg
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  strokeWidth="1.8"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  className="h-7 w-7 sm:h-8 sm:w-8"
+  aria-hidden="true"
+>
+  <path d="M12 3l7 3v5c0 4.5-2.9 8.2-7 10-4.1-1.8-7-5.5-7-10V6l7-3z" />
+  <path d="M9.5 12l1.7 1.7 3.5-3.5" />
+</svg>
             <span className="absolute -top-1 -end-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-[8px] font-medium text-gray-500 shadow-sm">
               {isArabic ? 'قريباً' : 'Soon'}
             </span>
           </button>
+        )}
+
+        <button
+          type="button"
+          disabled
+          aria-label={isArabic ? 'المساعد الذكي - قريباً' : 'AI Assistant - Coming soon'}
+          title={isArabic ? 'قريباً' : 'Coming soon'}
+          className="relative flex h-14 w-14 cursor-not-allowed items-center justify-center rounded-full border border-primary-100 bg-white shadow-lg opacity-80 sm:h-16 sm:w-16"
+        >
+          <MyLabPixelsIcon className="h-9 w-9 sm:h-10 sm:w-10" />
+          <span className="absolute -top-1 -end-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-[8px] font-medium text-gray-500 shadow-sm">
+            {isArabic ? 'قريباً' : 'Soon'}
+          </span>
+        </button>
+      </div>
 </main>
   );
 }
@@ -203,6 +256,31 @@ function BellIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0m6 0H9"
+      />
+    </svg>
+  );
+}
+
+
+function SettingsIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-7 w-7"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.9 1.9-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.7v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.9-1.9.06-.06A1.7 1.7 0 0 0 7.8 15a1.7 1.7 0 0 0-1.56-1.03H6v-2.7h.24A1.7 1.7 0 0 0 7.8 10.2a1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.9-1.9.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.7v.2a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.9 1.9-.06.06A1.7 1.7 0 0 0 19.4 10c.22.5.7.83 1.24.83H21v2.7h-.36A1.7 1.7 0 0 0 19.4 15Z"
       />
     </svg>
   );
