@@ -1,9 +1,9 @@
 
 import Link from 'next/link';
+import MyLabPixelsIcon from '@/components/brand/MyLabPixelsIcon';
 import { createClient } from '@/lib/supabase/server';
 import {
   BookOpen,
-  Bot,
   CreditCard,
   GraduationCap,
   Layers,
@@ -70,16 +70,13 @@ export default async function HomePage({ params }: HomePageProps) {
       icon: GraduationCap,
       title: isArabic ? 'الدورات' : 'Courses',
     },
-    {
-      icon: Layers,
-      title: isArabic ? 'المحافظ' : 'Wallets',
-    },
+    
     {
       icon: Wrench,
       title: isArabic ? 'الأدوات' : 'Tools',
     },
     {
-      icon: Bot,
+      icon: MyLabPixelsIcon,
       title: isArabic ? 'المساعد الذكي' : 'AI Assistant',
     },
   ];
@@ -141,9 +138,11 @@ export default async function HomePage({ params }: HomePageProps) {
               );
             })}
 
-            {reservedCards.map((card) => {
+            
+          {reservedCards
+            .filter((card) => card.title !== (isArabic ? 'المساعد الذكي' : 'AI Assistant'))
+            .map((card) => {
               const Icon = card.icon;
-
               return (
                 <div
                   key={card.title}
@@ -153,21 +152,30 @@ export default async function HomePage({ params }: HomePageProps) {
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
                     <Icon className="h-5 w-5" strokeWidth={1.8} />
                   </span>
-
                   <h3 className="min-w-0 text-base font-semibold text-gray-800 sm:text-lg">
                     {card.title}
                   </h3>
-
                   <span className="absolute end-3 top-3 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
                     {isArabic ? 'قريباً' : 'Coming soon'}
                   </span>
                 </div>
               );
-            })}
-          </div>
+            })}</div>
         </section>
       </div>
-    </main>
+              <button
+            type="button"
+            disabled
+            aria-label={isArabic ? 'المساعد الذكي - قريباً' : 'AI Assistant - Coming soon'}
+            title={isArabic ? 'قريباً' : 'Coming soon'}
+            className="fixed bottom-24 end-4 z-40 flex h-14 w-14 cursor-not-allowed items-center justify-center rounded-full border border-primary-100 bg-white shadow-lg opacity-80 sm:h-16 sm:w-16"
+          >
+            <MyLabPixelsIcon className="h-9 w-9 sm:h-10 sm:w-10" />
+            <span className="absolute -top-1 -end-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-[8px] font-medium text-gray-500 shadow-sm">
+              {isArabic ? 'قريباً' : 'Soon'}
+            </span>
+          </button>
+</main>
   );
 }
 

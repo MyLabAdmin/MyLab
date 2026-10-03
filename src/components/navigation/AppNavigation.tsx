@@ -1,6 +1,7 @@
 'use client';
 
 import { BookOpen, GraduationCap } from 'lucide-react';
+import MyLabPixelsIcon from '@/components/brand/MyLabPixelsIcon';
 
 import { Link, usePathname } from '@/i18n/navigation';
 
@@ -10,10 +11,12 @@ type AppNavigationProps = {
 
 function HomeIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="m3 10 9-7 9 7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M5 9v11h14V9M9 20v-6h6v6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <img
+      src="/brand/logo.png"
+      alt=""
+      aria-hidden="true"
+      className="h-8 w-8 object-contain"
+    />
   );
 }
 
@@ -36,13 +39,7 @@ function CoursesIcon() {
 }
 
 function AssistantIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="4" y="5" width="16" height="14" rx="3" />
-      <path d="M8 10h.01M16 10h.01M9 15h6" strokeLinecap="round" />
-      <path d="M12 5V3" strokeLinecap="round" />
-    </svg>
-  );
+  return <MyLabPixelsIcon className="h-6 w-6" />;
 }
 
 export default function AppNavigation({ locale }: AppNavigationProps) {
@@ -58,7 +55,10 @@ export default function AppNavigation({ locale }: AppNavigationProps) {
 
   const isCommunityHome = normalizedPathname === '/community';
 
-  if (normalizedPathname.startsWith('/community/') && !isCommunityHome) {
+  if (
+    (normalizedPathname.startsWith('/community/') && !isCommunityHome) ||
+    normalizedPathname === '/'
+  ) {
     return null;
   }
 
