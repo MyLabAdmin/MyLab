@@ -1,6 +1,8 @@
 
 import Link from 'next/link';
 import MyLabPixelsIcon from '@/components/brand/MyLabPixelsIcon';
+import HomeSidebar from '@/components/navigation/HomeSidebar';
+import { resolveAvatarUrl } from '@/lib/storage/avatar-server';
 import { createClient } from '@/lib/supabase/server';
 import {
   BookOpen,
@@ -25,15 +27,17 @@ export default async function HomePage({ params }: HomePageProps) {
   const userId = userData.user?.id ?? null;
 
   let displayName: string | null = null;
+  let avatarUrl: string | null = null;
 
   if (userId) {
     const { data: profile } = await supabase
       .from('profiles_public')
-      .select('display_name')
+      .select('display_name, avatar_url')
       .eq('id', userId)
       .maybeSingle();
 
     displayName = profile?.display_name ?? null;
+    avatarUrl = await resolveAvatarUrl(profile?.avatar_url);
   }
 
   const greeting = displayName
@@ -105,13 +109,12 @@ export default async function HomePage({ params }: HomePageProps) {
               <BellIcon />
             </button>
 
-            <button
-              type="button"
-              aria-label={isArabic ? 'القائمة' : 'Menu'}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50"
-            >
-              <MenuIcon />
-            </button>
+            <HomeSidebar
+              locale={isArabic ? 'ar' : 'en'}
+              userId={userId}
+              displayName={displayName}
+              avatarUrl={avatarUrl}
+            />
           </div>
         </div>
       </header>
@@ -200,25 +203,6 @@ function BellIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 0 1-6 0m6 0H9"
-      />
-    </svg>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 6h16M4 12h16M4 18h16"
       />
     </svg>
   );

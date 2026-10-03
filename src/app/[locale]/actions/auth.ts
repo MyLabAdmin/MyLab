@@ -32,3 +32,9 @@ export async function signup(formData: FormData) {
 
   redirect({ href: '/', locale: formData.get('locale') as string })
 }
+
+export async function logout() {
+  const supabase = await createClient()
+
+  await supabase.auth.signOut()
+}

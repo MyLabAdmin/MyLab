@@ -54,8 +54,12 @@ export default function AppNavigation({ locale }: AppNavigationProps) {
         : pathname;
 
   const isCommunityHome = normalizedPathname === '/community';
+  const isAuthPage =
+    normalizedPathname === '/login' ||
+    normalizedPathname === '/signup';
 
   if (
+    isAuthPage ||
     (normalizedPathname.startsWith('/community/') && !isCommunityHome) ||
     normalizedPathname === '/'
   ) {
