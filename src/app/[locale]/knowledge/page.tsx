@@ -74,8 +74,8 @@ export default async function KnowledgeListPage({
 
         <p className="max-w-2xl text-sm leading-6 text-gray-500 md:text-base">
           {locale === 'ar'
-            ? 'مرجعك للوصول السريع إلى الاختبارات والأجهزة ومسببات الأمراض والمقالات.'
-            : 'Your quick reference for tests, devices, pathogens, and articles.'}
+            ? 'مرجعك للوصول السريع إلى الاختبارات والأجهزة ومسببات الأمراض.'
+            : 'Your quick reference for tests, devices, and pathogens.'}
         </p>
       </div>
 

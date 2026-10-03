@@ -85,9 +85,16 @@ export default async function HomePage({ params }: HomePageProps) {
     <main className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <h1 className="truncate text-xl font-bold tracking-tight text-primary-600 sm:text-2xl">
-            MyLab
-          </h1>
+          <div className="flex items-center gap-2">
+            <img
+              src="/brand/logo.png"
+              alt="MyLab"
+              className="h-8 w-8 object-contain sm:h-9 sm:w-9"
+            />
+            <h1 className="truncate text-xl font-bold tracking-tight text-primary-600 sm:text-2xl">
+              MyLab
+            </h1>
+          </div>
 
           <div className="flex items-center gap-2">
             <button

@@ -24,7 +24,6 @@ const sectionIcons = {
   tests: FlaskConical,
   devices: Microscope,
   pathogens: Bug,
-  articles: Newspaper,
 } as const
 
 export default function KnowledgeFilters({
