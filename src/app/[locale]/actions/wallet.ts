@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { purchaseFeatureCapacityPlan } from '@/lib/features/access'
 
-export async function getWalletBalance() {
+export async function getWalletData() {
   const supabase = await createClient()
 
   const { data: userData, error: userError } =
@@ -16,30 +16,142 @@ export async function getWalletBalance() {
     }
   }
 
-  const { data, error } = await supabase
-    .from('wallets')
-    .select('id, wallet_number, balance')
-    .eq('user_id', userData.user.id)
-    .maybeSingle()
+  const userId = userData.user.id
 
-  if (error) {
+  const [{ data: wallet, error: walletError }, { data: profile, error: profileError }] =
+    await Promise.all([
+      supabase
+        .from('wallets')
+        .select('id, wallet_number, balance')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('profiles_public')
+        .select('display_name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle(),
+    ])
+
+  if (walletError) {
     return {
       success: false as const,
-      error: error.message,
+      error: walletError.message,
+    }
+  }
+
+  if (profileError) {
+    return {
+      success: false as const,
+      error: profileError.message,
+    }
+  }
+
+  if (!wallet) {
+    return {
+      success: false as const,
+      error: 'Wallet not found',
+    }
+  }
+
+  const { data: transactions, error: transactionsError } = await supabase
+    .from('wallet_transactions')
+    .select('id, amount, type, description, created_at')
+    .eq('wallet_id', wallet.id)
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  if (transactionsError) {
+    return {
+      success: false as const,
+      error: transactionsError.message,
     }
   }
 
   return {
     success: true as const,
-    wallet: data
-      ? {
-          id: data.id,
-          balance: data.balance,
-        }
-      : {
-          id: null,
-          balance: 0,
-        },
+    wallet: {
+      id: wallet.id,
+      walletNumber: wallet.wallet_number,
+      balance: wallet.balance,
+      ownerName: profile?.display_name ?? null,
+    },
+    transactions: transactions ?? [],
+  }
+}
+
+export async function transferWallet(
+  recipientWalletNumber: string,
+  amount: string,
+) {
+  const supabase = await createClient()
+
+  const { data: userData, error: userError } =
+    await supabase.auth.getUser()
+
+  if (userError || !userData.user) {
+    return {
+      success: false as const,
+      error: 'Not authenticated',
+    }
+  }
+
+  const recipient = Number(recipientWalletNumber)
+  const value = Number(amount)
+
+  if (
+    !Number.isSafeInteger(recipient) ||
+    recipient <= 0
+  ) {
+    return {
+      success: false as const,
+      error: 'Invalid recipient wallet number',
+    }
+  }
+
+  if (
+    !Number.isSafeInteger(value) ||
+    value <= 0
+  ) {
+    return {
+      success: false as const,
+      error: 'Transfer amount must be a positive whole number',
+    }
+  }
+
+  const { data, error } = await supabase.rpc(
+    'transfer_wallet',
+    {
+      p_recipient_wallet_number: recipient,
+      p_amount: value,
+    },
+  )
+
+  if (error || !data?.[0]) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Transfer failed',
+    }
+  }
+
+  return {
+    success: true as const,
+    transfer: data[0],
+  }
+}
+
+export async function getWalletBalance() {
+  const result = await getWalletData()
+
+  if (!result.success) {
+    return result
+  }
+
+  return {
+    success: true as const,
+    wallet: {
+      id: result.wallet.id,
+      balance: result.wallet.balance,
+    },
   }
 }
 
@@ -77,7 +189,6 @@ export async function purchaseMessageMedia() {
     purchase: data[0],
   }
 }
-
 
 export async function purchaseMessageMediaPlan(
   planId: string,

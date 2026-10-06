@@ -83,13 +83,14 @@ export default async function HomePage({ params }: HomePageProps) {
       icon: Users,
       title: isArabic ? 'المجتمع' : 'Community',
     },
-  ];
-
-  const reservedCards = [
     {
+      href: '/wallet',
       icon: Wallet,
       title: isArabic ? 'المحفظة' : 'Wallet',
     },
+  ];
+
+  const reservedCards = [
     {
       icon: CreditCard,
       title: isArabic ? 'الاشتراك' : 'Subscription',
