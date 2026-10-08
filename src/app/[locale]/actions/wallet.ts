@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { purchaseFeatureCapacityPlan } from '@/lib/features/access'
+import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
 
 export async function getWalletData() {
   const supabase = await createClient()
@@ -67,6 +68,60 @@ export async function getWalletData() {
     }
   }
 
+  const { data: transfers, error: transfersError } = await supabase
+    .from('wallet_transfers')
+    .select(
+      'id, sender_wallet_id, recipient_wallet_id, amount, fee_amount, total_debited, note, created_at',
+    )
+    .or(
+      `sender_wallet_id.eq.${wallet.id},recipient_wallet_id.eq.${wallet.id}`,
+    )
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  if (transfersError) {
+    return {
+      success: false as const,
+      error: transfersError.message,
+    }
+  }
+
+  const enrichedTransactions = (transactions ?? []).map((transaction) => {
+    const transfer = (transfers ?? []).find((item) => {
+      const sameWallet =
+        item.sender_wallet_id === wallet.id ||
+        item.recipient_wallet_id === wallet.id
+
+      const sameTime =
+        new Date(item.created_at).getTime() ===
+        new Date(transaction.created_at).getTime()
+
+      const sameAmount =
+        item.sender_wallet_id === wallet.id
+          ? transaction.amount === -item.total_debited
+          : transaction.amount === item.amount
+
+      return sameWallet && sameTime && sameAmount
+    })
+
+    return {
+      ...transaction,
+      transfer_id: transfer?.id ?? null,
+      transfer_amount: transfer?.amount ?? null,
+      transfer_fee: transfer?.fee_amount ?? null,
+      transfer_total: transfer?.total_debited ?? null,
+      transfer_note: transfer?.note ?? null,
+      transfer_sender_wallet:
+        transfer?.sender_wallet_id === wallet.id
+          ? wallet.wallet_number
+          : null,
+      transfer_recipient_wallet:
+        transfer?.recipient_wallet_id === wallet.id
+          ? wallet.wallet_number
+          : null,
+    }
+  })
+
   return {
     success: true as const,
     wallet: {
@@ -75,13 +130,71 @@ export async function getWalletData() {
       balance: wallet.balance,
       ownerName: profile?.display_name ?? null,
     },
-    transactions: transactions ?? [],
+    transactions: enrichedTransactions,
+  }
+}
+
+export async function lookupWalletRecipient(
+  recipientWalletNumber: string,
+) {
+  const supabase = await createClient()
+
+  const { data: userData, error: userError } =
+    await supabase.auth.getUser()
+
+  if (userError || !userData.user) {
+    return {
+      success: false as const,
+      error: 'Not authenticated',
+    }
+  }
+
+  const walletNumber = Number(recipientWalletNumber)
+
+  if (!Number.isSafeInteger(walletNumber) || walletNumber <= 0) {
+    return {
+      success: false as const,
+      error: 'Invalid recipient wallet number',
+    }
+  }
+
+  const { data, error } = await supabase.rpc(
+    'lookup_wallet_recipient',
+    {
+      p_wallet_number: walletNumber,
+    },
+  )
+
+  if (error || !data?.[0]) {
+    return {
+      success: false as const,
+      error: error?.message ?? 'Recipient wallet not found',
+    }
+  }
+
+  const recipient = data[0]
+
+  let avatarUrl = recipient.avatar_url
+
+  if (avatarUrl?.startsWith('imagekit:')) {
+    avatarUrl = getImagekitSignedUrl(
+      avatarUrl.slice('imagekit:'.length),
+    )
+  }
+
+  return {
+    success: true as const,
+    recipient: {
+      ...recipient,
+      avatar_url: avatarUrl,
+    },
   }
 }
 
 export async function transferWallet(
   recipientWalletNumber: string,
   amount: string,
+  note = '',
 ) {
   const supabase = await createClient()
 
@@ -118,11 +231,21 @@ export async function transferWallet(
     }
   }
 
+  const cleanNote = note.trim()
+
+  if (cleanNote.length > 500) {
+    return {
+      success: false as const,
+      error: 'Transfer note is too long',
+    }
+  }
+
   const { data, error } = await supabase.rpc(
     'transfer_wallet',
     {
       p_recipient_wallet_number: recipient,
       p_amount: value,
+      p_note: cleanNote || null,
     },
   )
 
