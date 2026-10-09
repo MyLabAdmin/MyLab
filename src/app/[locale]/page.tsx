@@ -48,20 +48,6 @@ export default async function HomePage({ params }: HomePageProps) {
       .maybeSingle();
 
     isAdmin = Boolean(role);
-    console.log('[MyLab Home admin check]', {
-      email: userData.user?.email ?? null,
-      userId,
-      role: role?.role ?? null,
-      roleError: roleError
-        ? {
-            message: roleError.message,
-            code: roleError.code,
-            details: roleError.details,
-            hint: roleError.hint,
-          }
-        : null,
-      isAdmin,
-    });
   }
 
   const greeting = displayName
@@ -178,6 +164,24 @@ export default async function HomePage({ params }: HomePageProps) {
             .filter((card) => card.title !== (isArabic ? 'المساعد الذكي' : 'AI Assistant'))
             .map((card) => {
               const Icon = card.icon;
+
+              if (card.title === (isArabic ? 'الاشتراك' : 'Subscription')) {
+                return (
+                  <Link
+                    key={card.title}
+                    href="/subscription"
+                    className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition group-hover:bg-primary-100">
+                      <Icon className="h-5 w-5" strokeWidth={1.8} />
+                    </span>
+                    <h3 className="min-w-0 text-base font-semibold text-gray-900 sm:text-lg">
+                      {card.title}
+                    </h3>
+                  </Link>
+                );
+              }
+
               return (
                 <div
                   key={card.title}

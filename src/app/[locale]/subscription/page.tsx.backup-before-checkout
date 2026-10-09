@@ -1,0 +1,352 @@
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
+
+type SubscriptionPageProps = {
+  params: Promise<{ locale: string }>;
+};
+
+type Plan = {
+  id: string;
+  plan_key: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  bonus_coins: number;
+  sort_order: number;
+};
+
+type Duration = {
+  id: string;
+  duration_key: string;
+  name_ar: string;
+  name_en: string;
+  months: number;
+  sort_order: number;
+};
+
+type SubscriptionPrice = {
+  plan_id: string;
+  duration_id: string;
+  market_code: string;
+  currency_code: string;
+  original_amount: number;
+};
+
+type PlanFeature = {
+  plan_id: string;
+  feature_key: string;
+  capacity_kind: string;
+  capacity_units: number;
+  daily_bonus_capacity: number;
+  feature_catalog: {
+    name_ar: string;
+    name_en: string;
+    description_ar: string | null;
+    description_en: string | null;
+  } | null;
+};
+
+export default async function SubscriptionPage({
+  params,
+}: SubscriptionPageProps) {
+  const { locale } = await params;
+  const isArabic = locale === 'ar';
+  const supabase = await createClient();
+
+  const { data: userData, error: authError } = await supabase.auth.getUser();
+  const isSignedIn = !authError && Boolean(userData.user);
+
+  let plans: Plan[] = [];
+  let durations: Duration[] = [];
+  let features: PlanFeature[] = [];
+  let prices: SubscriptionPrice[] = [];
+  let currentPlanId: string | null = null;
+  let loadError = false;
+
+  if (isSignedIn) {
+    const now = new Date().toISOString();
+
+    const [plansResult, durationsResult, featuresResult, pricesResult, currentSubscriptionResult] = await Promise.all([
+      supabase
+        .from('subscription_plans')
+        .select(
+          'id, plan_key, name_ar, name_en, description_ar, description_en, bonus_coins, sort_order'
+        )
+        .eq('enabled', true)
+        .order('sort_order'),
+      supabase
+        .from('subscription_durations')
+        .select('id, duration_key, name_ar, name_en, months, sort_order')
+        .eq('enabled', true)
+        .order('sort_order'),
+      supabase
+        .from('subscription_plan_features')
+        .select(
+          'plan_id, feature_key, capacity_kind, capacity_units, daily_bonus_capacity, feature_catalog(name_ar, name_en, description_ar, description_en)'
+        )
+        .eq('enabled', true),
+      supabase
+        .from('subscription_prices')
+        .select('plan_id, duration_id, market_code, currency_code, original_amount')
+        .eq('enabled', true),
+      supabase
+        .from('subscriptions')
+        .select('plan_id')
+        .eq('user_id', userData.user!.id)
+        .eq('status', 'active')
+        .lte('starts_at', now)
+        .gt('ends_at', now)
+        .order('ends_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    loadError = Boolean(
+      plansResult.error ||
+        durationsResult.error ||
+        featuresResult.error ||
+        pricesResult.error ||
+        currentSubscriptionResult.error
+    );
+
+    plans = (plansResult.data ?? []) as Plan[];
+    durations = (durationsResult.data ?? []) as Duration[];
+    features = (featuresResult.data ?? []) as unknown as PlanFeature[];
+    prices = (pricesResult.data ?? []) as SubscriptionPrice[];
+    currentPlanId =
+      currentSubscriptionResult.data?.plan_id ??
+      plans.find((plan) => plan.plan_key === 'free')?.id ??
+      null;
+  }
+
+  const text = {
+    title: isArabic ? 'خطط الاشتراك' : 'Subscription plans',
+    subtitle: isArabic
+      ? 'تعرّف على الخطط المتاحة ومزاياها.'
+      : 'Explore the available plans and their features.',
+    signInTitle: isArabic
+      ? 'سجّل الدخول لعرض الخطط'
+      : 'Sign in to view plans',
+    signInBody: isArabic
+      ? 'يلزم تسجيل الدخول لقراءة بيانات الخطط وفق صلاحيات قاعدة البيانات.'
+      : 'Please sign in to read plan information under the database access policies.',
+    signInButton: isArabic ? 'تسجيل الدخول' : 'Sign in',
+    unavailable: isArabic
+      ? 'تعذّر تحميل بيانات الاشتراك. حاول مرة أخرى لاحقًا.'
+      : 'Subscription data could not be loaded. Please try again later.',
+    durations: isArabic ? 'المدد المتاحة' : 'Available durations',
+    features: isArabic ? 'المزايا' : 'Features',
+    noFeatures: isArabic
+      ? 'لا توجد مزايا منشورة لهذه الخطة حتى الآن.'
+      : 'No features are currently listed for this plan.',
+    capacity: isArabic ? 'السعة' : 'Capacity',
+    total: isArabic ? 'إجمالي' : 'Total',
+    dailyBonus: isArabic ? 'إضافة يومية' : 'Daily bonus',
+    bonusCoins: isArabic ? 'عملات إضافية' : 'Bonus coins',
+    back: isArabic ? 'العودة للرئيسية' : 'Back to home',
+    currentPlan: isArabic ? 'اشتراكك الحالي' : 'Your current plan',
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto w-full max-w-5xl">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-primary-700">
+            {text.title}
+          </h1>
+          <p className="mt-3 text-base leading-7 text-gray-600">
+            {text.subtitle}
+          </p>
+        </header>
+
+        {!isSignedIn ? (
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {text.signInTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              {text.signInBody}
+            </p>
+            <Link
+              href="/login"
+              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary-600 px-5 py-2.5 font-medium text-white transition hover:bg-primary-700"
+            >
+              {text.signInButton}
+            </Link>
+          </section>
+        ) : loadError ? (
+          <section
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-white p-6 text-red-700"
+          >
+            {text.unavailable}
+          </section>
+        ) : (
+          <>
+            {plans.length === 0 ? (
+              <p className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-600">
+                {text.unavailable}
+              </p>
+            ) : (
+              <section
+                aria-label={text.title}
+                className="-mx-4 overflow-x-auto px-4 pb-5 sm:-mx-6 sm:px-6"
+              >
+                <div className="flex snap-x snap-mandatory gap-5">
+                  {plans.map((plan) => {
+                    const planFeatures = features.filter(
+                      (feature) => feature.plan_id === plan.id
+                    );
+
+                    return (
+                      <article
+                        key={plan.id}
+                        className={`flex w-[min(86vw,360px)] shrink-0 snap-start flex-col rounded-3xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-lg sm:w-[340px] ${currentPlanId === plan.id ? 'border-primary-500 ring-2 ring-primary-100' : 'border-gray-200'}`}
+                      >
+                        <div className="mb-5">
+                          {currentPlanId === plan.id && (
+                            <div className="mb-3 flex justify-center">
+                              <span className="rounded-full bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
+                                {text.currentPlan}
+                              </span>
+                            </div>
+                          )}
+                          <h2 className="text-center text-xl font-bold text-primary-700">
+                            {isArabic ? plan.name_ar : plan.name_en}
+                          </h2>
+
+                          <div className="mt-4 space-y-2">
+                            {plan.plan_key !== 'free' &&
+                              durations.map((duration) => {
+                                const price = prices.find(
+                                  (item) =>
+                                    item.plan_id === plan.id &&
+                                    item.duration_id === duration.id
+                                );
+
+                                if (!price) return null;
+
+                                return (
+                                  <div
+                                    key={duration.id}
+                                    className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2"
+                                  >
+                                    <span className="text-sm text-gray-600">
+                                      {isArabic ? duration.name_ar : duration.name_en}
+                                    </span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                      {Number(price.original_amount).toLocaleString(
+                                        isArabic ? 'ar' : 'en'
+                                      )}{' '}
+                                      {price.currency_code}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            {plan.plan_key !== 'free' &&
+                              prices.some((price) => price.plan_id === plan.id) && (
+                                <p className="text-center text-xs text-amber-700">
+                                  {isArabic
+                                    ? 'أسعار تجريبية — غير متاحة للدفع الحقيقي'
+                                    : 'Test prices — not available for real payments'}
+                                </p>
+                              )}
+                          </div>
+
+                          {plan.bonus_coins > 0 && (
+                            <p className="mt-4 inline-flex rounded-full bg-primary-50 px-3 py-1.5 text-sm font-medium text-primary-700">
+                              {text.bonusCoins}: {plan.bonus_coins}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mb-4 flex items-center gap-2">
+                          <span className="h-px flex-1 bg-gray-200" />
+                          <h3 className="text-sm font-semibold text-gray-500">
+                            {text.features}
+                          </h3>
+                          <span className="h-px flex-1 bg-gray-200" />
+                        </div>
+
+                        {planFeatures.length === 0 ? (
+                          <p className="text-sm leading-6 text-gray-500">
+                            {text.noFeatures}
+                          </p>
+                        ) : (
+                          <ul className="space-y-4">
+                            {planFeatures.map((feature) => {
+                              const catalog = feature.feature_catalog;
+                              const featureName = catalog
+                                ? isArabic
+                                  ? catalog.name_ar
+                                  : catalog.name_en
+                                : feature.feature_key;
+
+                              const featureDescription = catalog
+                                ? isArabic
+                                  ? catalog.description_ar
+                                  : catalog.description_en
+                                : null;
+
+                              return (
+                                <li
+                                  key={feature.feature_key}
+                                  className="flex gap-3"
+                                >
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-bold text-primary-700"
+                                  >
+                                    ✓
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-gray-800">
+                                      {featureName}
+                                    </p>
+                                    {featureDescription && (
+                                      <p className="mt-1 text-sm leading-5 text-gray-600">
+                                        {featureDescription}
+                                      </p>
+                                    )}
+                                    {feature.capacity_units > 0 && (
+                                      <p className="mt-1 text-sm text-gray-500">
+                                        {text.capacity}: {feature.capacity_units}{' '}
+                                        {feature.capacity_kind === 'total'
+                                          ? text.total
+                                          : feature.capacity_kind}
+                                      </p>
+                                    )}
+                                    {feature.daily_bonus_capacity > 0 && (
+                                      <p className="mt-1 text-sm text-gray-500">
+                                        {text.dailyBonus}:{' '}
+                                        {feature.daily_bonus_capacity}
+                                      </p>
+                                    )}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+
+        <div className="mt-8">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+          >
+            {text.back}
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
