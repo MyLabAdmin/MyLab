@@ -321,7 +321,7 @@ export default async function SubscriptionPage({
           </>
         )}
 
-        
+
       </div>
     </main>
   );
