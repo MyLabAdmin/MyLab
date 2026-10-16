@@ -94,9 +94,11 @@ export default function AppNavigation({ locale }: AppNavigationProps) {
     },
     {
       key: 'courses',
+      href: '/courses' as const,
       label: isArabic ? 'دورات' : 'Courses',
       icon: <CoursesIcon />,
-      disabled: true,
+      active: pathname.startsWith('/courses'),
+      disabled: false,
     },
     {
       key: 'assistant',
