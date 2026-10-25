@@ -16,12 +16,14 @@ export default function ImageUpload({
   folder,
   scope = 'knowledge',
   feature,
+  previewClassName,
 }: {
   value: string
   onChange: (ref: string) => void
   folder: string
   scope?: string
   feature?: string
+  previewClassName?: string
 }) {
   const t = useTranslations('KnowledgeAdmin')
   const [mode, setMode] = useState<'upload' | 'library'>('upload')
@@ -118,7 +120,11 @@ export default function ImageUpload({
 
       {error && <p className="text-xs text-red-500">{error}</p>}
       {previewUrl && (
-        <img src={previewUrl} alt="" className="w-full max-h-40 object-cover rounded-lg" />
+        <img
+            src={previewUrl}
+            alt=""
+            className={previewClassName || 'w-full max-h-40 object-cover rounded-lg'}
+          />
       )}
       {value && !previewUrl && <p className="text-xs text-gray-400">{value}</p>}
     </div>

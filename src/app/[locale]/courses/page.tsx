@@ -1,5 +1,20 @@
 import { createClient } from '@/lib/supabase/server';
 import CoursesFilters from './CoursesFilters';
+import { parseMediaRef } from '@/lib/storage'
+import { getImagekitSignedUrl } from '@/lib/storage/imagekit-server'
+
+async function resolveCourseCoverUrl(ref: string | null): Promise<string | null> {
+  if (!ref) return null
+
+  if (ref.startsWith('imagekit:')) {
+    const { provider, path } = parseMediaRef(ref)
+    if (provider !== 'imagekit' || !path.trim()) return null
+    return getImagekitSignedUrl(path)
+  }
+
+  return ref
+}
+
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -49,6 +64,16 @@ export default async function CoursesPage({ params, searchParams }: Props) {
     }
   }
 
+  const coverImageUrls = new Map<string, string | null>()
+  await Promise.all(
+    (courses ?? []).map(async (course) => {
+      coverImageUrls.set(
+        course.id,
+        await resolveCourseCoverUrl(course.cover_image_url),
+      )
+    }),
+  )
+
   const search = q.trim().toLocaleLowerCase();
 
   const visibleCourses = (courses ?? []).map((course) => {
@@ -67,7 +92,7 @@ export default async function CoursesPage({ params, searchParams }: Props) {
       currencyCode: course.currency_code,
       deliveryMode: course.delivery_mode,
       level: course.level,
-      coverImageUrl: course.cover_image_url,
+      coverImageUrl: coverImageUrls.get(course.id) ?? null,
       title: translation?.title ?? course.slug,
       description: translation?.description ?? '',
       enrollmentStatus: enrollmentStatusByCourse.get(course.id) ?? null,
